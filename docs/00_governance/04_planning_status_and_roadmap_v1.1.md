@@ -25,7 +25,7 @@ All eight previously identified foundation specification gaps have been resolved
 5. **Non-Functional Requirements:** baselined with clear performance and reliability targets in [REQ-002].
 6. **Domain Models and Logic:** State-machine transitions, glossary definitions, availability algorithms, and workflows are fully specified in `docs/03_domain/`.
 7. **Platform and Consistency Models:** Background process logic, transactional outboxes, and simulator contracts are baselined in `docs/04_platform_and_integrations/`.
-8. **Security and Privacy:** GDPR retention schedules, deletion workflows, and role-based policies are baselined in [PRV-001].
+8. **Security and Privacy:** privacy workflows and a provisional retention schedule, deletion workflows, and role-based policies are baselined in [PRV-001].
 
 ---
 

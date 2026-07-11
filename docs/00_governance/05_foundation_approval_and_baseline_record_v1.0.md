@@ -25,7 +25,7 @@ This record serves as the formal gate sign-off for the EV Charging Booking Platf
 | NFR baseline approved | **PASSED** | Performance and reliability metrics established and approved. |
 | Foundation traceability complete | **PASSED** | Functional requirements trace use cases to epics and test classes. |
 | No unresolved G1 planning questions | **PASSED** | All gate G1 decisions resolved and documented. |
-| Git baseline tag created | **PASSED** | Target tag: `planning-foundation-v1.0`. |
+| Git baseline tag created | **PASSED** | Target tag planning-foundation-v1.0 created and baselined. |
 
 ---
 

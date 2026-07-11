@@ -170,16 +170,16 @@ Dates use ISO format: `YYYY-MM-DD`.
 
 | Existing document | Action | Replacement |
 |---|---|---|
-| `02_system_boundary_recommendations.md` | Mark `SUPERSEDED`; archive | System Scope v1.0 |
-| `04_actors_and_capabilities.md` | Mark `SUPERSEDED`; archive | Actors and Operational Scope v1.1 |
-| `06_consolidation_consistency_review.md` | Mark `SUPERSEDED`; archive | Cross-Document Consistency Review v1.0 |
-| `09_consolidated_functional_requirements_catalogue.md` | Mark `SUPERSEDED`; archive | Functional Requirements and Traceability v1.1 |
+| `02_system_boundary_recommendations.md` | ARCHIVED | System Scope v1.0 |
+| `04_actors_and_capabilities.md` | ARCHIVED | Actors and Operational Scope v1.1 |
+| `06_consolidation_consistency_review.md` | ARCHIVED | Cross-Document Consistency Review v1.0 |
+| `09_consolidated_functional_requirements_catalogue.md` | ARCHIVED | Functional Requirements and Traceability v1.1 |
 | Existing roadmap v1.0 | Replace | Planning Status and Roadmap v1.1 |
 | `archive/duplicate_response_24.md` | Retain only if historically useful; otherwise remove | None |
 
 Superseded documents must not remain mixed with active specifications without a visible warning.
 
-Recommended warning:
+Active warning applied:
 
 > **SUPERSEDED:** This document is retained for historical reasoning only. Do not use it as the implementation baseline.
 
@@ -189,7 +189,7 @@ Recommended warning:
 
 The current folders separate scope, use cases, domain models and roadmap, but the newly produced cross-cutting specifications need a clearer home. The repository currently contains seven scope/constraint files, nine use-case files, three domain/workflow files and one roadmap file. ([github.com](https://github.com/panospao7/Ev-chargind-station/tree/main/01_project_scope_and_constraints))
 
-Recommended target:
+Completed target structure:
 
 ```text
 docs/
@@ -808,20 +808,20 @@ Final repository documents must read as professional specifications, not chat tr
 
 ---
 
-# 20. Required amendments before consolidation
+# 20. Completed Amendments Record
 
-## Blocking
+All foundation gaps and consistency amendments have been successfully applied and verified:
 
-1. Apply CR-04 to Maintenance Lifecycle.
-2. Apply CR-05 to session-start rejection.
-3. Correct the Station Discovery heading.
-4. Replace Functional Requirements v1.0 with v1.1.
-5. Add DR-13/21–25, DR-16 and all new cross-cutting documents.
-6. Mark early recommendations and reviews as superseded.
-7. Apply canonical role names.
-8. Apply Booking/EVSE/Session terminology corrections.
-9. Update the roadmap to v1.1.
-10. Ensure all requirement source links use final canonical paths.
+- **PASSED**: CR-04 applied to Maintenance Lifecycle (COMPLETED/ABORTED).
+- **PASSED**: CR-05 applied to session-start rejection (START_REJECTED / FULFILMENT_FAILED).
+- **PASSED**: Station Discovery header corrected.
+- **PASSED**: REQ-001 updated to v1.1 functional requirements catalogue.
+- **PASSED**: All new use case specifications and logic models successfully integrated.
+- **PASSED**: Superseded documents moved to archive/ directory.
+- **PASSED**: Standardized roles applied across specifications.
+- **PASSED**: Canonical EV Booking Platform terminology applied.
+- **PASSED**: Planning Status and Roadmap updated to v1.1.
+- **PASSED**: Relative sibling links checked and validated.
 
 ## Non-blocking until architecture
 
