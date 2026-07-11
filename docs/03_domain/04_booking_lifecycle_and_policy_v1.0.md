@@ -46,7 +46,7 @@ A generic `FAILED` state should be avoided because it does not explain what fail
 - State transitions are server-controlled and validated.
 - Terminal bookings cannot be reopened.
 - Rescheduling is atomic: either the new interval succeeds or the existing booking remains unchanged.
-- Cancellation releases capacity immediately, subject to the turnaround buffer.
+- Unused HELD or CONFIRMED bookings release the complete allocation immediately; a turnaround buffer remains only following actual charging or uncertain session use.
 - A no-show automatically releases the EVSE.
 - Equipment failure must not incorrectly classify the driver as a no-show.
 - Booking and charging-session lifecycles remain separate but connected.

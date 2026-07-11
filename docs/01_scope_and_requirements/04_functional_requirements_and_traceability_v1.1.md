@@ -62,7 +62,7 @@ Every MUST requirement must have:
 | DR-CAT | Driver Use-Case Catalogue |
 | DR-DIS | DR-01–05 Station Discovery |
 | DR-IAM | DR-06–10 Account, Authentication and Vehicle Profile |
-| DR-BKG | DR-11/12 Create Reservation |
+| DR-BKG | DR-11/12 Create Booking |
 | DR-VIEW | DR-13 Upcoming Booking Details |
 | DR-RSC | DR-14/15 Reschedule and Cancel |
 | DR-CIN | DR-16 Check-In and Arrival Authorization |

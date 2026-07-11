@@ -3,7 +3,7 @@
 This directory contains superseded planning documents, duplicates, and early draft recommendations retained for historical purposes and architectural reasoning logs only.
 
 > [!WARNING]
-> **SUPERSEDED MATERIAL:** Do not use the documents in this directory as the current implementation baseline. Refer to the canonical specifications located in the [docs/](docs) folder.
+> **SUPERSEDED MATERIAL:** Do not use the documents in this directory as the current implementation baseline. Refer to the canonical specifications located in the [docs/](../docs) folder.
 
 ## Archived Documents Index
 

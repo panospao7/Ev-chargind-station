@@ -22,13 +22,16 @@ stateDiagram-v2
     [*] --> HELD : Hold requested
     HELD --> CONFIRMED : Confirmed before expiry
     HELD --> EXPIRED : Hold timeout (5m)
+    HELD --> CANCELLED : Cancelled before confirmation
     CONFIRMED --> CHECKED_IN : Driver checks in
     CONFIRMED --> CANCELLED : Cancelled by Driver/Op/Admin
     CONFIRMED --> NO_SHOW : Start time + grace elapsed
+    CONFIRMED --> FULFILMENT_FAILED : Equipment failure before check-in
     CHECKED_IN --> ACTIVE : Session started (TransactionStarted event received)
     CHECKED_IN --> FULFILMENT_FAILED : Start command rejected / Device fault
     CHECKED_IN --> CONFIRMED : Driver abandons check-in (before session starts)
     CHECKED_IN --> CANCELLED : Operator emergency cancellation (before session starts)
+    CHECKED_IN --> NO_SHOW : Start time + grace elapsed (before session starts)
     ACTIVE --> COMPLETED : Session ends normally / interrupted
     EXPIRED --> [*]
     CANCELLED --> [*]
@@ -38,10 +41,16 @@ stateDiagram-v2
 ```
 
 Permitted Transitions:
-- `HELD` → `CONFIRMED` | `EXPIRED`
-- `CONFIRMED` → `CHECKED_IN` | `CANCELLED` | `NO_SHOW`
-- `CHECKED_IN` → `ACTIVE` | `FULFILMENT_FAILED` | `CONFIRMED` | `CANCELLED`
-- `ACTIVE` → `COMPLETED` (Any failure during an active session results in COMPLETED with an interrupted outcome or INTERRUPTED state, never FULFILMENT_FAILED).
+- `HELD` → `CONFIRMED` | `EXPIRED` | `CANCELLED`
+- `CONFIRMED` → `CHECKED_IN` | `CANCELLED` | `NO_SHOW` | `FULFILMENT_FAILED`
+- `CHECKED_IN` → `ACTIVE` | `FULFILMENT_FAILED` | `CONFIRMED` | `CANCELLED` | `NO_SHOW`
+- `ACTIVE` → `COMPLETED` (Any failure during active session energy transfer results in COMPLETED with an interrupted outcome or INTERRUPTED session state, never FULFILMENT_FAILED).
+
+*Booking vs. Session Lifecycle Correlation:*
+- An interrupted **charging session** enters the `INTERRUPTED` state.
+- The corresponding **booking** transitions to:
+  - `COMPLETED` if energy transfer had already begun (actual charging occurred);
+  - `FULFILMENT_FAILED` if the interruption occurred before any energy transfer took place (charging never started).
 
 *Note:* Terminal states (`EXPIRED`, `CANCELLED`, `NO_SHOW`, `COMPLETED`, `FULFILMENT_FAILED`) cannot be reopened.
 
@@ -58,7 +67,10 @@ Permitted Transitions:
 - `STARTING` → `CHARGING` | `START_REJECTED`
 - `CHARGING` → `SUSPENDED` | `STOPPING` | `INTERRUPTED`
 - `SUSPENDED` → `CHARGING` | `STOPPING` | `INTERRUPTED`
-- `STOPPING` → `COMPLETED` | `INTERRUPTED`
+- `STOPPING` → `COMPLETED` | `INTERRUPTED` | `CHARGING` | `SUSPENDED`
+
+*Reconciliation transitions:*
+- `STOPPING` → `CHARGING` or `SUSPENDED` represents reconciliation where a stop command was sent but failed to reconcile or the charger rejects/fails to stop, keeping the session active.
 
 ### 1.3 Operator Application Lifecycle
 - `PENDING_APPROVAL` — Operator organization request submitted.
@@ -101,7 +113,7 @@ Permitted Transitions:
 ### 2.1 Double-Booking Prevention (Correctness Invariant)
 - **Rule:** No two bookings may overlap for the same `EVSE` during any time interval.
 - **Interval Boundary Model:** Bookings use half-open intervals $[T_{start}, T_{end})$ with only a post-booking turnaround buffer ($B_{turn}$) applied to reserve capacity.
-- **Formula:** A booking for interval $[T_{start}, T_{end})$ on EVSE $E$ is valid if and only if no other booking on $E$ has a state of `HELD`, `CONFIRMED`, `CHECKED_IN`, or `ACTIVE` in interval $[T_{start}, T_{end} + B_{turn})$, where $B_{turn}$ is the configured station turnaround buffer (e.g., 15 minutes). No pre-booking buffer is applied.
+- **Formula:** A booking for interval $[T_{start}, T_{end})$ on EVSE $E$ is valid if and only if no other booking on $E$ has a state of `HELD`, `CONFIRMED`, `CHECKED_IN`, or `ACTIVE` in interval $[T_{start}, T_{end} + B_{turn})$. No pre-booking buffer is applied.
 - **Enforcement:** Enforced via pessimistic locking or database constraints at transaction boundaries in the Booking Service.
 
 ### 2.2 Resource Ownership & Scope Boundary

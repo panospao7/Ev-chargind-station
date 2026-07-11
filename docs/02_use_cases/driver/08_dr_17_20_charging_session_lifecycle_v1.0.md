@@ -35,7 +35,7 @@ The booking remains separate but linked:
 2. System validates the booking, EVSE, start window, authorization, and operational status.
 3. A session is created idempotently in `STARTING`.
 4. The simulator receives the start command.
-5. Acceptance changes the session to `CHARGING` and booking to `ACTIVE`.
+5. Command acceptance leaves the session in `STARTING`. Receipt of the OCPP-inspired `TransactionStarted` event (or `TransactionEvent(eventType=Started)`) from the charger confirms charging has begun, changing the session state to `CHARGING` and the booking state to `ACTIVE`.
 6. Rejection changes the session to START_REJECTED and the booking to FULFILMENT_FAILED, with no same-booking retry in v1.
 
 Only one session may exist for the booking, driver, and EVSE.
@@ -90,5 +90,3 @@ Explicitly stopping is final; restarting requires a new booking. Capacity is rel
 - Concurrent stop commands produce one final outcome.
 - Disconnections do not falsely report successful completion.
 - Final summaries are reproducible from stored session data.
-
-Next, we should define the **Availability Calculation Model**, since search, booking, maintenance, sessions, stale statuses, and buffers all depend on one authoritative definition of “available.”
