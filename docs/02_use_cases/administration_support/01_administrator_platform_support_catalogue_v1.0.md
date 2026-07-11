@@ -1,3 +1,15 @@
+Document ID: UC-AD-001
+Title: Administrator and Platform Support Catalogue v1.0
+Version: 1.0
+Status: APPROVED
+Owner: PO/DA/SA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: SCP-003
+Authoritative for: Admin/Support Access Tiers and Role Boundaries
+
+---
+
 ## Administrator and Platform Support Model v1.0
 
 ### Platform roles

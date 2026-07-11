@@ -1,3 +1,15 @@
+Document ID: UC-DR-008
+Title: DR-17-20 - Charging Session Lifecycle v1.0
+Version: 1.0
+Status: APPROVED
+Owner: DA/BA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: UC-DR-007, SIM-001
+Authoritative for: Session Telemetry, Meter Events, and Stop Commands
+
+---
+
 ## DR-17–20 — Charging Session Lifecycle v1.0
 
 ### Session states
@@ -24,7 +36,7 @@ The booking remains separate but linked:
 3. A session is created idempotently in `STARTING`.
 4. The simulator receives the start command.
 5. Acceptance changes the session to `CHARGING` and booking to `ACTIVE`.
-6. Rejection records a structured reason.
+6. Rejection changes the session to START_REJECTED and the booking to FULFILMENT_FAILED, with no same-booking retry in v1.
 
 Only one session may exist for the booking, driver, and EVSE.
 

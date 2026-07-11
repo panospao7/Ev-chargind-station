@@ -1,3 +1,15 @@
+Document ID: UC-DR-006
+Title: DR-14/15 - Reschedule and Cancel Booking v1.0
+Version: 1.0
+Status: APPROVED
+Owner: DA/BA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: UC-DR-004
+Authoritative for: Booking Cancellation and Rescheduling Rules
+
+---
+
 Approved as **Booking Lifecycle v1.0**.
 
 ## DR-14 — Reschedule Booking

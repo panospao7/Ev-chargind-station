@@ -1,3 +1,15 @@
+Document ID: UC-DR-001
+Title: Driver Use-Case Catalogue v1.0
+Version: 1.0
+Status: APPROVED
+Owner: PO/DA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: SCP-003
+Authoritative for: Driver Journey Use Cases and Priority Index
+
+---
+
 ## Driver Use-Case Catalogue v1.0 — Draft
 
 ### Discovery

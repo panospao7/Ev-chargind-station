@@ -1,4 +1,14 @@
-After reevaluation, the foundation is strong. I recommend **keeping it with the following additions and clarifications**:
+Document ID: SCP-003
+Title: Actors and Operational Scope v1.1
+Version: 1.1
+Status: APPROVED
+Owner: DA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: SCP-002
+Authoritative for: Actors and General Access/Permission Bounds
+
+---
 
 1. **Formal lifecycle models**
    - Booking: `HELD → CONFIRMED → CHECKED_IN → ACTIVE → COMPLETED`

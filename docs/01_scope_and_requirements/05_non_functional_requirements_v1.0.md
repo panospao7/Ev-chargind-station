@@ -1,4 +1,16 @@
-## Non-Functional Requirements v1.0 — Draft
+Document ID: REQ-002
+Title: Non-Functional Requirements v1.0
+Version: 1.0
+Status: APPROVED
+Owner: DA/BA/SA/PA/QA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: SCP-001
+Authoritative for: Performance, Reliability, Security, and Quality Targets
+
+---
+
+## Non-Functional Requirements v1.0
 
 Targets apply under a reference load of **500 concurrent users, 2,000 simulated EVSEs, 50 API requests/second and 100 charger events/second**.
 

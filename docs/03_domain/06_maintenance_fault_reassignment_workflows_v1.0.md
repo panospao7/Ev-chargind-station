@@ -1,8 +1,20 @@
+Document ID: DOM-006
+Title: Maintenance, Fault and Reassignment Workflows v1.0
+Version: 1.0
+Status: APPROVED
+Owner: DA/BA/QA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: DOM-003, DOM-004
+Authoritative for: Maintenance scheduling, faults lifecycles, and reassignment checks
+
+---
+
 ## Maintenance, Fault and Reassignment Workflows v1.0
 
 ### Maintenance lifecycle
 
-`SCHEDULED → ACTIVE → COMPLETED`
+`SCHEDULED → ACTIVE → COMPLETED` (optionally with `completionOutcome = ABORTED`)
 
 Alternative terminal state: `CANCELLED`.
 
@@ -24,7 +36,7 @@ Maintenance records include:
 5. Unresolved bookings are flagged for operator action.
 6. Maintenance is scheduled and drivers are notified.
 7. At start time, affected infrastructure becomes `MAINTENANCE`.
-8. At completion, operational status returns to `UNKNOWN` until fresh charger status arrives.
+8. At completion (normal or aborted), operational status returns to `UNKNOWN` until fresh charger status arrives.
 
 Maintenance cannot silently invalidate bookings or interrupt active sessions without an emergency reason.
 

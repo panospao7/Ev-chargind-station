@@ -1,3 +1,15 @@
+Document ID: UC-DR-003
+Title: DR-06-10 - Account, Auth and Vehicle Profile v1.0
+Version: 1.0
+Status: APPROVED
+Owner: DA/SA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: UC-DR-001
+Authoritative for: IAM, Authentication PKCE, and Vehicle Profiles
+
+---
+
 ## DR-06–10 — Account, Authentication and Vehicle Profile v1.0
 
 ### Account lifecycle

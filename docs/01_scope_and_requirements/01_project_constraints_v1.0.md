@@ -1,6 +1,16 @@
-Agreed. We’ll record these as **provisional architectural decisions**:
+Document ID: SCP-001
+Title: Project Constraints v1.0
+Version: 1.0
+Status: APPROVED
+Owner: PO
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: None
+Authoritative for: Team, Budget, Tech Stack and Scope Constraints
 
-## Project Constraints v0.1
+---
+
+## Project Constraints v1.0
 
 - **Team:** Individual project
 - **Deadline:** No fixed deadline

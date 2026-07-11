@@ -1,6 +1,16 @@
-Next is the **Booking Lifecycle and Policy Specification**. It must be settled before rescheduling, cancellation, check-in, and charging-session use cases.
+Document ID: DOM-004
+Title: Booking Lifecycle and Policy Specification v1.0
+Version: 1.0
+Status: APPROVED
+Owner: DA/BA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: DOM-001, DOM-003
+Authoritative for: Booking State Machine Transitions and Policies
 
-## Booking Lifecycle v1.0 — Draft
+---
+
+## Booking Lifecycle and Policy Specification v1.0
 
 ### States
 
@@ -12,7 +22,7 @@ Next is the **Booking Lifecycle and Policy Specification**. It must be settled b
 - **CANCELLED** — cancelled by driver, operator, or administrator.
 - **EXPIRED** — hold was not confirmed in time.
 - **NO_SHOW** — driver did not check in before the grace period ended.
-- **FULFILMENT_FAILED** — booking could not be fulfilled because of equipment or platform failure.
+- **FULFILMENT_FAILED** — booking could not be fulfilled because of equipment, platform failure, or definitive session start rejection.
 
 A generic `FAILED` state should be avoided because it does not explain what failed.
 

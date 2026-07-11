@@ -1,4 +1,14 @@
-Great. We’ll mark these decisions as **approved for System Scope v1**, while allowing revisions through documented change decisions.
+Document ID: SCP-002
+Title: System Scope v1.0
+Version: 1.0
+Status: APPROVED
+Owner: PO
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: SCP-001
+Authoritative for: In-Scope, Out-of-Scope, and Deferred Capabilities
+
+---
 
 ## System Scope v1
 

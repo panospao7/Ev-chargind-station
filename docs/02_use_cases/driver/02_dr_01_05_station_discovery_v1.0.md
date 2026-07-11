@@ -1,4 +1,16 @@
-Approved and locked as **Availability Calculation Model v1.0**.
+Document ID: UC-DR-002
+Title: DR-01-05 - Station Discovery v1.0
+Version: 1.0
+Status: APPROVED
+Owner: PO/FA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: UC-DR-001
+Authoritative for: Discovery and Map Search Rules
+
+---
+
+# DR-01-05 - Station Discovery v1.0
 
 ## DR-01–05 — Station Discovery v1.0
 

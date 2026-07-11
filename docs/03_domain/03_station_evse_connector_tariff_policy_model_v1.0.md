@@ -1,3 +1,15 @@
+Document ID: DOM-003
+Title: Station, EVSE, Connector, Tariff and Booking Policy Model v1.0
+Version: 1.0
+Status: APPROVED
+Owner: DA/BA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: DOM-001
+Authoritative for: Infrastructure Schema and Immutable Tariff Snapshot Requirements
+
+---
+
 ## Station, EVSE, Connector and Tariff Domain Model v1.0
 
 ### 1. Operator Organization

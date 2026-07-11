@@ -1,3 +1,15 @@
+Document ID: UC-DR-004
+Title: DR-11/12 - Create Booking v1.0
+Version: 1.0
+Status: APPROVED
+Owner: DA/BA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: UC-DR-001, DOM-005
+Authoritative for: Booking Allocation and Concurrency Check
+
+---
+
 ## DR-11/12 — Create EVSE Reservation v1.0
 
 **Goal:** Reserve one compatible EVSE for a defined start time and duration, either automatically assigned or explicitly selected.

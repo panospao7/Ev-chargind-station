@@ -1,3 +1,15 @@
+Document ID: UC-OP-001
+Title: Operator Use-Case Catalogue and Roles v1.0
+Version: 1.0
+Status: APPROVED
+Owner: PO/DA
+Last reviewed: 2026-07-11
+Supersedes: None
+Depends on: SCP-003
+Authoritative for: Operator Roles, Station Lifecycle, and Override Rules
+
+---
+
 ## Operator Use Cases and Organization Model v1.0
 
 ### Organization lifecycle
