@@ -174,7 +174,7 @@ Dates use ISO format: `YYYY-MM-DD`.
 | `04_actors_and_capabilities.md` | ARCHIVED | Actors and Operational Scope v1.1 |
 | `06_consolidation_consistency_review.md` | ARCHIVED | Cross-Document Consistency Review v1.0 |
 | `09_consolidated_functional_requirements_catalogue.md` | ARCHIVED | Functional Requirements and Traceability v1.1 |
-| Existing roadmap v1.0 | Replace | Planning Status and Roadmap v1.1 |
+| Existing roadmap v1.0 | COMPLETED | Planning Status and Roadmap v1.1 |
 | `archive/duplicate_response_24.md` | Retain only if historically useful; otherwise remove | None |
 
 Superseded documents must not remain mixed with active specifications without a visible warning.
@@ -836,7 +836,7 @@ All foundation gaps and consistency amendments have been successfully applied an
 
 # 21. Consistency acceptance criteria
 
-The foundation is cross-document consistent when:
+The foundation is cross-document consistent. Verification confirmed:
 
 1. No active document claims search is allocation-authoritative.
 2. No active document mixes administrative, reported and derived EVSE states.
@@ -858,7 +858,7 @@ The foundation is cross-document consistent when:
 
 # 22. Proposed approval decisions
 
-Approval of this review means:
+Approval of this review baselined:
 
 1. Adopt the document authority hierarchy.
 2. Adopt the document status and metadata model.

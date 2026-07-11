@@ -69,18 +69,20 @@ Permitted Transitions:
 - `SUSPENDED` → `CHARGING` | `STOPPING` | `INTERRUPTED` | `COMPLETED`
 - `STOPPING` → `COMPLETED` | `INTERRUPTED` | `CHARGING` | `SUSPENDED`
 
-*Reconciliation transitions:*
+*Reconciliation/Guard transitions:*
 - `STOPPING` → `CHARGING` or `SUSPENDED` represents reconciliation where a stop command was sent but failed to reconcile or the charger rejects/fails to stop, keeping the session active.
-- `STARTING` → `INTERRUPTED` represents cases where the remote start was accepted, but a physical fault or disconnection interrupted the startup before `TransactionStarted` could be received.
+- `STARTING` → `INTERRUPTED` is strictly guarded. It requires positive confirmation (via subsequent telemetry or meter sequence logs) that physical energy transfer actually began before the connection was lost. A mere start command acceptance followed by disconnection without energy transfer results in `START_REJECTED`.
 
 ### 1.3 Start Authorization Lifecycle
-- `CREATED` — Start authorization token generated upon check-in.
+- `ISSUED` — Token generated upon successful check-in.
 - `EXPIRED` — Check-in grace period ends without session starting.
-- `CONSUMED` — Session successfully started with this token.
+- `CONSUMED` — Start attempt accepted for processing.
 - `REVOKED` — Booking cancelled or check-in abandoned before start.
 
 Permitted Transitions:
-- `CREATED` → `CONSUMED` | `EXPIRED` | `REVOKED`
+- `ISSUED` → `CONSUMED` | `EXPIRED` | `REVOKED`
+
+*Note:* An authorization becomes `CONSUMED` as soon as the start command is accepted for processing, and remains consumed during any command uncertainty to prevent duplicate activation attempts.
 
 ### 1.4 Station Lifecycle
 - `DRAFT` — Configuration in progress.
@@ -93,6 +95,7 @@ Permitted Transitions:
 - `PUBLISHED` ↔ `TEMPORARILY_CLOSED`
 - `PUBLISHED` → `DEACTIVATED`
 - `TEMPORARILY_CLOSED` → `DEACTIVATED`
+- `DEACTIVATED` → `DRAFT` (Permits reactivation, requiring full verification).
 
 ### 1.5 EVSE Administration Lifecycle
 - `ACTIVE` — Equipment is administratively enabled.
@@ -108,49 +111,55 @@ Permitted Transitions:
 - `NONE` — Standard status determined by telemetry.
 - `ACTIVE_OVERRIDE` — Status manually forced by operator.
 - `EXPIRED` — Override duration elapsed (automatic expiry).
-- `REMOVED` — Override manually cleared.
+- `REVOKED` — Override manually cleared.
 
 Permitted Transitions:
 - `NONE` → `ACTIVE_OVERRIDE`
-- `ACTIVE_OVERRIDE` → `EXPIRED` | `REMOVED`
-- `EXPIRED` | `REMOVED` → `NONE`
+- `ACTIVE_OVERRIDE` → `EXPIRED` | `REVOKED`
+- `EXPIRED` | `REVOKED` → `NONE`
 
 ### 1.7 Machine Identity Lifecycle
-- `PROVISIONED` — Credentials created in central system.
-- `REGISTERED` — First charger boot and verification (handshake).
-- `ACTIVE` — Online, emitting heartbeats.
+- `PENDING_ENROLLMENT` — Provisioned in the registry but not yet active or validated.
+- `ACTIVE` — Authenticated, verified, and emitting heartbeats.
 - `SUSPENDED` — Temporarily blocked due to security or firmware mismatch.
-- `DECOMMISSIONED` — Permanently retired charger hardware.
+- `REVOKED` — Permanently disabled, credentials invalidated.
 
 Permitted Transitions:
-- `PROVISIONED` → `REGISTERED`
-- `REGISTERED` → `ACTIVE`
+- `PENDING_ENROLLMENT` → `ACTIVE`
 - `ACTIVE` ↔ `SUSPENDED`
-- `ACTIVE` → `DECOMMISSIONED`
-- `SUSPENDED` → `DECOMMISSIONED`
+- `ACTIVE` → `REVOKED`
+- `SUSPENDED` → `REVOKED`
 
 ### 1.8 Device Commands Lifecycle
-- `PENDING` — Command queued.
+- `CREATED` — Command prepared in database.
+- `CANCELLED_BEFORE_DISPATCH` — Cancelled before dispatching to gateway.
 - `SENT` — Dispatched over connection.
 - `DELIVERED` — Acknowledged by device gateway.
-- `ACCEPTED` — Command successfully executed by charger.
+- `ACCEPTED` — Executed successfully by device.
 - `REJECTED` — Charger rejected command execution.
 - `TIMED_OUT` — No response received within the timeout window.
+- `RECONCILING` — Non-terminal state after timeout, waiting for telemetry validation.
 
 Permitted Transitions:
-- `PENDING` → `SENT`
+- `CREATED` → `SENT` | `CANCELLED_BEFORE_DISPATCH`
 - `SENT` → `DELIVERED` | `TIMED_OUT`
 - `DELIVERED` → `ACCEPTED` | `REJECTED` | `TIMED_OUT`
+- `TIMED_OUT` → `RECONCILING`
+- `RECONCILING` → `ACCEPTED` | `REJECTED`
 
 ### 1.9 Notification Delivery Lifecycle
-- `QUEUED` — Notification generated.
-- `SENT` — Handed over to provider.
-- `DELIVERED` — Delivery confirmed by receipt payload (where supported).
-- `FAILED` — Delivery failed after maximum retries.
+- `QUEUED` — Email/in-app notification record written to outbox.
+- `DISPATCHED` — Submitted to mail server/SMS gateway.
+- `DELIVERED` — Delivery confirmed by downstream callback.
+- `PROVIDER_REJECTED` — Rejected by mail provider (e.g. bounce, bad domain) - transient retry or permanent fail depending on error class.
+- `NETWORK_ERROR` — Socket or server timeout - transient retry.
+- `RETRIES_EXHAUSTED` — Failed permanently after reaching max retry backoff limit.
 
 Permitted Transitions:
-- `QUEUED` → `SENT`
-- `SENT` → `DELIVERED` | `FAILED`
+- `QUEUED` → `DISPATCHED`
+- `DISPATCHED` → `DELIVERED` | `PROVIDER_REJECTED` | `NETWORK_ERROR`
+- `NETWORK_ERROR` → `DISPATCHED` (retry) | `RETRIES_EXHAUSTED`
+- `PROVIDER_REJECTED` → `RETRIES_EXHAUSTED`
 
 ### 1.10 Support Cases Lifecycle
 - `OPEN` — Ticket created.
@@ -166,30 +175,44 @@ Permitted Transitions:
 - `IN_PROGRESS` ↔ `WAITING_FOR_OPERATOR`
 - `IN_PROGRESS` → `RESOLVED`
 - `RESOLVED` → `CLOSED`
-- `RESOLVED` → `IN_PROGRESS` (if user rejects resolution)
+- `RESOLVED` → `IN_PROGRESS`
 
-### 1.11 Privacy Requests (Export/Deletion) Lifecycle
+### 1.11 Privacy Deletion Workflow Lifecycle
 - `SUBMITTED` — Request received.
 - `VALIDATED` — Driver identity confirmed.
-- `IN_PROGRESS` — Anonymization/export scripts running.
-- `COMPLETED` — Data package delivered or user data anonymized.
-- `REJECTED` — Request rejected (e.g. active booking or session pending).
+- `IN_PROGRESS` — Anonymization scripts running.
+- `ANONYMIZED` — User data anonymized successfully.
+- `REJECTED` — Request rejected (e.g., pending active booking).
 
 Permitted Transitions:
 - `SUBMITTED` → `VALIDATED` | `REJECTED`
 - `VALIDATED` → `IN_PROGRESS`
-- `IN_PROGRESS` → `COMPLETED` | `REJECTED`
+- `IN_PROGRESS` → `ANONYMIZED` | `REJECTED`
 
-### 1.12 Invitations (Staff/Operator) Lifecycle
+### 1.12 Privacy Export Workflow Lifecycle
+- `SUBMITTED` — Request received.
+- `VALIDATED` — Driver identity confirmed.
+- `PACKAGING` — Compiling user data.
+- `DELIVERED` — Export package delivered to driver.
+- `EXPIRED` — Download link expired.
+- `REJECTED` — Request rejected.
+
+Permitted Transitions:
+- `SUBMITTED` → `VALIDATED` | `REJECTED`
+- `VALIDATED` → `PACKAGING`
+- `PACKAGING` → `DELIVERED` | `REJECTED`
+- `DELIVERED` → `EXPIRED`
+
+### 1.13 Invitations (Staff/Operator) Lifecycle
 - `SENT` — Invitation link emailed.
 - `ACCEPTED` — User clicked and linked account.
-- `EXPIRED` — Validity window (e.g., 48 hours) elapsed.
+- `EXPIRED` — Validity window elapsed.
 - `REVOKED` — Cancelled by operator manager.
 
 Permitted Transitions:
 - `SENT` → `ACCEPTED` | `EXPIRED` | `REVOKED`
 
-### 1.13 Ownership Transfers Lifecycle
+### 1.14 Ownership Transfers Lifecycle
 - `INITIATED` — Transfer request sent to target organization owner.
 - `ACCEPTED` — Transfer completed.
 - `EXPIRED` — Validity elapsed.
@@ -199,7 +222,7 @@ Permitted Transitions:
 Permitted Transitions:
 - `INITIATED` → `ACCEPTED` | `EXPIRED` | `REJECTED` | `CANCELLED`
 
-### 1.14 Driver Fault Reports Lifecycle
+### 1.15 Driver Fault Reports Lifecycle
 - `SUBMITTED` — Driver reported EVSE fault.
 - `REVIEWED` — Operator staff checked the report.
 - `LINKED_TO_FAULT` — Linked to an active fault incident record.
@@ -209,7 +232,7 @@ Permitted Transitions:
 - `SUBMITTED` → `REVIEWED`
 - `REVIEWED` → `LINKED_TO_FAULT` | `ARCHIVED_DUPLICATE`
 
-### 1.15 Operator Application Lifecycle
+### 1.16 Operator Application Lifecycle
 - `SUBMITTED` — Operator organization request submitted.
 - `UNDER_REVIEW` — Administrator reviewing the application.
 - `CLARIFICATION_REQUESTED` — Awaiting additional details from the applicant.
@@ -221,21 +244,44 @@ Permitted Transitions:
 - `UNDER_REVIEW` ↔ `CLARIFICATION_REQUESTED`
 - `UNDER_REVIEW` → `APPROVED` | `REJECTED`
 
-### 1.16 Operator Organization Lifecycle
+### 1.17 Operator Organization Lifecycle
 - `ACTIVE` — Approved organization actively managing stations.
 - `SUSPENDED` — Suspended due to moderation or policy breach. Cannot manage stations or take bookings.
-- `CLOSED` — Permanently closed. All bookings must be resolved first.
+- `CLOSED` permanent retirement. All bookings resolved.
 
 Permitted Transitions:
 - `ACTIVE` ↔ `SUSPENDED`
 - `ACTIVE` → `CLOSED`
 - `SUSPENDED` → `CLOSED`
 
-### 1.17 Driver Account Lifecycle
+### 1.18 Driver Account Lifecycle
 - `PENDING_VERIFICATION` → `ACTIVE` | `DELETED`
 - `ACTIVE` → `SUSPENDED` | `DELETION_PENDING`
 - `SUSPENDED` → `ACTIVE` | `DELETION_PENDING`
 - `DELETION_PENDING` → `DELETED`
+
+### 1.19 Maintenance Lifecycle
+- `SCHEDULED` — Planned maintenance interval created.
+- `ACTIVE` — Maintenance work currently ongoing. Affected EVSEs are offline.
+- `COMPLETED` — Maintenance finished. Returns EVSE state to `UNKNOWN`.
+  - *Optionally* with `completionOutcome = ABORTED`.
+- `CANCELLED` — Scheduled maintenance cancelled before starting.
+
+Permitted Transitions:
+- `SCHEDULED` → `ACTIVE` | `CANCELLED`
+- `ACTIVE` → `COMPLETED`
+
+### 1.20 Fault Incident Lifecycle
+- `OPEN` — Fault detected (via simulator telemetry or driver report).
+- `ACKNOWLEDGED` — Operator staff acknowledged the issue.
+- `IN_PROGRESS` — Maintenance/technician dispatched.
+- `RESOLVED` — Equipment repaired. State returns to `UNKNOWN`.
+
+Permitted Transitions:
+- `OPEN` → `ACKNOWLEDGED`
+- `ACKNOWLEDGED` ↔ `IN_PROGRESS`
+- `IN_PROGRESS` → `RESOLVED`
+- `RESOLVED` → `OPEN` (if issue reoccurs)
 
 ---
 
@@ -244,9 +290,9 @@ Permitted Transitions:
 ### 2.1 Double-Booking Prevention (Correctness Invariant)
 - **Rule:** No two Allocations may overlap on the same `EVSE` during any time interval.
 - **Allocation Interval Boundary Model:** 
-  An Allocation represents an effective time block on the physical hardware $[T_{start}, T_{end\_effective})$ where:
-  - For planned bookings, $T_{start}$ is the scheduled start and $T_{end\_effective} = T_{end} + B_{turn}$ (scheduled end plus turnaround buffer).
-  - For checked-in or active bookings, $T_{end\_effective}$ extends to the actual session completion time plus turnaround buffer, or the grace deadline if a no-show occurs.
+  An Allocation represents an effective time block on the physical hardware $[T_{start}, T_{end_effective})$ where:
+  - For planned bookings, $T_{start}$ is the scheduled start and $T_{end_effective} = T_{end} + B_{turn}$ (scheduled end plus turnaround buffer).
+  - For checked-in or active bookings, $T_{end_effective}$ extends to the actual session completion time plus turnaround buffer, or the grace deadline if a no-show occurs.
   - For uncertain physical occupation (e.g. telemetry indicates active energy transfer but connection is stale/unknown), the Allocation remains active until reconciliation resolves the state.
   - A new allocation request is valid if and only if it does not overlap with any existing non-released Allocation.
 - **Enforcement:** Enforced via pessimistic locking or database constraints at transaction boundaries in the Booking authority.

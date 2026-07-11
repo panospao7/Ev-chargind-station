@@ -61,15 +61,15 @@ Possession of an EVSE identifier alone never authorizes charging.
    - station accessibility;
    - absence of maintenance or blocking faults;
    - fresh EVSE connectivity and operational status;
-   - absence of another session or consumed authorization.
+   - absence of another session or active/consumed authorization.
 6. In one transaction, the system:
    - changes the booking from `CONFIRMED` to `CHECKED_IN`;
    - records the check-in timestamp and method;
-   - creates a single-use start authorization;
+   - issues a single-use start authorization (state: ISSUED);
    - records an audit entry;
    - writes required outbox events.
 7. Driver receives confirmation and the earliest permitted charging-start time.
-8. The start authorization is later consumed by DR-17 when the simulator accepts the start command.
+8. The start authorization transitions to CONSUMED when a start attempt is accepted for processing, remaining consumed during any subsequent command uncertainty.
 
 ## 6. Start-authorization rules
 
@@ -113,7 +113,7 @@ Do not check in the driver as successful. Attempt eligible same-station reassign
 
 ### Duplicate request
 
-Return the existing successful result. Do not issue another authorization.
+Return the existing successful result. Do not issue another authorization (state remains ISSUED or CONSUMED).
 
 ### Concurrent check-in requests
 

@@ -4,7 +4,7 @@ Version: 1.0
 Status: APPROVED
 Owner: PO/DA/BA
 Last reviewed: 2026-07-11
-Supersedes: None
+Supersedes: Git tag planning-foundation-v1.0 (Superseded due to final G1 corrections)
 Depends on: All governance and specification documents
 Authoritative for: Foundation Gate Approval Record
 
@@ -25,7 +25,7 @@ This record serves as the formal gate sign-off for the EV Charging Booking Platf
 | NFR baseline approved | **PASSED** | Performance and reliability metrics established and approved. |
 | Foundation traceability complete | **PASSED** | Functional requirements trace use cases to epics and test classes. |
 | No unresolved G1 planning questions | **PASSED** | All gate G1 decisions resolved and documented. |
-| Git baseline tag created | **PASSED** | Target tag planning-foundation-v1.0 created and baselined. |
+| Git baseline tag created | **PASSED** | Target tag planning-foundation-v1.1 created and baselined. |
 
 ---
 
@@ -70,4 +70,4 @@ The following architectural directions are provisionally accepted but require va
 - **Approving Authority:** Repository Owner
 - **AI Assistant & Reviewer:** Antigravity AI
 - **Sign-off Date:** 2026-07-11
-- **Baseline Git Tag:** `planning-foundation-v1.0`
+- **Baseline Git Tag:** `planning-foundation-v1.1`
