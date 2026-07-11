@@ -512,4 +512,10 @@ Approval of Decision and Open-Question Register v1.0 means:
 5. Gate deadlines become mandatory readiness conditions.
 6. Changes require recorded impact analysis.
 7. The next foundation artifact is the **Domain Glossary v1.0**.
+## 20. Foundation Errata Record
+
+| ID | Description | Impact | Gate | Owner |
+|---|---|---|---|---|
+| FE-001 | **Secondary Lifecycle Alignment:** Reconcile DOM-002 simplified states (Overrides, Device Commands, Privacy, Notifications, and secondary transitions) with detailed specs. | Non-blocking for boundaries; must be resolved before REST/event/DB contracts. | G3 | DA/BA |
+
 </12_decision_and_open_question_register_v1.0.md>

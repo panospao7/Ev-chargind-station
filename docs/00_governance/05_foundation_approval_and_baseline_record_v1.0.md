@@ -71,3 +71,15 @@ The following architectural directions are provisionally accepted but require va
 - **AI Assistant & Reviewer:** Antigravity AI
 - **Sign-off Date:** 2026-07-11
 - **Baseline Git Tag:** `planning-foundation-v1.1`
+
+## 5. Foundation Errata
+
+### [FE-001] Secondary Lifecycle Alignment
+- **Description:** DOM-002 uses simplified states that differ from some focused specifications:
+  - Status Override uses `NONE/ACTIVE_OVERRIDE` rather than `SCHEDULED/ACTIVE/EXPIRED/REVOKED`.
+  - Device Command uses `SENT/DELIVERED`, whereas PLT-001 uses `PENDING/DISPATCHED`.
+  - Privacy export/deletion states are simplified compared with PRV-001.
+  - Notification delivery states differ from the detailed notification specification.
+  - Some secondary transitions remain omitted, such as deletion cooling-off cancellation and the full operator-application draft/withdrawal flow.
+- **Impact:** Non-blocking for capability decomposition or service-boundary analysis.
+- **Resolution:** These lifecycles must be reconciled and aligned before REST, event, and database contracts (Gate G3) are approved.
