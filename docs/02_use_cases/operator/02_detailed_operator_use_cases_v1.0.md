@@ -10,7 +10,7 @@ Authoritative for: OP-01 to OP-25 Flow Details and Rules
 
 ---
 
-# Detailed Operator Use Cases v1.0 — Draft
+# Detailed Operator Use Cases v1.0
 
 ## Global operator rules
 

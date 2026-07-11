@@ -10,7 +10,7 @@ Authoritative for: Simulator Telemetry Sequence and Committing Command Rules
 
 ---
 
-# Charger Simulator Protocol, Machine Identity, Commands and Events v1.0 — Draft
+# Charger Simulator Protocol, Machine Identity, Commands and Events v1.0
 
 ## 1. Purpose
 

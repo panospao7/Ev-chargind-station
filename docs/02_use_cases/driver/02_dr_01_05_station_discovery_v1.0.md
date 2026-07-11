@@ -94,4 +94,3 @@ Internal hardware identifiers and operationally sensitive data must not be publi
 - Search remains usable without location permission.
 - Search performs efficiently across the simulated Greek dataset.
 
-Next: **Driver account, vehicle profile, and authentication lifecycle (DR-06–10)**.

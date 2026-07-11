@@ -10,7 +10,7 @@ Authoritative for: System State Transitions and Domain Invariants
 
 # Lifecycle and Invariant Catalogue v1.0
 
-This catalogue consolidates all state machines, permitted transitions, and business invariants across the EV Charging reservation system.
+This catalogue consolidates all state machines, permitted transitions, and business invariants across the EV Charging Booking Platform.
 
 ---
 
@@ -25,10 +25,11 @@ stateDiagram-v2
     CONFIRMED --> CHECKED_IN : Driver checks in
     CONFIRMED --> CANCELLED : Cancelled by Driver/Op/Admin
     CONFIRMED --> NO_SHOW : Start time + grace elapsed
-    CHECKED_IN --> ACTIVE : Session start accepted
-    CHECKED_IN --> FULFILMENT_FAILED : Start rejected / Device fault
+    CHECKED_IN --> ACTIVE : Session started (TransactionStarted event received)
+    CHECKED_IN --> FULFILMENT_FAILED : Start command rejected / Device fault
+    CHECKED_IN --> CONFIRMED : Driver abandons check-in (before session starts)
+    CHECKED_IN --> CANCELLED : Operator emergency cancellation (before session starts)
     ACTIVE --> COMPLETED : Session ends normally / interrupted
-    ACTIVE --> FULFILMENT_FAILED : Emergency session failure
     EXPIRED --> [*]
     CANCELLED --> [*]
     NO_SHOW --> [*]
@@ -39,8 +40,8 @@ stateDiagram-v2
 Permitted Transitions:
 - `HELD` → `CONFIRMED` | `EXPIRED`
 - `CONFIRMED` → `CHECKED_IN` | `CANCELLED` | `NO_SHOW`
-- `CHECKED_IN` → `ACTIVE` | `FULFILMENT_FAILED`
-- `ACTIVE` → `COMPLETED` | `FULFILMENT_FAILED`
+- `CHECKED_IN` → `ACTIVE` | `FULFILMENT_FAILED` | `CONFIRMED` | `CANCELLED`
+- `ACTIVE` → `COMPLETED` (Any failure during an active session results in COMPLETED with an interrupted outcome or INTERRUPTED state, never FULFILMENT_FAILED).
 
 *Note:* Terminal states (`EXPIRED`, `CANCELLED`, `NO_SHOW`, `COMPLETED`, `FULFILMENT_FAILED`) cannot be reopened.
 
@@ -59,25 +60,35 @@ Permitted Transitions:
 - `SUSPENDED` → `CHARGING` | `STOPPING` | `INTERRUPTED`
 - `STOPPING` → `COMPLETED` | `INTERRUPTED`
 
-### 1.3 Maintenance Record Lifecycle
+### 1.3 Operator Application Lifecycle
+- `PENDING_APPROVAL` — Operator organization request submitted.
+- `APPROVED` — Application approved. Creates active operator organization.
+- `REJECTED` — Application rejected with structured reasons.
+
+### 1.4 Operator Organization Lifecycle
+- `ACTIVE` — Approved organization actively managing stations.
+- `SUSPENDED` — Suspended due to moderation or policy breach. Cannot manage stations or take bookings.
+- `CLOSED` — Permanently closed. All bookings must be resolved first.
+
+Permitted Transitions:
+- `ACTIVE` ↔ `SUSPENDED`
+- `ACTIVE` → `CLOSED`
+- `SUSPENDED` → `CLOSED`
+
+### 1.5 Maintenance Record Lifecycle
 - `SCHEDULED` — Planned maintenance interval created.
 - `ACTIVE` — Maintenance work currently ongoing. Affected EVSEs are offline.
 - `COMPLETED` — Maintenance finished. Returns EVSE state to `UNKNOWN`.
   - *Optionally* with `completionOutcome = ABORTED`.
 - `CANCELLED` — Scheduled maintenance cancelled before starting.
 
-### 1.4 Fault Record Lifecycle
+### 1.6 Fault Record Lifecycle
 - `OPEN` — Fault detected (via simulator telemetry or driver report).
 - `ACKNOWLEDGED` — Operator staff acknowledged the issue.
 - `IN_PROGRESS` — Maintenance/technician dispatched.
 - `RESOLVED` — Equipment repaired. State returns to `UNKNOWN` until next heartbeat.
 
-### 1.5 Operator Organization Lifecycle
-- `PENDING_APPROVAL` → `ACTIVE` | `CLOSED`
-- `ACTIVE` → `SUSPENDED` | `CLOSED`
-- `SUSPENDED` → `ACTIVE` | `CLOSED`
-
-### 1.6 Driver Account Lifecycle
+### 1.7 Driver Account Lifecycle
 - `PENDING_VERIFICATION` → `ACTIVE` | `DELETED`
 - `ACTIVE` → `SUSPENDED` | `DELETION_PENDING`
 - `SUSPENDED` → `ACTIVE` | `DELETION_PENDING`
@@ -89,7 +100,8 @@ Permitted Transitions:
 
 ### 2.1 Double-Booking Prevention (Correctness Invariant)
 - **Rule:** No two bookings may overlap for the same `EVSE` during any time interval.
-- **Formula:** A booking for interval $[T_{start}, T_{end}]$ on EVSE $E$ is valid if and only if no other booking on $E$ has a state of `HELD`, `CONFIRMED`, `CHECKED_IN`, or `ACTIVE` in interval $[T_{start} - B_{turn}, T_{end} + B_{turn}]$, where $B_{turn}$ is the configured station turnaround buffer (e.g., 15 minutes).
+- **Interval Boundary Model:** Bookings use half-open intervals $[T_{start}, T_{end})$ with only a post-booking turnaround buffer ($B_{turn}$) applied to reserve capacity.
+- **Formula:** A booking for interval $[T_{start}, T_{end})$ on EVSE $E$ is valid if and only if no other booking on $E$ has a state of `HELD`, `CONFIRMED`, `CHECKED_IN`, or `ACTIVE` in interval $[T_{start}, T_{end} + B_{turn})$, where $B_{turn}$ is the configured station turnaround buffer (e.g., 15 minutes). No pre-booking buffer is applied.
 - **Enforcement:** Enforced via pessimistic locking or database constraints at transaction boundaries in the Booking Service.
 
 ### 2.2 Resource Ownership & Scope Boundary

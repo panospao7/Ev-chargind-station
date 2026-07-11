@@ -10,7 +10,7 @@ Authoritative for: Decision Baseline and Open Questions
 
 ---
 
-# Decision and Open-Question Register v1.0 — Draft
+# Decision and Open-Question Register v1.0
 
 ## 1. Purpose
 

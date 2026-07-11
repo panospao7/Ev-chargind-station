@@ -151,4 +151,3 @@ Station settings override organization defaults.
 - Status timestamps and all lifecycle changes are audited.
 - Optimistic versioning prevents lost operator updates.
 
-Next: **maintenance scheduling, fault handling and booking reassignment workflows**.

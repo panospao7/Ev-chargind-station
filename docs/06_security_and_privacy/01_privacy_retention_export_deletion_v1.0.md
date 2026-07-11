@@ -10,7 +10,7 @@ Authoritative for: GDPR Compliance, Deletion purge bounds, and location masking
 
 ---
 
-# Privacy, Retention, Export, Deletion and Anonymization Workflows v1.0 — Draft
+# Privacy, Retention, Export, Deletion and Anonymization Workflows v1.0
 
 ## 1. Purpose
 

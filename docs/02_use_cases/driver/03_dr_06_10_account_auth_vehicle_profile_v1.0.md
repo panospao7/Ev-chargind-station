@@ -89,4 +89,3 @@ Session identifiers and tokens must never be exposed. Sessions use secure expiry
 - Active bookings/sessions must first be resolved.
 - Authentication events and privileged profile changes are audited.
 
-Next: **Operator use-case catalogue and organization/staff model**.

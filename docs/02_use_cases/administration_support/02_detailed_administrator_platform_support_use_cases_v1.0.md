@@ -10,7 +10,7 @@ Authoritative for: AD-01 to AD-09 and SUP-01 to SUP-03 Detailed Flows
 
 ---
 
-# Detailed Administrator and Platform Support Use Cases v1.0 — Draft
+# Detailed Administrator and Platform Support Use Cases v1.0
 
 ## Global rules
 

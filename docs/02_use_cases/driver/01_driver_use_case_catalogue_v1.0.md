@@ -10,7 +10,7 @@ Authoritative for: Driver Journey Use Cases and Priority Index
 
 ---
 
-## Driver Use-Case Catalogue v1.0 — Draft
+## Driver Use-Case Catalogue v1.0
 
 ### Discovery
 

@@ -10,7 +10,7 @@ Authoritative for: Functional Requirements and Traceability Mapping
 
 ---
 
-# Consolidated Functional Requirements Catalogue and Traceability Matrix v1.1 — Draft
+# Consolidated Functional Requirements Catalogue and Traceability Matrix v1.1
 
 ## 1. Purpose
 

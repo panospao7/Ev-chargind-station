@@ -14,7 +14,7 @@ Authoritative for: In-Scope, Out-of-Scope, and Deferred Capabilities
 
 ### Included
 
-- Greece-first EV charging reservation platform
+- Greece-first EV charging booking platform
 - Responsive Angular web application
 - Driver, operator and administrator interfaces
 - Map-based station discovery

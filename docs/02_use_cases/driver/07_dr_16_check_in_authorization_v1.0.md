@@ -10,7 +10,7 @@ Authoritative for: Late Grace Limits and Start Authorization Token
 
 ---
 
-# DR-16 — Check-In and Arrival Authorization v1.0 — Draft
+# DR-16 — Check-In and Arrival Authorization v1.0
 
 ## 1. Purpose
 

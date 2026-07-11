@@ -13,7 +13,7 @@ Authoritative for: Canonical Terminology and Vocabulary Definition
 This glossary establishes canonical terminology and resolves ambiguous terms such as charger, slot, status, reservation, availability, and session.
 
 <13_domain_glossary_v1.0.md>
-# Domain Glossary v1.0 — Draft
+# Domain Glossary v1.0
 
 ## 1. Purpose
 

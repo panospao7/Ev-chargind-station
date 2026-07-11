@@ -59,4 +59,3 @@ A reason is mandatory.
 
 Rather than separate states such as `CANCELLED_BY_DRIVER` and `CANCELLED_BY_OPERATOR`, we retain one `CANCELLED` state with structured metadata describing **who cancelled it and why**.
 
-Next: **DR-16 Check-in and arrival authorization**, followed by the complete simulated charging-session lifecycle.

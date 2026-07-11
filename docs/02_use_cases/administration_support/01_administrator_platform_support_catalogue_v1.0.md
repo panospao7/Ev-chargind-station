@@ -69,4 +69,3 @@ Support case lifecycle:
 
 These controls follow least privilege, default-deny, per-request authorization and separation-of-duty guidance. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html?utm_source=openai))
 
-Next: **charger simulator responsibilities, machine identity, commands, events and failure behaviour**.

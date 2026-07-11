@@ -10,7 +10,7 @@ Authoritative for: Transactional Outbox Pattern, Lockings, and Heartbeat Check r
 
 ---
 
-# Background Processes and Distributed Consistency v1.0 — Draft
+# Background Processes and Distributed Consistency v1.0
 
 ## 1. Purpose
 

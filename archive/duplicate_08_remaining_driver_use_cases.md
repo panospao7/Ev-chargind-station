@@ -1,4 +1,4 @@
-# Remaining Driver Use Cases v1.0 — Draft
+# Remaining Driver Use Cases v1.0
 
 Covers DR-13 and DR-21–25. DR-24 and DR-25 are user-facing specifications built on the approved privacy workflows.
 

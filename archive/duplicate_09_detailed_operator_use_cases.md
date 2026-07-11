@@ -1,4 +1,4 @@
-# Detailed Operator Use Cases v1.0 — Draft
+# Detailed Operator Use Cases v1.0
 
 ## Global operator rules
 

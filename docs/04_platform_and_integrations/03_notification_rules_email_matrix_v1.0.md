@@ -10,7 +10,7 @@ Authoritative for: Transactional Email Triggers and Retrying Constraints
 
 ---
 
-# Notification Rules and Essential Email Matrix v1.0 — Draft
+# Notification Rules and Essential Email Matrix v1.0
 
 ## 1. Purpose
 

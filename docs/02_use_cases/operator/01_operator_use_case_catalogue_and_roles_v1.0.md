@@ -106,4 +106,3 @@ Station lifecycle:
 - Sensitive actions are immutable audit events.
 - Analytics must not expose unnecessary driver information.
 
-Next: detailed **station, EVSE, connector and tariff domain model**, followed by operator maintenance and booking-reassignment workflows.

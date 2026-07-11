@@ -10,7 +10,7 @@ Authoritative for: Authoritative Check Algorithm and Interval Availability
 
 ---
 
-# Availability Calculation Model v1.0 — Draft
+# Availability Calculation Model v1.0
 
 ## 1. Purpose
 

@@ -1,4 +1,4 @@
-# Detailed Administrator and Platform Support Use Cases v1.0 — Draft
+# Detailed Administrator and Platform Support Use Cases v1.0
 
 ## Global rules
 

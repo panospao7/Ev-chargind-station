@@ -99,4 +99,3 @@ Otherwise, driver approval is required. A driver who explicitly selected an EVSE
 - Status overrides expire automatically.
 - Notifications occur after committed changes.
 
-Next: **Administrator and platform-support use cases and permission model**.

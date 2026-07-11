@@ -1,7 +1,7 @@
 I consolidated every proposed decision from the gap-closing specifications. Decisions requiring architecture, provider, empirical, or legal validation remain provisional/open rather than being falsely finalized.
 
 <12_decision_and_open_question_register_v1.0.md>
-# Decision and Open-Question Register v1.0 — Draft
+# Decision and Open-Question Register v1.0
 
 ## 1. Purpose
 
