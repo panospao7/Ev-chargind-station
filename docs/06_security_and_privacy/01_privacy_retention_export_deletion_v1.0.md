@@ -506,7 +506,7 @@ No automated job independently decides that an incident is legally reportable; a
 - Operator/support authorization tests
 - Dead-letter personal-data tests
 
-## 28. Proposed decisions for approval
+## 28. Decision summary
 
 1. Do not retain precise search-location history by default.
 2. Exclude VIN, registration plate and home address from v1.

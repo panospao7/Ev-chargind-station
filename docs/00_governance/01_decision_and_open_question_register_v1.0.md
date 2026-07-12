@@ -127,7 +127,7 @@ Default owner: **DA/BA**.
 | DEC-AVL-07 | Use a 60-minute near-term status horizon initially. | APPROVED | G3 |
 | DEC-AVL-08 | Define freshness as fixed 300 seconds (5 minutes). | APPROVED | G3 |
 | DEC-AVL-09 | Permit future reservations despite temporary offline, stale or unknown status, labelled `PLANNED_AVAILABLE`. | APPROVED | G1 |
-| DEC-AVL-10 | Never allow reservations over blocking maintenance, administrative closure or unresolved critical/emergency faults. | APPROVED | G1 |
+| DEC-AVL-10 | A fault with an explicit impact interval blocks every overlapping booking interval. A current fault without predictive impact information is operational evidence that blocks bookings beginning within the 60-minute near-term horizon. Emergency administrative closure may apply an explicit indefinite block. | APPROVED | G1 |
 | DEC-AVL-11 | A search without a requested interval is an operational summary, not reservation availability. | APPROVED | G1 |
 | DEC-AVL-12 | Require the charging interval, but not necessarily the post-buffer, to fit opening hours. | APPROVED | G1 |
 | DEC-AVL-13 | Release unused cancelled allocations immediately. | APPROVED | G1 |
@@ -366,7 +366,7 @@ Default owner: **DA/QA/AR**.
 |---|---|---|---|
 | OQ-DAT-01 | Will each service use a separate PostgreSQL database, separate schema, or separate logical ownership in one instance? | BA/CA | RESOLVED_BY ARC-001 §15 |
 | OQ-DAT-02 | Which database mechanism will enforce non-overlapping EVSE allocations? | BA | RESOLVED_BY ARC-006, ARC-021 |
-| OQ-DAT-03 | What transaction-isolation level is required for allocation and rescheduling? | BA/QA | G3 |
+| OQ-DAT-03 | What transaction-isolation level is required for allocation and rescheduling? | BA/QA | RESOLVED_BY ARC-006 §2 (READ COMMITTED with explicit row locks) |
 | OQ-DAT-04 | What is the supported broker/event replay window? | BA/CA | G3 |
 | OQ-DAT-05 | How long must inbox, outbox and command-result deduplication records be retained? | BA/PA | G3 |
 | OQ-DAT-06 | What event store/source-data strategy will support projection rebuilds? | BA | G3 |
@@ -388,7 +388,7 @@ Default owner: **DA/QA/AR**.
 
 | ID | Question | Owner | Deadline |
 |---|---|---|---|
-| OQ-SEC-01 | Confirm Keycloak through an identity-provider ADR and proof of concept. | SA/BA | RESOLVED_BY DEC-TECH-01 |
+| OQ-SEC-01 | Confirm Keycloak through an identity-provider ADR and proof of concept. PoC artifact required. | SA/BA | OPEN (provisionally selected; PoC pending) |
 | OQ-SEC-02 | Define service-to-service authentication and authorization. | SA/BA | RESOLVED_BY ARC-019 §3 |
 | OQ-SEC-03 | Determine whether deployed simulator mTLS is practical on the selected cloud platform. | SA/CA | G5 |
 | OQ-SEC-04 | Select secrets-management technology. | SA/CA | G5 |
@@ -498,7 +498,7 @@ Default owner: **DA/QA/AR**.
 | Resolved by ADR/approved document | 16 |
 | Open questions | 50+ |
 
-Logical architecture, service boundaries and contract catalogues are now complete (G2/G3). Security, cloud and implementation planning remain in progress. None invalidates the approved product/domain foundation, but all release-critical questions must be resolved before implementation readiness.
+G2 (service topology): approved. G3-logical (API/event catalogues): in review. G3-executable (OpenAPI/AsyncAPI/JSON Schema): pending. Security, cloud and implementation planning remain in progress. All release-critical questions must be resolved before implementation readiness.
 
 ---
 

@@ -484,7 +484,7 @@ Removes a mirrored reservation.
 
 It cannot stop an active charging transaction.
 
-### `StartCharging`
+### `StartChargingAtEVSE`
 
 Requests one authorized simulated charging session.
 
@@ -840,7 +840,7 @@ Flow:
 1. Driver completes DR-16 check-in.
 2. Platform creates a single-use start authorization.
 3. DR-17 consumes that authorization transactionally.
-4. Platform issues `StartCharging`.
+4. Platform issues `StartChargingAtEVSE`.
 5. Simulator validates trusted command identity and command constraints.
 6. Simulator reports acceptance or rejection.
 7. `TransactionStarted` confirms actual charging.

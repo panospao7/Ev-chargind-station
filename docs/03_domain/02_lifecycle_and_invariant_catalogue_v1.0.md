@@ -28,13 +28,10 @@ stateDiagram-v2
     CONFIRMED --> NO_SHOW : Start time + grace elapsed
     CONFIRMED --> FULFILMENT_FAILED : Equipment failure before check-in
     CHECKED_IN --> ACTIVE : Session started (TransactionStarted event received)
-    CHECKED_IN --> START_REJECTED : Start command rejected by device
     CHECKED_IN --> CONFIRMED : Driver abandons check-in (before session starts)
     CHECKED_IN --> CANCELLED : Operator emergency cancellation (before session starts)
     CHECKED_IN --> NO_SHOW : Start time + grace elapsed (before session starts)
-    START_REJECTED --> ACTIVE : Retry with new authorization succeeds
-    START_REJECTED --> FULFILMENT_FAILED : Retry/reassignment exhausted
-    START_REJECTED --> NO_SHOW : Start time + grace elapsed (before session starts)
+    CHECKED_IN --> FULFILMENT_FAILED : Retry/reassignment exhausted
     ACTIVE --> COMPLETED : Session ends normally / interrupted
     EXPIRED --> [*]
     CANCELLED --> [*]
@@ -46,8 +43,7 @@ stateDiagram-v2
 Permitted Transitions:
 - `HELD` → `CONFIRMED` | `EXPIRED` | `CANCELLED`
 - `CONFIRMED` → `CHECKED_IN` | `CANCELLED` | `NO_SHOW` | `FULFILMENT_FAILED`
-- `CHECKED_IN` → `ACTIVE` | `START_REJECTED` | `CONFIRMED` | `CANCELLED` | `NO_SHOW`
-- `START_REJECTED` → `ACTIVE` | `FULFILMENT_FAILED` | `NO_SHOW`
+- `CHECKED_IN` → `ACTIVE` | `CONFIRMED` | `CANCELLED` | `NO_SHOW` | `FULFILMENT_FAILED`
 - `ACTIVE` → `COMPLETED` (Any failure during active session energy transfer results in COMPLETED with an interrupted outcome or INTERRUPTED session state, never FULFILMENT_FAILED).
 
 *Booking vs. Session Lifecycle Correlation:*
@@ -56,15 +52,36 @@ Permitted Transitions:
   - `COMPLETED` if energy transfer had already begun (actual charging occurred);
   - `FULFILMENT_FAILED` if the interruption occurred before any energy transfer took place (charging never started).
 
-*Note:* Terminal states (`EXPIRED`, `CANCELLED`, `NO_SHOW`, `COMPLETED`, `FULFILMENT_FAILED`) cannot be reopened. `START_REJECTED` is non-terminal; retry remains available until retry/reassignment is exhausted, at which point the Booking transitions to `FULFILMENT_FAILED`.
+*Note:* Terminal states (`EXPIRED`, `CANCELLED`, `NO_SHOW`, `COMPLETED`, `FULFILMENT_FAILED`) cannot be reopened.
 
-### 1.2 Charging Session Lifecycle
-- `AUTHORIZING` — Authorization being validated and start command being prepared (internal processing substate).
+*Start Rejection vs Retry:* Booking remains `CHECKED_IN` while retry/reassignment is available. A rejected attempt creates a terminal `START_REJECTED` session-attempt record, not a Booking-state change. Each retry receives a new attempt number, a newly issued authorization, and a new session-attempt record. Booking transitions to `ACTIVE` only after confirmed transaction-start evidence, and to `FULFILMENT_FAILED` only when retry/reassignment is exhausted.
+
+### 1.2 Session Attempt Lifecycle
+*Each start attempt creates a new SessionAttempt record. The Booking remains in `CHECKED_IN` across attempts.*
+
+- `AUTHORIZING` — Authorization being validated and start command being prepared.
+- `STARTING` — Remote start command submitted.
+- `DEVICE_ACCEPTED` — Charger acknowledged the command (not proof of energy transfer).
+- `DEVICE_REJECTED` — Charger explicitly rejected the command.
+- `START_REJECTED` — Terminal; charger rejected or authorization invalid.
+- `TRANSACTION_STARTED` — Charging physically began (DeviceTransactionStarted received).
+
+Permitted Transitions:
+- `AUTHORIZING` → `STARTING` | `START_REJECTED`
+- `STARTING` → `DEVICE_ACCEPTED` | `DEVICE_REJECTED` | `TIMED_OUT`
+- `DEVICE_ACCEPTED` → `TRANSACTION_STARTED` | `TIMED_OUT`
+- `DEVICE_REJECTED` → [Terminal]
+- `TIMED_OUT` → `RECONCILING`
+- `RECONCILING` → `TRANSACTION_STARTED` | `START_REJECTED`
+
+### 1.3 Charging Session Lifecycle
+*The session aggregate spans the full lifecycle from first attempt to completion. `AUTHORIZING` and `FINALIZING` are internal processing substeps recorded for observability; capacity conflict detection uses `STARTING`, `CHARGING`, `SUSPENDED`, `STOPPING` as the authoritative blocking states.*
+- `AUTHORIZING` — Authorization being validated and start command being prepared (internal processing substep; not a persistent blocking state).
 - `STARTING` — Remote start command submitted. (Can be flagged with `uncertain=true` during connection timeouts or ambiguous responses, remaining in `STARTING` until resolved.)
 - `CHARGING` — Physical energy transfer in progress.
 - `SUSPENDED` — Temporarily paused (e.g., vehicle request or grid load control).
 - `STOPPING` — Stop requested, waiting for final meter values.
-- `FINALIZING` — Meter data being reconciled and final cost calculated (internal processing substate).
+- `FINALIZING` — Meter data being reconciled and final cost calculated (internal processing substep; not a persistent blocking state).
 - `COMPLETED` — Session ended normally with full meter data.
 - `INTERRUPTED` — Session ended due to device fault, grid loss, or emergency override.
 - `START_REJECTED` — Central management system or charger rejected start.
@@ -150,7 +167,7 @@ Permitted Transitions:
 - `SENT_TO_DEVICE` — Dispatched over physical/simulated charger connection (Release applicability: W1).
 
 **Terminal Outcomes:**
-- `DEVICE_ACCEPTED` — Executed successfully by the physical/simulated device (Release applicability: W1).
+- `DEVICE_ACCEPTED` — Charger acknowledged/accepted the command (Release applicability: W1). Does not prove physical energy transfer; `DeviceTransactionStarted` event confirms charging began.
 - `DEVICE_REJECTED` — Charger rejected command execution (Release applicability: W1).
 
 **Side / Non-Terminal Outcomes:**
@@ -209,31 +226,10 @@ Permitted Transitions:
 - `RESOLVED` → `CLOSED`
 - `RESOLVED` → `IN_PROGRESS`
 
-### 1.11 Privacy Deletion Workflow Lifecycle
-- `SUBMITTED` — Request received.
-- `VALIDATED` — Driver identity confirmed.
-- `IN_PROGRESS` — Anonymization scripts running.
-- `ANONYMIZED` — User data anonymized successfully.
-- `REJECTED` — Request rejected (e.g., pending active booking).
+### 1.11 Privacy Workflow Lifecycles
+*PRV-001 is authoritative for all privacy workflow lifecycles (rights request, access export, portability, restriction, account deletion). See PRV-001 §9 (rights-request lifecycle), §11 (access export), §12 (portability), §14 (restriction), §15 (account deletion). These are the canonical state machines; any lifecycle in this section is a summary only.*
 
-Permitted Transitions:
-- `SUBMITTED` → `VALIDATED` | `REJECTED`
-- `VALIDATED` → `IN_PROGRESS`
-- `IN_PROGRESS` → `ANONYMIZED` | `REJECTED`
-
-### 1.12 Privacy Export Workflow Lifecycle
-- `SUBMITTED` — Request received.
-- `VALIDATED` — Driver identity confirmed.
-- `PACKAGING` — Compiling user data.
-- `DELIVERED` — Export package delivered to driver.
-- `EXPIRED` — Download link expired.
-- `REJECTED` — Request rejected.
-
-Permitted Transitions:
-- `SUBMITTED` → `VALIDATED` | `REJECTED`
-- `VALIDATED` → `PACKAGING`
-- `PACKAGING` → `DELIVERED` | `REJECTED`
-- `DELIVERED` → `EXPIRED`
+**Key point:** Deletion follows `REQUESTED → VALIDATING → COOLING_OFF → APPROVED → PROCESSING → COMPLETED` with alternative states `BLOCKED`, `PARTIALLY_COMPLETED`, `REQUIRES_REVIEW`, `CANCELLED`. `ANONYMIZED` is an action/result, not the universal successful terminal state.
 
 ### 1.13 Invitations (Staff/Operator) Lifecycle
 - `SENT` — Invitation link emailed.
@@ -315,7 +311,7 @@ Permitted Transitions:
 Permitted Transitions:
 - `DRAFT` → `PROPOSED` (normal submission)
 - `DRAFT` → `CANCELLED` (cancelled before submit)
-- `DRAFT` → `ACTIVE` (emergency activation; bypasses planning)
+- `DRAFT` → `ACTIVE` (emergency activation; requires authorized emergency audit record and immediate `EMERGENCY_BLOCK` commitment before state change. Existing bookings/sessions are marked affected without deleting claims. The emergency must be authorized and audited.)
 - `PROPOSED` → `ENFORCEMENT_PENDING`
 - `PROPOSED` → `CANCELLED`
 - `ENFORCEMENT_PENDING` → `IMPACT_RESOLUTION` (enforcement accepted / FREEZE committed)

@@ -69,7 +69,7 @@ A directed request for exactly one logical handler to attempt an action.
 
 Examples:
 
-- `StartCharging`
+- `StartChargingAtEVSE`
 - `InstallCapacityBlock`
 - `CollectPrivacyExportContribution`
 
@@ -734,7 +734,7 @@ Passwords, tokens, secrets and unnecessary personal data are excluded.
 
 | Command | Sender | Handler | Outcome evidence |
 |---|---|---|---|
-| `StartCharging` | Booking | Device Integration | Dispatch result plus `DeviceTransactionStarted` |
+| `StartChargingAtEVSE` | Booking | Device Integration | Dispatch result plus `DeviceTransactionStarted` |
 | `StopCharging` | Booking/Governance through Booking | Device Integration | Dispatch result plus `DeviceTransactionEnded` |
 | `RequestDeviceState` | Booking | Device Integration | `DeviceCommandOutcomeReconciled` |
 | `SynchronizeReservationMirror` | Booking | Device Integration | Device command outcome |
@@ -844,7 +844,7 @@ If the workflow stops after step 5, reconciliation detects the orphaned block by
 
 1. Booking consumes Start Authorization.
 2. Booking creates Session `STARTING`.
-3. Booking publishes `StartCharging`.
+3. Booking publishes `StartChargingAtEVSE`.
 4. Device Integration records the command idempotently.
 5. Device Integration dispatches the simulator command.
 6. It emits dispatch rejection, timeout or acceptance evidence.

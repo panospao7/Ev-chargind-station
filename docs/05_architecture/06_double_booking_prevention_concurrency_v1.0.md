@@ -169,12 +169,15 @@ CREATE TABLE capacity_claim (
     CONSTRAINT ck_capacity_claim_kind CHECK (
         claim_kind IN (
             'BOOKING_HOLD',
-            'BOOKING',
-            'MAINTENANCE',
+            'BOOKING_ALLOCATION',
+            'MAINTENANCE_BLOCK',
             'EMERGENCY_BLOCK',
             'OPERATOR_RESTRICTION'
         )
     ),
+    /* Domain-to-storage mapping: BOOKING_ALLOCATION = confirmed booking allocation,
+       MAINTENANCE_BLOCK = scheduled maintenance block. These domain names are
+       used in public contracts and events; only the storage names are abbreviated. */
     CONSTRAINT ck_capacity_claim_state CHECK (
         state IN ('ACTIVE', 'RELEASED')
     ),
@@ -239,7 +242,63 @@ This prevents duplicate active claims for the same source workflow.
 
 ---
 
-## 4.6 `driver_schedule_claim`
+## 4.6 `capacity_restriction`
+
+Capacity restrictions track the maintenance freeze/block/release lifecycle independently from the interval-based `capacity_claim`. A restriction begins as a `FREEZE` (planned/imminent), transitions to `BLOCKED` (active), and ends as `RELEASED`.
+
+```sql
+CREATE TABLE capacity_restriction (
+    restriction_ref uuid PRIMARY KEY,
+    evse_ref uuid NOT NULL
+        REFERENCES evse_allocation_guard(evse_ref),
+    restriction_kind varchar(32) NOT NULL,
+    source_ref uuid NOT NULL,
+    state varchar(16) NOT NULL,
+    reason text,
+    authorized_by varchar(128),
+    authorized_at timestamptz,
+    frozen_at timestamptz NOT NULL,
+    blocked_at timestamptz,
+    released_at timestamptz,
+    version bigint NOT NULL,
+    created_at timestamptz NOT NULL,
+    updated_at timestamptz NOT NULL,
+
+    CONSTRAINT ck_restriction_kind CHECK (
+        restriction_kind IN ('MAINTENANCE', 'EMERGENCY', 'OPERATOR_RESTRICTION')
+    ),
+    CONSTRAINT ck_restriction_state CHECK (
+        state IN ('FREEZE', 'BLOCKED', 'RELEASED')
+    ),
+    CONSTRAINT ck_restriction_transition CHECK (
+        (state = 'FREEZE' AND blocked_at IS NULL AND released_at IS NULL)
+        OR (state = 'BLOCKED' AND blocked_at IS NOT NULL AND released_at IS NULL)
+        OR (state = 'RELEASED' AND released_at IS NOT NULL)
+    ),
+    CONSTRAINT ck_emergency_authorization CHECK (
+        (restriction_kind = 'EMERGENCY' AND authorized_by IS NOT NULL AND authorized_at IS NOT NULL)
+        OR (restriction_kind <> 'EMERGENCY')
+    )
+);
+```
+
+Permitted states:
+
+- `FREEZE` — Restriction is planned or imminent; new capacity_claims for the EVSE are blocked by the guard.
+- `BLOCKED` — Restriction is active; the corresponding capacity_claim has been created and is enforced.
+- `RELEASED` — Restriction lifted; EVSE available for allocation.
+
+Permitted transitions:
+
+- `FREEZE` → `BLOCKED` — Maintenance window starts or emergency goes active.
+- `FREEZE` → `RELEASED` — Restriction cancelled before taking effect.
+- `BLOCKED` → `RELEASED` — Maintenance/emergency completed.
+
+The `capacity_restriction` aggregate is write-only authoritative for the freeze/block protocol; the `capacity_claim` table remains the interval-based enforcement mechanism. When a restriction transitions `FREEZE → BLOCKED`, the maintaining workflow must also create (or already hold) a corresponding `capacity_claim` of the matching kind.
+
+---
+
+## 4.7 `driver_schedule_claim`
 
 ```sql
 CREATE TABLE driver_schedule_claim (
@@ -282,7 +341,7 @@ Unexpired driver Holds are serialized and checked under `driver_schedule_guard`.
 
 ---
 
-## 4.7 `operational_occupation`
+## 4.8 `operational_occupation`
 
 ```sql
 CREATE TABLE operational_occupation (
@@ -875,7 +934,7 @@ When start is requested:
 6. Create Session `STARTING`.
 7. Insert `operational_occupation` in `UNCERTAIN`.
 8. Use the Booking allocation interval as its initial finite blocking interval.
-9. Write the `StartCharging` command to the Outbox.
+9. Write the `StartChargingAtEVSE` command to the Outbox.
 10. Commit.
 
 The record is `UNCERTAIN` because the physical command may execute before acknowledgement is received.

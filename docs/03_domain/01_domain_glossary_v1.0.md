@@ -992,7 +992,7 @@ Example: `BookingConfirmed`
 
 A request for another component to attempt an action.
 
-Example: `StartCharging`
+Example: `StartChargingAtEVSE`
 
 Commands use imperative naming; events use completed-fact naming.
 
@@ -1352,7 +1352,7 @@ Use imperative names:
 - `CreateBookingHold`
 - `ConfirmBooking`
 - `CheckInDriver`
-- `StartCharging`
+- `StartChargingAtEVSE`
 - `StopCharging`
 - `ScheduleMaintenance`
 

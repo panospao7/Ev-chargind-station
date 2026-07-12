@@ -105,13 +105,15 @@ These do not block the architectural model.
 
 With these documents approved, service interaction planning is approximately **complete at the logical-design level**.
 
-The next planning phase should be:
+Outstanding artifacts pending implementation readiness:
 
-1. Database model and table ownership per service (Release applicability: W1 | Cross-cutting)
-2. Detailed OpenAPI contracts for Booking and Session Service, and Station Operations Service (Release applicability: W1 | Cross-cutting)
-3. AsyncAPI/event-schema definitions (Release applicability: W1 | Cross-cutting)
-4. Security architecture and threat model (Release applicability: W1 | Cross-cutting)
-5. Deployment topology and cloud design (Release applicability: W1 | Cross-cutting)
+1. Machine-readable OpenAPI 3.0.3 contract files (Release applicability: W1 | Cross-cutting)
+2. Machine-readable AsyncAPI 2.6.0 contract files (Release applicability: W1 | Cross-cutting)
+3. Standalone JSON Schema 2020-12 files for events/commands (Release applicability: W1 | Cross-cutting)
+4. CI contract validation and breaking-change detection pipeline (Release applicability: W1 | Cross-cutting)
+5. Generated executable contract tests (Release applicability: W1 | Cross-cutting)
+
+Database model and table ownership is already defined in ARC-005. Security architecture and deployment topology are covered in their respective documents.
 
 ## 7. Shared Problem-Code Registry (Release applicability: W1 | Cross-cutting)
 All microservices standardise on the following RFC 9457 error problem codes:
@@ -131,7 +133,7 @@ All microservices standardise on the following RFC 9457 error problem codes:
 
 ## 8. Schema Dialect Policy (Release applicability: W1 | Cross-cutting)
 To avoid tooling incompatibilities during code generation and automated contract testing:
-- **Synchronous HTTP APIs:** OpenAPI 3.0.3 documents must use the standard OpenAPI Schema Object dialect (a subset of JSON Schema Draft 5/2019-09 depending on tooling; do not use advanced Draft 2020-12 features inside OpenAPI).
+- **Synchronous HTTP APIs:** OpenAPI 3.0.3 documents must use OpenAPI Schema Objects only. This is the schema dialect defined by the OpenAPI 3.0.3 specification; do not use standalone JSON Schema 2020-12 features inside OpenAPI documents.
 - **Asynchronous Messaging:** AsyncAPI 2.6.0 documents and standalone JSON Schema files for RabbitMQ events/commands must use JSON Schema Draft 2020-12 dialect (`$schema: "https://json-schema.org/draft/2020-12/schema"`).
 - **Bundling & Code-Gen:** Standalone event/command schemas must be bundled dynamically using node-based tooling to resolve `$ref` anchors before publication.
 - **CI Validation:** The CI build pipeline must run validation tests against OpenAPI and JSON Schema dialects using `spectral` and `ajv-cli` to guarantee machine-readability and strict conformance.

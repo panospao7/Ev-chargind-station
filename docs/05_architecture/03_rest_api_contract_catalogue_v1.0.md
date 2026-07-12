@@ -216,7 +216,7 @@ Binary floating-point values must not represent money.
 
 | Header | Requirement | Purpose |
 |---|---|---|
-| `Authorization` | Protected APIs | Bearer access token |
+| `Authorization` | Internal/S2S APIs only | Bearer access token (BFF-to-service and service-to-service) |
 | `Idempotency-Key` | Retryable commands | Identifies one logical operation |
 | `If-Match` | Versioned updates | Prevents lost updates |
 | `Accept-Language` | Optional | Preferred `el` or `en` response text |
@@ -263,7 +263,7 @@ No account required:
 
 Require:
 
-- Valid access token
+- Valid session (browser→BFF via opaque cookie; BFF→service via audience-specific bearer token)
 - Active verified account where state changes are requested
 - Resource ownership
 
@@ -271,7 +271,7 @@ Require:
 
 Require:
 
-- Valid access token
+- Valid session (browser→BFF via opaque cookie with CSRF protection; BFF→service via bearer token)
 - MFA assurance
 - Canonical operator role
 - Current organization membership
@@ -297,7 +297,7 @@ Require:
 - Originating actor context where acting on behalf of a human
 - Independent authorization by the recipient
 
-The exact service-identity and actor-context format remains pending the security architecture.
+Service-identity and actor-context format: BFF→service uses JWT bearer tokens with audience claims; service→service uses service identity + signed JWS delegated assertion for human-initiated calls (ARC-019 §3).
 
 ---
 
@@ -420,7 +420,8 @@ Initial shared codes:
 - `OUTSIDE_OPENING_HOURS`
 - `NO_COMPATIBLE_EVSE`
 - `EVSE_ALLOCATION_CONFLICT`
-- `STATUS_STALE`
+- `ALLOCATION_BUSY` — Transient contention; retry with backoff (HTTP 409)
+- `EVSE_STALE_TELEMETRY`
 - `STATUS_UNKNOWN`
 - `MAINTENANCE_CONFLICT`
 - `BOOKING_STATE_CONFLICT`

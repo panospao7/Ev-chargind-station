@@ -64,24 +64,26 @@ Now that the foundation specifications are approved and baselined, the project s
 
 To ensure a realistic scope for an individual developer, the platform's features are divided into Release 1 (MVP) and Release 2 (Deferred):
 
-### Release 1 MVP (In-Scope)
-1. **Station Discovery:** Map/list browsing and filters in Greece (`Europe/Athens`).
-2. **Connector Details:** Inspect EVSE connector compatibility.
-3. **Interval Availability:** Projections mapping allocations, maintenance, and faults.
-4. **Registration & Auth:** OIDC/PKCE verified sign-in/recovery, plus privileged MFA.
-5. **Holds & Bookings:** Create/confirm booking holds, view bookings, cancel bookings.
-6. **Station Operations:** Basic operator settings, EVSE configurations, and tariff profiles.
-7. **Basic Analytics:** Simple metrics for utilization and cancellations.
-8. **Double-Booking Proof:** Pessimistic lock ordering and constraints in Booking.
-9. **Basic Simulation:** Simulator protocol showing start, stop, and heartbeats.
-10. **Essential Emails:** Booking confirmation, cancellation, and security alerts.
-11. **Cloud Deployment:** Hetzner container deployment baseline.
+### Release 1 MVP (In-Scope) — Wave applicability: W1
+1. **Station Discovery:** Map/list browsing and filters in Greece (`Europe/Athens`). [W1]
+2. **Connector Details:** Inspect EVSE connector compatibility. [W1]
+3. **Interval Availability:** Projections mapping allocations, maintenance, and faults. [W1]
+4. **Registration & Auth:** OIDC/PKCE verified sign-in/recovery, plus privileged MFA. [W1]
+5. **Holds & Bookings:** Create/confirm booking holds, view bookings, cancel bookings. [W1]
+6. **Station Operations:** Basic operator settings, EVSE configurations, and tariff profiles. [W1]
+7. **Basic Analytics:** Simple metrics for utilization and cancellations. [W1]
+8. **Double-Booking Proof:** Pessimistic lock ordering and constraints in Booking. [W1]
+9. **Basic Simulation:** Simulator protocol showing start, stop, and heartbeats. [W1]
+10. **Essential Emails:** Booking confirmation, cancellation, and security alerts. [W1]
+11. **Cloud Deployment:** Hetzner container deployment baseline. [W1]
 
-### Release 2 (Deferred to Later Releases)
-1. **Operator Applications:** Full sign-up review workflow including operator application lifecycle events, approval saga and automated organization creation (handled manually with pre-seeded operators in W1).
-2. **Staff Invitations:** Automated invitation workflow lifecycle, emails, and acceptance handling (provisioned manually in W1).
-3. **Platform Support Cases:** Central ticket management system.
-4. **Data Privacy Exports:** GDPR data packaging worker.
-5. **Data Deletion Coordination:** Automated deletion workers.
-6. **Advanced Simulation:** OCPP 2.1 sequence replay and queue reconciliation.
-7. **Marketing Notifications:** Reminders, push alerts, and SMS integrations.
+### Release 2 (Deferred to Later Releases) — Wave applicability: W2
+1. **Operator Applications:** Full sign-up review workflow including operator application lifecycle events, approval saga and automated organization creation (handled manually with pre-seeded operators in W1). [W2]
+2. **Staff Invitations:** Automated invitation workflow lifecycle, emails, and acceptance handling (provisioned manually in W1). [W2]
+3. **Platform Support Cases:** Central ticket management system. [W2]
+
+### Release 3 — Wave applicability: W3
+4. **Data Privacy Exports:** GDPR data packaging worker. [W3]
+5. **Data Deletion Coordination:** Automated deletion workers. [W3]
+6. **Advanced Simulation:** OCPP 2.1 sequence replay and queue reconciliation. [W3]
+7. **Marketing Notifications:** Reminders, push alerts, and SMS integrations. [W3]
