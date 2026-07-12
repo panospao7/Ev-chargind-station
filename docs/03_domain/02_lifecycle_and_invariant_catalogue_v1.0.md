@@ -28,9 +28,9 @@ stateDiagram-v2
     CONFIRMED --> NO_SHOW : Start time + grace elapsed
     CONFIRMED --> FULFILMENT_FAILED : Equipment failure before check-in
     CHECKED_IN --> ACTIVE : Session started (TransactionStarted event received)
-    CHECKED_IN --> CONFIRMED : Driver abandons check-in (before session starts)
+    CHECKED_IN --> CONFIRMED : Driver temporarily withdraws (window remains valid; authorization revoked)
     CHECKED_IN --> CANCELLED : Operator emergency cancellation (before session starts)
-    CHECKED_IN --> DRIVER_ABANDONED : Driver abandons before charging starts
+    CHECKED_IN --> DRIVER_ABANDONED : Driver permanently abandons (terminal)
     CHECKED_IN --> FULFILMENT_FAILED : Retry/reassignment exhausted
     ACTIVE --> COMPLETED : Session ends normally / interrupted
     EXPIRED --> [*]
@@ -42,7 +42,7 @@ stateDiagram-v2
 ```
 
 State Definitions:
-- `DRIVER_ABANDONED` — Driver checked in but abandoned the session before charging started (e.g., left before start command, incompatible connector, vehicle issue).
+- `DRIVER_ABANDONED` — Terminal. Driver checked in but decided not to charge (e.g., left location, incompatible connector, vehicle issue). Cannot be reopened. Distinct from `CONFIRMED` (temporary withdrawal while window remains open).
 
 Permitted Transitions:
 - `HELD` → `CONFIRMED` | `EXPIRED` | `CANCELLED`
@@ -66,49 +66,49 @@ Permitted Transitions:
 - `AUTHORIZING` — Authorization being validated and start command being prepared.
 - `STARTING` — Remote start command submitted.
 - `DEVICE_ACCEPTED` — Charger acknowledged the command (not proof of energy transfer).
-- `DEVICE_REJECTED` — Charger explicitly rejected the command.
-- `START_REJECTED` — Terminal; charger rejected or authorization invalid.
-- `TRANSACTION_STARTED` — Charging physically began (DeviceTransactionStarted received).
+- `ATTEMPT_REJECTED` — Terminal; charger explicitly rejected the command or authorization was invalid.
+- `TIMED_OUT` — No response received from device within timeout period.
 - `RECONCILING` — Awaiting device outcome reconciliation after timeout.
-- `UNRESOLVED_REQUIRES_ACTION` — Reconciliation produced ambiguous or missing evidence; requires authorized manual resolution. During this state, the corresponding operational_occupation remains blocking.
+- `TRANSACTION_STARTED` — Terminal; charging physically began (DeviceTransactionStarted received).
+- `UNRESOLVED_REQUIRES_ACTION` — Terminal; reconciliation produced ambiguous or missing evidence. Requires authorized manual resolution. During this state the corresponding operational_occupation remains blocking.
 
 Permitted Transitions:
-- `AUTHORIZING` → `STARTING` | `START_REJECTED`
-- `STARTING` → `DEVICE_ACCEPTED` | `DEVICE_REJECTED` | `TIMED_OUT`
+- `AUTHORIZING` → `STARTING` | `ATTEMPT_REJECTED`
+- `STARTING` → `DEVICE_ACCEPTED` | `ATTEMPT_REJECTED` | `TIMED_OUT`
 - `DEVICE_ACCEPTED` → `TRANSACTION_STARTED` | `TIMED_OUT`
-- `DEVICE_REJECTED` → [Terminal]
 - `TIMED_OUT` → `RECONCILING`
-- `RECONCILING` → `TRANSACTION_STARTED` | `START_REJECTED` | `UNRESOLVED_REQUIRES_ACTION`
-- `UNRESOLVED_REQUIRES_ACTION` → `TRANSACTION_STARTED` (manual confirmation of actual energy transfer)
-- `UNRESOLVED_REQUIRES_ACTION` → `START_REJECTED` (manual confirmation that charging never started)
+- `RECONCILING` → `TRANSACTION_STARTED` | `ATTEMPT_REJECTED` | `UNRESOLVED_REQUIRES_ACTION`
+- `UNRESOLVED_REQUIRES_ACTION` → `TRANSACTION_STARTED` (manual confirmation of energy transfer)
+- `UNRESOLVED_REQUIRES_ACTION` → `ATTEMPT_REJECTED` (manual confirmation that charging never started)
 
 *Unresolved state behavior:* An `UNRESOLVED_REQUIRES_ACTION` attempt blocks capacity until manually resolved. Escalation deadline: 24 hours. Resolution must be authorized (requires `resolved_by` and `resolution_evidence`). Notification is sent to the operator escalation path on entry. If later device evidence arrives, an authorized operator may still resolve the state manually.
+
+Terminal states: `ATTEMPT_REJECTED`, `TRANSACTION_STARTED`, `UNRESOLVED_REQUIRES_ACTION`.
 
 ### 1.2a Authorization Consumption Rule
 
 Start authorization becomes consumed when the local start-intent transaction commits the attempt/session shell and outbox command. Device acceptance is unrelated to authorization consumption.
 
 - If the local transaction rolls back, consumption rolls back.
-- A definitive rejected attempt (terminal `START_REJECTED`) requires a newly issued authorization for any subsequent retry.
+- A definitive rejected attempt (terminal `ATTEMPT_REJECTED`) requires a newly issued authorization for any subsequent retry.
 - Authorization consumption is recorded on the SessionAttempt record (`authorization_id`, `consumed_at`).
 
 ### 1.3 Charging Session Lifecycle
-*The session aggregate spans the full lifecycle from first attempt to completion. `AUTHORIZING` and `FINALIZING` are internal processing substeps recorded for observability; capacity conflict detection uses `STARTING`, `CHARGING`, `SUSPENDED`, `STOPPING` as the authoritative blocking states.*
-- `AUTHORIZING` — Authorization being validated and start command being prepared (internal processing substep; not a persistent blocking state).
-- `STARTING` — Remote start command submitted. (Can be flagged with `uncertain=true` during connection timeouts or ambiguous responses, remaining in `STARTING` until resolved.)
+*The session aggregate spans the full lifecycle from first attempt to completion. `FINALIZING` is an internal processing substep recorded for observability; capacity conflict detection uses `STARTING`, `CHARGING`, `SUSPENDED`, `STOPPING` as the authoritative blocking states.*
+
+- `STARTING` — Remote start command submitted. (Can be flagged with `uncertain=true` during connection timeouts or ambiguous responses, remaining in `STARTING` until resolved.) The session remains `STARTING` across multiple SessionAttempts — only the attempt transitions through its own lifecycle.
 - `CHARGING` — Physical energy transfer in progress.
 - `SUSPENDED` — Temporarily paused (e.g., vehicle request or grid load control).
 - `STOPPING` — Stop requested, waiting for final meter values.
 - `FINALIZING` — Meter data being reconciled and final cost calculated (internal processing substep; not a persistent blocking state).
 - `COMPLETED` — Session ended normally with full meter data.
 - `INTERRUPTED` — Session ended due to device fault, grid loss, or emergency override.
-- `START_REJECTED` — Central management system or charger rejected start.
+- `START_REJECTED` — All retry attempts exhausted; charging never started.
 
 Permitted Transitions:
-- `AUTHORIZING` → `STARTING` | `START_REJECTED`
-- `STARTING` → `CHARGING` | `START_REJECTED` | `INTERRUPTED` (Timeout, lost connection, or ambiguous start result does not transition to `INTERRUPTED` or `START_REJECTED` immediately. The session remains in `STARTING` with `uncertain=true` until downstream reconciliation or a definitive charger telemetry event resolves the state. Explicit device rejection transitions to `START_REJECTED`. Confirmed transaction evidence transitions to `CHARGING`. Reconciliation may later establish definitive rejection if a device snapshot proves no transaction began.)
-- `CHARGING` → `SUSPENDED` | `STOPPING` | `INTERRUPTED` | `COMPLETED`
-- `SUSPENDED` → `CHARGING` | `STOPPING` | `INTERRUPTED` | `COMPLETED`
+- `STARTING` → `CHARGING` | `SUSPENDED` | `INTERRUPTED` | `START_REJECTED`
+- `CHARGING` → `SUSPENDED` | `STOPPING` | `INTERRUPTED`
+- `SUSPENDED` → `CHARGING` | `STOPPING` | `INTERRUPTED`
 - `STOPPING` → `FINALIZING` | `COMPLETED` | `INTERRUPTED` | `CHARGING` | `SUSPENDED`
 - `FINALIZING` → `COMPLETED` | `INTERRUPTED`
 

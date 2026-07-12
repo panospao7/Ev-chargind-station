@@ -793,7 +793,7 @@ A value making a failure scenario deterministic and reproducible.
 
 Planned or emergency work that may restrict station or EVSE operation.
 
-Lifecycle: DOM-002 §1.18 (Maintenance Planning Record Lifecycle) — `DRAFT`, `PROPOSED`, `SCHEDULED`, `ACTIVE`, `COMPLETED`, `CANCELLED`.
+Lifecycle: `DRAFT → PROPOSED → ENFORCEMENT_PENDING → IMPACT_RESOLUTION → SCHEDULED → ACTIVE → COMPLETED | CANCELLED | FAILED` (DOM-002 §1.18).
 
 ### Capacity Restriction
 - **Definition:** A planned or active restriction on EVSE capacity following the FREEZE → BLOCKED → RELEASED lifecycle. Used for maintenance, emergency, and operator-initiated blocks.

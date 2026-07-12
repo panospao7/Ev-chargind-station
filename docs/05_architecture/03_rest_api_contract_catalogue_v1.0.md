@@ -463,7 +463,7 @@ Service-specific catalogues may add codes but cannot redefine shared meanings.
 - Check-in abandonment
 - Charging start and stop
 - Reassignment
-- Maintenance scheduling
+- Maintenance lifecycle
 - Fault submission
 - Status overrides
 - Invitations and ownership transfer
@@ -838,16 +838,18 @@ Hard-delete APIs are excluded for infrastructure with history.
 
 Base: `/api/v1/operator/organizations/{organizationRef}`
 
-| Method and path | Operation ID | Success |
-|---|---|---|
-| `GET /operations/evses` | `listOperationalEvseStatus` | `200` |
-| `GET /stations/{stationRef}/booking-impact` | `previewStationBookingImpact` | `200` |
-| `POST /maintenance-impact-previews` | `previewMaintenanceImpact` | `200` |
-| `POST /maintenances` | `scheduleMaintenance` | `201` or `202` |
-| `GET /maintenances/{maintenanceRef}` | `getMaintenance` | `200` |
-| `PATCH /maintenances/{maintenanceRef}` | `updateScheduledMaintenance` | `200` |
-| `POST /maintenances/{maintenanceRef}/cancel` | `cancelScheduledMaintenance` | `200` |
-| `POST /maintenances/{maintenanceRef}/complete` | `completeMaintenance` | `200` |
+| Method and path | Operation ID | Success | Purpose |
+|---|---|---|---|
+| `GET /operations/evses` | `listOperationalEvseStatus` | `200` | |
+| `GET /stations/{stationRef}/booking-impact` | `previewStationBookingImpact` | `200` | |
+| `POST /maintenance-impact-previews` | `previewMaintenanceImpact` | `200` | |
+| `POST /maintenances` | `createMaintenanceDraft` | `201` | Create maintenance record in DRAFT |
+| `GET /maintenances/{maintenanceRef}` | `getMaintenance` | `200` | |
+| `PATCH /maintenances/{maintenanceRef}` | `updateScheduledMaintenance` | `200` | |
+| `POST /maintenances/{maintenanceRef}/submit` | `submitMaintenanceProposal` | `200` | Transition DRAFT → PROPOSED |
+| `POST /maintenances/{maintenanceRef}/cancel` | `cancelScheduledMaintenance` | `200` | Cancel from any pre-active state |
+| `POST /maintenances/{maintenanceRef}/complete` | `completeMaintenance` | `200` | Transition ACTIVE → COMPLETED |
+| `POST /maintenances/{maintenanceRef}/fail` | `failMaintenance` | `200` | Transition → FAILED |
 | `GET /fault-incidents` | `listFaultIncidents` | `200` |
 | `POST /fault-incidents` | `createFaultIncident` | `201` |
 | `GET /fault-incidents/{faultRef}` | `getFaultIncident` | `200` |
@@ -1023,9 +1025,9 @@ Base: `/internal/v1/booking-operations`
 | Method and path | Caller | Purpose |
 |---|---|---|
 | `POST /impact-previews` | Station Operations | Non-binding maintenance/closure preview |
-| `POST /capacity-blocks` | Station Operations workflow | Install restriction atomically |
-| `GET /capacity-blocks/{blockRef}` | Station Operations | Read installation state |
-| `POST /capacity-blocks/{blockRef}/release` | Station Operations workflow | Release coordinated block |
+| `POST /capacity-blocks` | Station Operations workflow | *Repair-only.* Authoritative installation path is the async three-command protocol (ARC-020: `CreateCapacityFreeze`→`FinalizeCapacityBlock`→`ReleaseCapacityRestriction`). This endpoint exists for authorized repair/reconciliation only; it must not bypass the FREEZE→BLOCKED→RELEASED lifecycle. |
+| `GET /capacity-blocks/{blockRef}` | Station Operations | Read installation state (also available via restriction query) |
+| `POST /capacity-blocks/{blockRef}/release` | Station Operations workflow | *Repair-only.* Authoritative release path is `ReleaseCapacityRestriction` command. |
 | `GET /bookings/{bookingRef}/operator-view` | Station Operations | Owned-station minimized view |
 | `GET /bookings/{bookingRef}/support-view` | Governance | Case-scoped masked view |
 | `POST /bookings/{bookingRef}/operator-cancellations` | Station Operations/Governance | Authoritative cancellation |
@@ -1329,7 +1331,7 @@ These costs are accepted because the APIs form long-lived boundaries between ind
 
 ---
 
-# 46. Next architecture artifact
+# 46. Related architecture artifact
 
 ARC-004 is approved and defines the event and command contract catalogue.
 

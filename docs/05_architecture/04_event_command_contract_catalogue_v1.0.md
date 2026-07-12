@@ -70,7 +70,7 @@ A directed request for exactly one logical handler to attempt an action.
 Examples:
 
 - `StartChargingAtEVSE`
-- `InstallCapacityBlock`
+- `CreateCapacityFreeze`
 - `CollectPrivacyExportContribution`
 
 Properties:
@@ -746,8 +746,9 @@ Passwords, tokens, secrets and unnecessary personal data are excluded.
 
 | Command | Sender | Handler | Outcome |
 |---|---|---|---|
-| `InstallCapacityBlock` | Station Operations | Booking | `CapacityBlockInstalled` or rejected outcome |
-| `ReleaseCapacityBlock` | Station Operations | Booking | `CapacityBlockReleased` |
+| `CreateCapacityFreeze` | Station Operations | Booking | `CapacityFreezeCommitted` / `CapacityFreezeRejected` |
+| `FinalizeCapacityBlock` | Station Operations | Booking | `CapacityBlockCommitted` / `CapacityBlockRejected` |
+| `ReleaseCapacityRestriction` | Station Operations | Booking | `CapacityRestrictionReleased` / `CapacityRestrictionReleaseRejected` |
 | `InstallDriverRestriction` | Account/Governance | Booking | `DriverRestrictionInstalled` |
 | `ReleaseDriverRestriction` | Account | Booking | `DriverRestrictionReleased` |
 | `RevalidateNearTermBooking` | Booking scheduler | Booking | Local result events where material |
@@ -824,20 +825,24 @@ Rules:
 
 # 22. Maintenance capacity-block workflow
 
-1. Station Operations creates a Maintenance workflow.
-2. Existing Booking impact is resolved.
-3. Station Operations publishes `InstallCapacityBlock`.
-4. Booking validates the request and source version.
-5. Booking installs the block transactionally.
-6. Booking emits `CapacityBlockInstalled`.
-7. Station Operations transitions Maintenance to `SCHEDULED`.
-8. `MaintenanceScheduled` is published.
-9. At completion, Station Operations publishes `ReleaseCapacityBlock`.
-10. Booking releases the block only when safe.
-11. Booking emits `CapacityBlockReleased`.
-12. Device status must become fresh before near-term availability returns.
+The maintenance capacity-block workflow follows the three-command protocol defined in ARC-020. This supersedes any prior one-step installation approach.
 
-If the workflow stops after step 5, reconciliation detects the orphaned block by workflow ID.
+1. Station Operations creates a Maintenance workflow record.
+2. Station Operations publishes `CreateCapacityFreeze` (ARC-020 command).
+3. Booking validates the request, locks EVSE guards, inserts `capacity_restriction(state=FREEZE)`, returns affected obligations.
+4. Booking emits `CapacityFreezeCommitted` or `CapacityFreezeRejected`.
+5. Station Operations resolves affected obligations (Phase B — see ARC-006 §20.2).
+6. Once obligations are resolved, Station Operations publishes `FinalizeCapacityBlock`.
+7. Booking locks guards, verifies freeze state, inserts `MAINTENANCE_BLOCK` capacity_claim, transitions restriction to `BLOCKED`.
+8. Booking emits `CapacityBlockCommitted` or `CapacityBlockRejected`.
+9. Station Operations transitions Maintenance to `SCHEDULED`.
+10. `MaintenanceScheduled` is published.
+11. At completion/safe-cancellation, Station Operations publishes `ReleaseCapacityRestriction`.
+12. Booking releases the block and restriction only when safe.
+13. Booking emits `CapacityRestrictionReleased` or `CapacityRestrictionReleaseRejected`.
+14. Device status must become fresh before near-term availability returns.
+
+If the workflow stops between freeze and block, reconciliation detects the orphaned restriction by workflow ID.
 
 ---
 

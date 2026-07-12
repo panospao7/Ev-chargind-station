@@ -196,16 +196,16 @@ Operator users are not globally disabled if they belong to another active organi
 ## 10. Operator invitation and role synchronization
 
 **Owner:** Station Operations Service
-**Release applicability:** W1
+**Release applicability:** W2. W1 uses pre-seeded memberships created outside the platform.
 
-1. Owner/manager creates an expiring invitation. (Release applicability: W1)
-2. Notification Service sends the invite. (Release applicability: W1)
-3. Invitee signs in or registers through Keycloak. (Release applicability: W1)
-4. Station Operations Service validates and consumes the invitation. (Release applicability: W1)
-5. Membership is created. (Release applicability: W1)
-6. Identity adapter grants the broad operator role when required. (Release applicability: W1)
-7. If identity synchronization fails, membership remains `PENDING_IDENTITY_SYNC` and cannot be used. (Release applicability: W1)
-8. A reconciliation worker completes or reverses the pending membership. (Release applicability: W1)
+1. Owner/manager creates an expiring invitation. (Release applicability: W2)
+2. Notification Service sends the invite. (Release applicability: W2)
+3. Invitee signs in or registers through Keycloak. (Release applicability: W2)
+4. Station Operations Service validates and consumes the invitation. (Release applicability: W2)
+5. Membership is created. (Release applicability: W2)
+6. Identity adapter grants the broad operator role when required. (Release applicability: W2)
+7. If identity synchronization fails, membership remains `PENDING_IDENTITY_SYNC` and cannot be used. (Release applicability: W2)
+8. A reconciliation worker completes or reverses the pending membership. (Release applicability: W2)
 
 Removing the final operator membership removes the broad operator role after reconciliation.
 
