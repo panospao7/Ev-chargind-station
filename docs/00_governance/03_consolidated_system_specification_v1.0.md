@@ -77,6 +77,10 @@ This specification serves as the master entry point and index for all approved d
 - **[ARC-010] Cloud Provider & Cost Analysis:** [../05_architecture/09_cloud_provider_cost_analysis_v1.0.md](../05_architecture/09_cloud_provider_cost_analysis_v1.0.md)
 - **[ARC-011] Deployment Architecture & IaC:** [../05_architecture/10_deployment_architecture_iac_v1.0.md](../05_architecture/10_deployment_architecture_iac_v1.0.md)
 - **[ARC-017] Modular-Monolith Alternative Design:** [../05_architecture/11_modular_monolith_alternative_design_v1.0.md](../05_architecture/11_modular_monolith_alternative_design_v1.0.md)
+- **[ARC-018] Contract Governance:** [../05_architecture/12_contract_governance_and_decisions_v1.0.md](../05_architecture/12_contract_governance_and_decisions_v1.0.md)
+- **[ARC-019] Sync APIs & Interactions:** [../05_architecture/13_service_interactions_and_sync_apis_v1.0.md](../05_architecture/13_service_interactions_and_sync_apis_v1.0.md)
+- **[ARC-020] Domain Events & Async Contracts:** [../05_architecture/14_domain_events_and_async_contracts_v1.0.md](../05_architecture/14_domain_events_and_async_contracts_v1.0.md)
+- **[ARC-021] Major Saga Workflows:** [../05_architecture/15_major_saga_workflows_v1.0.md](../05_architecture/15_major_saga_workflows_v1.0.md)
 
 ### 1.8 Quality, Operations & Delivery
 - **[ARC-012] Observability & Backup Runbooks:** [../07_quality_and_operations/01_observability_backup_runbooks_v1.0.md](../07_quality_and_operations/01_observability_backup_runbooks_v1.0.md)

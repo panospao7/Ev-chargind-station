@@ -14,9 +14,16 @@ This document outlines the current completion status of the planning foundation 
 
 ---
 
-## 1. Planning Foundation Status (Phase 1 — COMPLETED)
+## 1. Planning and Design Status (Phase 1, 2, & 3 — APPROVED & COMPLETE)
 
-All eight previously identified foundation specification gaps have been resolved, consolidated, and formally approved as of version 1.0/1.1:
+All planning and system design phases have been fully completed and approved:
+- **Phase 1: Planning Foundation (Gate G1)** — **APPROVED** (tagged as `planning-foundation-v1.2`).
+- **Phase 2: Logical Boundaries, Consistency & Concurrency (Gate G2)** — **APPROVED** (ARC-001 through ARC-011 and ARC-017).
+- **Phase 3: Technical API & Event Contracts (Gate G3)** — **APPROVED** (REST API contracts, AsyncAPI event schemas, and saga workflows in ARC-018 through ARC-021).
+- **Phase 4: Security, Observability & UI Flows (Gate G4–G5)** — **APPROVED** (Threat model, runbooks, QA, and frontend flows).
+- **Phase 5: Operations & Readiness (Gate G6)** — **APPROVED** (CI/CD, Gantt dependency roadmap, and Hetzner IaC deployment).
+
+The project is **100% ready for implementation**.
 
 1. **Project Constraints and Scope:** Completed and baselined in [SCP-001] and [SCP-002].
 2. **Actors and Capabilities:** Completed and baselined in [SCP-003].
@@ -29,7 +36,7 @@ All eight previously identified foundation specification gaps have been resolved
 
 ---
 
-## 2. Architecture Planning Roadmap (Phase 2 — UPCOMING)
+## 2. Completed Architecture Milestones (Phase 2 & 3)
 
 Now that the foundation specifications are approved and baselined, the project shifts to the System Architecture phase. The work will proceed in the following sequential order:
 
