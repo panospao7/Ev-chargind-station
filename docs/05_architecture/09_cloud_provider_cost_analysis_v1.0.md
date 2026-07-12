@@ -102,43 +102,47 @@ The deployment must host:
 
 Recommended production-like profile:
 
-- Three ARM cloud nodes
-- Two nodes in Nuremberg (`nbg1`)
-- One node in Falkenstein (`fsn1`)
-- One private `eu-central` network
+- Three primary ARM cloud nodes in Nuremberg (`nbg1`)
+- Falkenstein (`fsn1`) dedicated to backup / disaster recovery (DR) standby resources
+- One private `eu-central` network spanning Nuremberg and Falkenstein
 - One Hetzner Load Balancer
 - S3-compatible Hetzner Object Storage
-- Node backups
-- Self-managed PostgreSQL, RabbitMQ and Keycloak
+- No routine server backups (replaced by persistent volume snapshots and DR replication)
+- Self-managed PostgreSQL, RabbitMQ, Keycloak, and DR standby instances
 - Cluster orchestration finalized in ARC-011
 
 Hetzner private networks can span Falkenstein, Nuremberg and Helsinki, and Load Balancer targets do not need to be in the same location as long as they remain in the same network zone. ([docs.hetzner.com](https://docs.hetzner.com/networking/load-balancers/faq/?utm_source=openai))
 
 ## 5.2 Compute profile
 
-Use three `CAX31` nodes:
-
+Use three `CAX31` nodes in Nuremberg:
 - 8 ARM vCPUs each
 - 16 GB RAM each
 - 160 GB local SSD each
 - 24 vCPUs, 48 GB RAM and 480 GB total local storage
-- Current planning price: €20.99 per node/month
+- Planning price: €20.99 per node/month
 
-Hetzner’s June 15, 2026 pricing lists `CAX31` at €20.99 per month excluding VAT and IPv4. CAX plans use shared Ampere ARM resources, so performance can vary under host contention. ([docs.hetzner.com](https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/?utm_source=openai))
+Use one `CAX21` standby node in Falkenstein for DR:
+- 4 ARM vCPUs
+- 8 GB RAM
+- 80 GB local SSD
+- Planning price: €10.99 per month
 
-All application images must therefore support `linux/arm64`. CI should optionally produce both `linux/amd64` and `linux/arm64` images.
+Hetzner’s June 15, 2026 pricing lists `CAX31` at €20.99 per month and `CAX21` at €10.99 per month excluding VAT. CAX plans use shared Ampere ARM resources. All application images must support `linux/arm64`. ([docs.hetzner.com](https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/?utm_source=openai))
 
 ## 5.3 Cost estimate
 
 | Component | Monthly estimate |
 |---|---:|
-| Three `CAX31` nodes | €62.97 |
-| Server backups at 20% | €12.59 |
+| Three Nuremberg `CAX31` nodes | €62.97 |
+| One Falkenstein `CAX21` DR node | €10.99 |
+| Persistent Volumes (100 GB SSD) | €10.00 |
+| Server backups | €0.00 (disabled; snapshot managed) |
 | LB11 planning allowance | €7.50 |
-| Object Storage | €4.99 |
+| Object Storage (1 TB space/egress) | €4.99 |
 | Private network/firewalls | €0 |
 | Server public IPv4 | €0 if private/IPv6-only targets are used |
-| **Infrastructure subtotal** | **Approximately €88.05** |
+| **Infrastructure subtotal** | **Approximately €96.45** |proximately €88.05** |
 
 Hetzner charges server backups at 20% of the server price and provides seven backup slots. Object Storage starts at €4.99 per month excluding VAT and includes 1 TB of storage and 1 TB of egress. A Load Balancer supplies public IPv4 and IPv6 and can target servers through private addresses. ([docs.hetzner.com](https://docs.hetzner.com/cloud/billing/faq/?utm_source=openai))
 

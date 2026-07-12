@@ -114,8 +114,12 @@ Permitted Transitions:
 - `REVOKED` — Override manually cancelled or cleared.
 
 Permitted Transitions:
+- `[Creation]` → `SCHEDULED` (future start time)
+- `[Creation]` → `ACTIVE` (immediate start time)
 - `SCHEDULED` → `ACTIVE` | `REVOKED`
 - `ACTIVE` → `EXPIRED` | `REVOKED`
+- `EXPIRED` — Terminal record
+- `REVOKED` — Terminal record
 
 ### 1.7 Machine Identity Lifecycle
 - `PENDING_ENROLLMENT` — Provisioned in the registry but not yet active or validated.
@@ -271,16 +275,28 @@ Permitted Transitions:
 - `SUSPENDED` → `ACTIVE` | `DELETION_PENDING`
 - `DELETION_PENDING` → `DELETED` | `ACTIVE` (cancellation during the 7-day cooling off period)
 
-### 1.19 Maintenance Lifecycle
-- `SCHEDULED` — Planned maintenance interval created.
-- `ACTIVE` — Maintenance work currently ongoing. Affected EVSEs are offline.
-- `COMPLETED` — Maintenance finished. Returns EVSE state to `UNKNOWN`.
-  - *Optionally* with `completionOutcome = ABORTED`.
-- `CANCELLED` — Scheduled maintenance cancelled before starting.
+### 1.19 Maintenance Planning Record Lifecycle
+- `DRAFT` — Plan created by operator (Owner: Operator Staff).
+- `PROPOSED` — Plan submitted for review (Owner: Operator Staff. Event: `MaintenanceProposed`).
+- `ENFORCEMENT_PENDING` — Request submitted to Booking authority to block capacity (Owner: Station Operations Service).
+- `IMPACT_RESOLUTION` — Handling affected overlapping bookings via reassignment/alerts (Owner: Booking and Session Service).
+- `SCHEDULED` — Capacity restriction enforced; task is officially scheduled (Owner: Booking and Session Service. Event: `MaintenanceScheduled`).
+- `ACTIVE` — Task is in progress; EVSE operational status is marked as `MAINTENANCE` (Owner: Operator Staff/Device Integration Service. Event: `MaintenanceActivated`).
+- `COMPLETED` — Task finished (normal, aborted, failed, or cancelled) (Owner: Operator Staff. Event: `MaintenanceCompleted`).
 
 Permitted Transitions:
-- `SCHEDULED` → `ACTIVE` | `CANCELLED`
-- `ACTIVE` → `COMPLETED`
+- `DRAFT` → `PROPOSED` (normal submission)
+- `DRAFT` → `COMPLETED` (cancelled before submit; outcome = `CANCELLED`)
+- `DRAFT` → `ACTIVE` (emergency activation; bypasses planning)
+- `PROPOSED` → `ENFORCEMENT_PENDING`
+- `PROPOSED` → `COMPLETED` (cancelled; outcome = `CANCELLED`)
+- `ENFORCEMENT_PENDING` → `IMPACT_RESOLUTION` (enforcement accepted)
+- `ENFORCEMENT_PENDING` → `COMPLETED` (enforcement rejected; outcome = `FAILED_ENFORCEMENT`)
+- `IMPACT_RESOLUTION` → `SCHEDULED` (impacts resolved/reassigned)
+- `IMPACT_RESOLUTION` → `COMPLETED` (aborted due to unresolved conflict; outcome = `ABORTED`)
+- `SCHEDULED` → `ACTIVE` (maintenance work begins)
+- `SCHEDULED` → `COMPLETED` (cancelled before start; outcome = `CANCELLED`)
+- `ACTIVE` → `COMPLETED` (work finished; outcome = `SUCCESS` or `ABORTED`)
 
 ### 1.20 Fault Incident Lifecycle
 - `OPEN` — Fault detected (via simulator telemetry or driver report).
@@ -299,18 +315,17 @@ Permitted Transitions:
 ## 2. Core Domain Invariants
 
 ### 2.1 Double-Booking Prevention (Correctness Invariant)
-- **Rule:** No two Allocations may overlap on the same `EVSE` during any time interval.
+- **Rule:** No two mutually exclusive new capacity claims may commit with overlapping effective intervals. An operational-occupation claim may overlap a pre-existing planned claim (`BOOKING_ALLOCATION`) during a physical overrun; the existing booking remains durable and enters operational-risk handling. No new conflicting claim may be accepted.
 - **Allocation Interval Boundary Model:** 
-  An Allocation represents an effective time block on the physical hardware $[T_{start}, T_{end_effective})$ where:
-  - For planned bookings, $T_{start}$ is the scheduled start and $T_{end_effective} = T_{end} + B_{turn}$ (scheduled end plus turnaround buffer).
-  - For checked-in or active bookings, $T_{end_effective}$ extends to the actual session completion time plus turnaround buffer, or the grace deadline if a no-show occurs.
-  - For uncertain physical occupation (e.g. telemetry indicates active energy transfer but connection is stale/unknown), the Allocation remains active until reconciliation resolves the state.
-  - A new allocation request is valid if and only if it does not overlap with any existing non-released Allocation.
+  Capacity allocation is managed through three explicit claim types:
+  - `BOOKING_HOLD`: A temporary, non-exclusive capacity block (5-minute TTL) assigned to a driver during checkout.
+  - `BOOKING_ALLOCATION`: A confirmed planned capacity claim for a scheduled booking.
+  - `OPERATIONAL_OCCUPATION`: An active operational claim tracking actual connection or charging. An operational-occupation claim may overlap a pre-existing planned allocation in an overrun scenario; the pre-existing allocation becomes `AT_RISK` (risk flag, not a lifecycle state) and undergoes same-station reassignment check.
 - **Enforcement:** Enforced via pessimistic locking or database constraints at transaction boundaries in the Booking authority.
 
 ### 2.2 Resource Ownership & Scope Boundary
 - **Rule:** Operator Staff may only view or modify resources (Stations, EVSEs, Bookings, Tariffs) owned by their specific `Operator Organization`.
-- **Enforcement:** Enforced at the service layer by verifying `OrganizationID` claims on every request.
+- **Enforcement:** Enforced by validating organization membership and resource scope against Station Operations authority or a versioned, freshness-bounded membership projection. Token claims provide coarse role context only. Downstream services track a cached membership projection version stamp; membership changes trigger an asynchronous membership invalidation event, causing immediate local cache eviction and verification.
 
 ### 2.3 Privileged Access Security
 - **Rule:** Multi-Factor Authentication (MFA) is strictly mandatory for all privileged roles (`OPERATOR_OWNER`, `OPERATOR_MANAGER`, `OPERATOR_TECHNICIAN`, `OPERATOR_SUPPORT`, `PLATFORM_SUPPORT`, `PLATFORM_ADMINISTRATOR`, `AUDITOR_SECURITY_REVIEWER`).
@@ -328,8 +343,4 @@ Permitted Transitions:
 - **Enforcement:** Already-existing future bookings on the same EVSE become `AT_RISK`. The Booking authority automatically attempts same-station reassignment to another compatible EVSE based on equivalence/driver-approval rules. The driver is notified. If reassignment is impossible, the operator and driver are immediately notified of the potential delay. The occupation claim is released only upon definitive disconnect or reconciliation evidence.
 
 ### 2.7 Restriction and Maintenance Handshake Lifecycles
-- **Maintenance Planning Record Lifecycle:**
-  `DRAFT → PROPOSED → ENFORCEMENT_PENDING → IMPACT_RESOLUTION → SCHEDULED → ACTIVE → COMPLETED`
-- **Booking Capacity Restriction Lifecycle:**
-  `FREEZE → BLOCKED → RELEASED`
-- **Enforcement:** When maintenance is proposed, a capacity restriction in the Booking authority commits a `FREEZE` immediately before affected bookings are resolved. This prevents new booking creations during the impact resolution phase. Upon resolution, it transitions to `BLOCKED` (hard block), or is `RELEASED` if aborted.
+- **Handshake Mechanics:** When maintenance is proposed (transitioning the planning record in Section 1.19 to `PROPOSED`), a capacity restriction in the Booking authority commits a `FREEZE` immediately before affected bookings are resolved. This prevents new booking creations during the impact resolution phase. Upon resolution, it transitions to `BLOCKED` (hard block), or is `RELEASED` if aborted. The planning record then transitions to `SCHEDULED`.

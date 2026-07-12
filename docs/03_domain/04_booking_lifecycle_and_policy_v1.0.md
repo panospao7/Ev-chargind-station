@@ -35,6 +35,7 @@ A generic `FAILED` state should be avoided because it does not explain what fail
 - Maximum duration: **4 hours**
 - Check-in opens: **15 minutes before start**
 - Late-arrival grace period: **15 minutes**
+- Near-term horizon: **60 minutes**
 - Near-term operational evidence freshness threshold: **5 minutes**
 - Driver cancellation allowed until booking starts
 - No financial penalty in the initial version

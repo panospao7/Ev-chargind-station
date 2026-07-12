@@ -1738,7 +1738,6 @@ It must finalize:
 - Concurrency and property-based test strategy
 
 ### Initial Data Bootstrap Strategy
-- **Flyway Seed Migrations:** Flyway is used exclusively for schemas and immutable reference/metadata tables.
+- **Flyway Database Migrations:** Flyway is the approved migration tool for Spring Boot services. It is used exclusively for schema DDL and seeding immutable reference/metadata tables.
 - **Idempotent Bootstrap API Runner:** Operational domain aggregates (organizations, stations, EVSEs, tariffs, and policies) are populated via a service-owned idempotent bootstrap runner API. Seeding uses normal domain validation and publishes outbox events, maintaining database encapsulation.
-- **Flyway Migrations:** Flyway is the approved database migration tool for Spring Boot services. It is used to apply schema DDL and seed immutable reference tables.
-- ** Repeat Reset:** Non-production environments expose a protected reset API that safely truncates tables and replays seed migrations.
+- **Repeat Reset:** Non-production environments expose a protected reset API that safely truncates tables and triggers the bootstrap runner.

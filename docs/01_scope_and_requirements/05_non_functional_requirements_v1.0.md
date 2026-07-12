@@ -73,10 +73,11 @@ To satisfy reliability requirements, platform operations must behave as follows 
 
 | Operational Request | Downstream Dependency | Fail-Safe Behavior |
 |---|---|---|
-| View/Cancel Booking | Discovery & Analytics | **Succeeds**: Operates directly against the Booking database. |
-| Check-In / Start Charging | Station Operations | **Succeeds**: Uses Booking-local cached configuration projections. |
-| Cancel Booking | Station Operations | **Succeeds**: Capacity released immediately; notification queued in outbox. |
+| View/Cancel Booking | Discovery & Insights | **Succeeds**: Operates directly against the Booking database. |
 | Create Booking Hold | Booking and Session | **Fails Closed**: Blocked if local config/enforcement projections are stale or unavailable. |
+| Check-In | Booking and Session | **Succeeds**: Uses Booking-local cached configuration and device projections. |
+| Start Charging | Booking and Session | **Succeeds**: Dispatches asynchronous command to Device Integration. |
+| Station Operations Offline | Booking and Session | **Succeeds**: Existing booking and charging operations continue if local projections are valid. |
 | Event Publishing | RabbitMQ Broker | **Transaction Succeeds**: Business commit completes; outbox event remains pending/retryable. |
 | Send Notification | Email Provider | **Transaction Succeeds**: Business commit completes; notification delivery remains pending/retryable. |
 | Simulator Status Update | Device Integration | **Transaction Succeeds**: Live status and heartbeats buffered; state reconciled on reconnect. |

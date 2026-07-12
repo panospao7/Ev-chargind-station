@@ -14,16 +14,16 @@ This document outlines the current completion status of the planning foundation 
 
 ---
 
-## 1. Planning and Design Status (Phase 1, 2, & 3 — APPROVED & COMPLETE)
+## 1. Planning and Design Status
 
-All planning and system design phases have been fully completed and approved:
-- **Phase 1: Planning Foundation (Gate G1)** — **APPROVED** (tagged as `planning-foundation-v1.2`).
-- **Phase 2: Logical Boundaries, Consistency & Concurrency (Gate G2)** — **APPROVED** (ARC-001 through ARC-011 and ARC-017).
-- **Phase 3: Technical API & Event Contracts (Gate G3)** — **APPROVED** (REST API contracts, AsyncAPI event schemas, and saga workflows in ARC-018 through ARC-021).
-- **Phase 4: Security, Observability & UI Flows (Gate G4–G5)** — **APPROVED** (Threat model, runbooks, QA, and frontend flows).
-- **Phase 5: Operations & Readiness (Gate G6)** — **APPROVED** (CI/CD, Gantt dependency roadmap, and Hetzner IaC deployment).
+The design phase is structured into separate gates:
+- **Gate G1: Planning Foundation** — **APPROVED** (tagged as `planning-foundation-v1.2`).
+- **Gate G2: Logical Architecture** — **APPROVED IN PRINCIPLE** (capability boundaries and concurrency rules established in ARC-001 through ARC-011 and ARC-017).
+- **Gate G3: Contract Catalogues** — **IN_REVIEW** (REST API contracts, AsyncAPI event schemas, and saga workflows in ARC-018 through ARC-021).
+- **Gate G3-executable: Contract Schemas** — **PENDING** (OpenAPI, AsyncAPI, and JSON schema machine-readable contracts are not yet fully generated).
+- **Gate G4/G5/G6: Security, Observability, and Operations** — **IN_REVIEW / PENDING** (dependent on contract and security finalization).
 
-Logical planning is complete; technical contract specifications are complete and currently **IN_REVIEW**. Executable contract schema generation remains pending.
+The project is **not yet implementation-ready**; logical planning and specifications are complete, but machine-readable contracts remain pending.
 
 1. **Project Constraints and Scope:** Completed and baselined in [SCP-001] and [SCP-002].
 2. **Actors and Capabilities:** Completed and baselined in [SCP-003].
