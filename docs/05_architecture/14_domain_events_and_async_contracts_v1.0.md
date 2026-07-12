@@ -90,6 +90,9 @@ Recommended durable exchanges:
 | `ev.audit.v1` | Restricted privileged/security audit |
 | `ev.identity.private.v1` | Restricted contact and identity changes |
 | `ev.privacy.command.v1` | Privacy export/anonymization jobs |
+| `ev.retry.v1` | Retry/dead-letter processing |
+| `ev.quarantine.v1` | Quarantined messages requiring operator review |
+| `ev.unroutable.v1` | Unroutable message capture |
 
 Each consumer owns its queue. Critical queues should use quorum queues.
 

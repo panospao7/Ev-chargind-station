@@ -40,6 +40,21 @@ Payload schemas use JSON Schema Draft 2020-12. ([json-schema.org](https://json-s
 
 RabbitMQ is the approved messaging broker. Publishers use publisher confirms and consumers use manual acknowledgements after durable processing. RabbitMQ distinguishes publisher confirms from consumer acknowledgements; together they support reliable at-least-once processing. ([rabbitmq.com](https://www.rabbitmq.com/docs/next/confirms))
 
+## 2a. Canonical exchange set
+
+| Exchange | Purpose |
+|---|---|
+| `ev.domain.v1` | General domain events |
+| `ev.device.command.v1` | Device-directed commands |
+| `ev.device.result.v1` | Device command results |
+| `ev.device.telemetry.v1` | Meter and high-volume status data |
+| `ev.audit.v1` | Audit events |
+| `ev.identity.private.v1` | Identity/authentication events (restricted) |
+| `ev.privacy.command.v1` | Privacy-directed commands |
+| `ev.retry.v1` | Retry/dead-letter processing |
+| `ev.quarantine.v1` | Quarantined messages requiring operator review |
+| `ev.unroutable.v1` | Unroutable message capture |
+
 ---
 
 ## 3. Message categories
@@ -158,7 +173,7 @@ CloudEvents requires uniqueness from the combination of `source` and `id`; platf
   "specversion": "1.0",
   "id": "01J2Y7W4K8W5N6A3ZX2F9T1M0P",
   "source": "urn:ev-platform:booking-session",
-  "type": "gr.evbooking.booking.confirmed.v1",
+  "type": "com.evplatform.booking.confirmed.v1",
   "subject": "booking/BKG-7K4M2P",
   "time": "2026-07-11T20:14:32.418Z",
   "datacontenttype": "application/json",
@@ -227,24 +242,24 @@ Required fields:
 
 Pattern:
 
-`gr.evbooking.<domain>.<fact>.v<major>`
+`com.evplatform.<domain>.<fact>.v<major>`
 
 Examples:
 
-- `gr.evbooking.booking.confirmed.v1`
-- `gr.evbooking.session.started.v1`
-- `gr.evbooking.maintenance.scheduled.v1`
+- `com.evplatform.booking.confirmed.v1`
+- `com.evplatform.session.started.v1`
+- `com.evplatform.maintenance.scheduled.v1`
 
 ### 6.2 Command types
 
 Pattern:
 
-`gr.evbooking.<target-domain>.command.<action>.v<major>`
+`com.evplatform.<target-domain>.command.<action>.v<major>`
 
 Examples:
 
-- `gr.evbooking.device.command.start-charging.v1`
-- `gr.evbooking.booking.command.restrict-capacity.v1`
+- `com.evplatform.device.command.start-charging.v1`
+- `com.evplatform.booking.command.restrict-capacity.v1`
 
 ### 6.3 Routing keys
 
@@ -482,7 +497,6 @@ A schema cannot be retired while supported consumers still depend on it.
 | `AccountReactivated` | Account | Booking, Notification | Account reference |
 | `AccountDeletionPending` | Account | Booking, Notification, Governance | Account reference, workflow |
 | `AccountDeleted` | Account | Notification, Governance | Tombstone reference, completion time |
-| `AccountTombstone` | Account | Discovery | Account ID only; no PII. Produced alongside `AccountDeleted` for Discovery projection cleanup. |
 | `NotificationPreferencesChanged` | Account | Notification | Account reference, preference version |
 | `ProfileLocaleChanged` | Account | Notification | Account reference, locale |
 | `VehicleProfileChanged` | Account | No mandatory consumer | Account and vehicle references |
@@ -537,13 +551,13 @@ They exclude unrestricted operator notes.
 | `MaintenanceCompleted` | Station Operations | Booking, Discovery, Device Integration |
 | `MaintenanceCancelled` | Station Operations | Booking, Discovery |
 | `FaultReportSubmitted` | Station Operations | Governance/operational projection |
-| `FaultIncidentOpened` | Station Operations | Booking, Discovery, Notification |
-| `FaultIncidentSeverityChanged` | Station Operations | Booking, Discovery |
-| `FaultIncidentResolved` | Station Operations | Booking, Discovery |
-| `FaultIncidentReopened` | Station Operations | Booking, Discovery |
-| `StatusOverrideActivated` | Station Operations | Booking, Discovery, Device Integration |
-| `StatusOverrideExpired` | Station Operations | Booking, Discovery, Device Integration |
-| `StatusOverrideRevoked` | Station Operations | Booking, Discovery, Device Integration |
+| `FaultOpened` | Station Operations | Booking, Discovery, Notification |
+| `FaultStateChanged` | Station Operations | Booking, Discovery |
+| `FaultResolved` | Station Operations | Booking, Discovery |
+| `FaultReopened` | Station Operations | Booking, Discovery |
+| `OperationalOverrideApplied` | Station Operations | Booking, Discovery, Device Integration |
+| `OperationalOverrideExpired` | Station Operations | Booking, Discovery, Device Integration |
+| `OperationalOverrideRevoked` | Station Operations | Booking, Discovery, Device Integration |
 
 A Maintenance record is not considered transactionally enforceable merely because `MaintenanceScheduled` exists. Booking enforcement depends on the coordinated Capacity Block workflow.
 
@@ -551,7 +565,7 @@ A Maintenance record is not considered transactionally enforceable merely becaus
 
 # 16. Booking and allocation events
 
-*ARC-020 is the authoritative event inventory. This catalogue is retained for command-contract completeness and consumer routing. Event names below are aligned with ARC-020.*
+*ARC-020 (Domain Events and Async Contracts) is the authoritative event inventory. ARC-004 is authoritative for envelope, delivery, retry, ordering, broker and compatibility semantics. The event tables below are retained for consumer-routing reference; any differences from ARC-020 should be resolved in favour of ARC-020.*
 
 | Event | Producer | Consumers |
 |---|---|---|
@@ -560,7 +574,7 @@ A Maintenance record is not considered transactionally enforceable merely becaus
 | `BookingRescheduled` | Booking | Notification, Station Operations |
 | `BookingReassigned` | Booking | Notification, Station Operations, Device Integration |
 | `BookingCancelled` | Booking | Notification, Station Operations, Device Integration |
-| `BookingExpired` | Booking | — |
+| `BookingHoldExpired` | Booking | — |
 | `BookingCheckedIn` | Booking | Notification where configured, Governance |
 | `CheckInAbandoned` | Booking | Device Integration where mirror exists |
 | `BookingNoShow` | Booking | Notification, Station Operations, Insights |
@@ -605,19 +619,18 @@ Events must not include:
 | `ChargingSessionStarted` | Booking | Station Operations, Discovery, Insights |
 | `ChargingSessionSuspended` | Booking | Station Operations, Notification where material |
 | `ChargingSessionResumed` | Booking | Station Operations |
-| `ChargingSessionStopping` | Booking | Station Operations |
-| `ChargingSessionCompleted` | Booking | Notification, Station Operations, Insights |
+| `ChargingStopRequested` | Booking | Station Operations |
+| `ChargingSessionCompleted` | Booking | Notification, Station Operations, Insights | Carries final-summary data/reference |
 | `ChargingSessionInterrupted` | Booking | Notification, Station Operations, Governance, Insights |
 | `ChargingStartAttemptRejected` | Booking | Notification (attempt-level; Booking remains CHECKED_IN; retry available) |
 | `ChargingSessionStartRejected` | Booking | Notification, Station Operations, Governance (final exhaustion; Booking transitions to FULFILMENT_FAILED) |
 | `ChargingReconciliationRequired` | Booking | Station Operations, Governance |
-| `ChargingSessionSummaryFinalized` | Booking | Notification, Insights |
 
 High-frequency accepted meter values are not broadcast as general integration events.
 
 Analytics receives the finalized summary rather than every raw sample.
 
-Operational live views may consume a rate-limited `ChargingSessionTelemetryUpdated` projection event containing:
+Operational live views may consume a rate-limited `ChargingSessionProgressed` projection event containing:
 
 - Session reference
 - Latest cumulative energy
@@ -642,7 +655,7 @@ Telemetry projection events are disposable and cannot finalize a Session.
 | `DeviceHeartbeatStale` | Device Integration | Booking, Discovery, Station Operations |
 | `DeviceRecovered` | Device Integration | Booking, Discovery, Station Operations |
 | `EVSEStatusChanged` | Device Integration | Booking, Discovery, Station Operations |
-| `DeviceFaultReported` | Device Integration | Station Operations |
+| `DeviceFaultRaised` | Device Integration | Station Operations |
 | `DeviceFaultCleared` | Device Integration | Station Operations |
 | `DeviceInventoryMismatchDetected` | Device Integration | Station Operations, Governance |
 | `DeviceCommandDispatchAccepted` | Device Integration | Booking |
@@ -706,8 +719,8 @@ Arbitrary message bodies are prohibited.
 | Event | Consumers |
 |---|---|
 | `NotificationProviderAccepted` | Source workflow where necessary |
-| `NotificationDelivered` | Operational projection |
-| `NotificationTemporarilyFailed` | Operational projection |
+| `NotificationInboxDelivered` | Operational projection |
+| `NotificationDispatchFailed` | Operational projection |
 | `NotificationPermanentlyFailed` | Account/Governance where action is required |
 | `NotificationBounced` | Account |
 | `NotificationSuppressed` | Account/operational projection |
@@ -740,7 +753,7 @@ Passwords, tokens, secrets and unnecessary personal data are excluded.
 |---|---|---|---|
 | `StartChargingAtEVSE` | Booking | Device Integration | Dispatch result plus `DeviceTransactionStarted` |
 | `StopChargingAtEVSE` | Booking/Governance through Booking | Device Integration | Dispatch result plus `DeviceTransactionEnded` |
-| `RequestDeviceState` | Booking | Device Integration | `DeviceCommandOutcomeReconciled` |
+| `RequestDeviceSnapshot` | Booking | Device Integration | `DeviceCommandOutcomeReconciled` |
 | `SynchronizeReservationMirror` | Booking | Device Integration | Device command outcome |
 | `CancelReservationMirror` | Booking | Device Integration | Device command outcome |
 | `TriggerDeviceStatusReport` | Station Operations | Device Integration | Updated device-status events |

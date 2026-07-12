@@ -133,7 +133,7 @@ Module names, responsibilities and exclusions mirror ARC-001.
 Recommended Java package structure:
 
 ```text
-gr.evbooking.platform
+com.evplatform.platform
 ├── account
 │   ├── api
 │   ├── application
