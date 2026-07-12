@@ -415,21 +415,21 @@ Initial shared codes:
 
 ### Availability and booking
 
-- `INVALID_INTERVAL`
-- `OUTSIDE_ADVANCE_WINDOW`
-- `OUTSIDE_OPENING_HOURS`
-- `NO_COMPATIBLE_EVSE`
-- `EVSE_ALLOCATION_CONFLICT`
-- `ALLOCATION_BUSY` — Transient contention; retry with backoff (HTTP 409)
-- `EVSE_STALE_TELEMETRY`
-- `STATUS_UNKNOWN`
-- `MAINTENANCE_CONFLICT`
-- `BOOKING_STATE_CONFLICT`
-- `BOOKING_HOLD_EXPIRED`
-- `CHECK_IN_WINDOW_CLOSED`
-- `WRONG_EVSE`
-- `START_AUTHORIZATION_INVALID`
-- `START_AUTHORIZATION_CONSUMED`
+- `INVALID_INTERVAL` — 422
+- `OUTSIDE_ADVANCE_WINDOW` — 422
+- `OUTSIDE_OPENING_HOURS` — 422
+- `NO_COMPATIBLE_EVSE` — 422
+- `EVSE_ALLOCATION_CONFLICT` — 409
+- `ALLOCATION_BUSY` — 409, retryable
+- `EVSE_STALE_TELEMETRY` — 503, retryable
+- `STATUS_UNKNOWN` — 503
+- `MAINTENANCE_CONFLICT` — 409
+- `BOOKING_STATE_CONFLICT` — 409
+- `BOOKING_HOLD_EXPIRED` — 409
+- `CHECK_IN_WINDOW_CLOSED` — 409
+- `WRONG_EVSE` — 409
+- `START_AUTHORIZATION_INVALID` — 403
+- `START_AUTHORIZATION_CONSUMED` — 409
 
 ### Charging
 
@@ -742,14 +742,16 @@ Success includes:
 
 Common failures:
 
-- `409 EVSE_ALLOCATION_CONFLICT`
-- `409 NO_COMPATIBLE_EVSE`
-- `409 ACCOUNT_NOT_ACTIVE`
-- `422 INVALID_INTERVAL`
-- `503 DEPENDENCY_UNAVAILABLE`
-- `503 STATUS_UNKNOWN`
+- `409 EVSE_ALLOCATION_CONFLICT` — Overlapping allocation exists
+- `409 ALLOCATION_BUSY` — Transient contention; retry with backoff
+- `422 NO_COMPATIBLE_EVSE` — No EVSE matches connector/power constraints
+- `422 INVALID_INTERVAL` — Requested interval is invalid or out of range
+- `503 EVSE_STALE_TELEMETRY` — EVSE status data unavailable or stale; retryable
+- `503 STATUS_UNKNOWN` — EVSE operational status cannot be determined
 
 Exactly one concurrent conflicting hold may succeed.
+
+*Note:* `DEPENDENCY_UNAVAILABLE` is reserved for cases where a remote dependency is genuinely mandatory for the operation. Optional preflight failures during hold creation should not produce this code.
 
 ## 23.2 Start and stop semantics
 
@@ -1329,11 +1331,11 @@ These costs are accepted because the APIs form long-lived boundaries between ind
 
 # 46. Next architecture artifact
 
-The next document is:
+ARC-004 is approved and defines the event and command contract catalogue.
 
 **Event and Command Contract Catalogue v1.0**
 
-It must define:
+It defines:
 
 - Event and command envelope
 - RabbitMQ topology assumptions

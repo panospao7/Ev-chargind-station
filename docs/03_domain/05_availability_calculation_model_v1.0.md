@@ -136,7 +136,7 @@ A candidate is unavailable if its allocation interval overlaps:
 
 - An unexpired `HELD` booking
 - `CONFIRMED`, `CHECKED_IN` or `ACTIVE` booking allocation
-- A session in `AUTHORIZING`, `STARTING`, `CHARGING`, `SUSPENDED`, `STOPPING` or `FINALIZING`
+- A session in `STARTING`, `CHARGING`, `SUSPENDED` or `STOPPING` (internal processing substeps `AUTHORIZING`, `FINALIZING` are not persistent blocking states — see DOM-002 §1.3)
 - A completed/interrupted session whose turnaround release time has not passed
 - An unresolved session whose physical outcome is uncertain
 

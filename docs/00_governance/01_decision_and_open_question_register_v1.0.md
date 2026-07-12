@@ -290,7 +290,7 @@ Default owner: **DA/QA/AR**.
 | DEC-REQ-03 | Never silently reuse an ID for a different requirement. | APPROVED |
 | DEC-REQ-04 | Mark removed requirements `RETIRED` rather than deleting them. | APPROVED |
 | DEC-REQ-05 | Require change history and impact analysis for modified requirements. | APPROVED |
-| DEC-REQ-06 | Treat `MUST` requirements as the operational release baseline. | APPROVED |
+| DEC-REQ-06 | Treat `MUST` requirements as mandatory for the completed target platform. `MUST` does not imply W1 delivery; each requirement carries an independent `releaseApplicability` (W1/W2/W3) field. | APPROVED |
 | DEC-REQ-07 | Defer `SHOULD` requirements only through a recorded release decision. | APPROVED |
 | DEC-REQ-08 | Keep logical capability owners provisional until architecture approval. | APPROVED |
 | DEC-REQ-09 | Trace every final architecture and implementation artifact to requirements. | APPROVED |
@@ -388,7 +388,7 @@ Default owner: **DA/QA/AR**.
 
 | ID | Question | Owner | Deadline |
 |---|---|---|---|
-| OQ-SEC-01 | Confirm Keycloak through an identity-provider ADR and proof of concept. PoC artifact required. | SA/BA | OPEN (provisionally selected; PoC pending) |
+| OQ-SEC-01 | Confirm Keycloak through an identity-provider ADR and proof of concept. PoC artifact required. | SA/BA | RESOLVED_BY DEC-TECH-01 (PoC is an implementation-readiness validation task, not a technology-selection question) |
 | OQ-SEC-02 | Define service-to-service authentication and authorization. | SA/BA | RESOLVED_BY ARC-019 §3 |
 | OQ-SEC-03 | Determine whether deployed simulator mTLS is practical on the selected cloud platform. | SA/CA | G5 |
 | OQ-SEC-04 | Select secrets-management technology. | SA/CA | G5 |
@@ -512,7 +512,7 @@ Approval of Decision and Open-Question Register v1.0 means:
 4. Open questions become tracked planning obligations.
 5. Gate deadlines become mandatory readiness conditions.
 6. Changes require recorded impact analysis.
-7. The next foundation artifact is the **Domain Glossary v1.0**.
+7. The Domain Glossary (DOM-001) is approved and establishes canonical terminology.
 ## 20. Foundation Errata Record
 
 | ID | Description | Impact | Gate | Owner |

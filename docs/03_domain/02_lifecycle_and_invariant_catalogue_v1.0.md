@@ -30,20 +30,24 @@ stateDiagram-v2
     CHECKED_IN --> ACTIVE : Session started (TransactionStarted event received)
     CHECKED_IN --> CONFIRMED : Driver abandons check-in (before session starts)
     CHECKED_IN --> CANCELLED : Operator emergency cancellation (before session starts)
-    CHECKED_IN --> NO_SHOW : Start time + grace elapsed (before session starts)
+    CHECKED_IN --> DRIVER_ABANDONED : Driver abandons before charging starts
     CHECKED_IN --> FULFILMENT_FAILED : Retry/reassignment exhausted
     ACTIVE --> COMPLETED : Session ends normally / interrupted
     EXPIRED --> [*]
     CANCELLED --> [*]
     NO_SHOW --> [*]
+    DRIVER_ABANDONED --> [*]
     COMPLETED --> [*]
     FULFILMENT_FAILED --> [*]
 ```
 
+State Definitions:
+- `DRIVER_ABANDONED` — Driver checked in but abandoned the session before charging started (e.g., left before start command, incompatible connector, vehicle issue).
+
 Permitted Transitions:
 - `HELD` → `CONFIRMED` | `EXPIRED` | `CANCELLED`
 - `CONFIRMED` → `CHECKED_IN` | `CANCELLED` | `NO_SHOW` | `FULFILMENT_FAILED`
-- `CHECKED_IN` → `ACTIVE` | `CONFIRMED` | `CANCELLED` | `NO_SHOW` | `FULFILMENT_FAILED`
+- `CHECKED_IN` → `ACTIVE` | `CONFIRMED` | `CANCELLED` | `DRIVER_ABANDONED` | `FULFILMENT_FAILED`
 - `ACTIVE` → `COMPLETED` (Any failure during active session energy transfer results in COMPLETED with an interrupted outcome or INTERRUPTED session state, never FULFILMENT_FAILED).
 
 *Booking vs. Session Lifecycle Correlation:*
@@ -52,7 +56,7 @@ Permitted Transitions:
   - `COMPLETED` if energy transfer had already begun (actual charging occurred);
   - `FULFILMENT_FAILED` if the interruption occurred before any energy transfer took place (charging never started).
 
-*Note:* Terminal states (`EXPIRED`, `CANCELLED`, `NO_SHOW`, `COMPLETED`, `FULFILMENT_FAILED`) cannot be reopened.
+*Note:* Terminal states (`EXPIRED`, `CANCELLED`, `NO_SHOW`, `COMPLETED`, `FULFILMENT_FAILED`, `DRIVER_ABANDONED`) cannot be reopened.
 
 *Start Rejection vs Retry:* Booking remains `CHECKED_IN` while retry/reassignment is available. A rejected attempt creates a terminal `START_REJECTED` session-attempt record, not a Booking-state change. Each retry receives a new attempt number, a newly issued authorization, and a new session-attempt record. Booking transitions to `ACTIVE` only after confirmed transaction-start evidence, and to `FULFILMENT_FAILED` only when retry/reassignment is exhausted.
 
@@ -65,6 +69,8 @@ Permitted Transitions:
 - `DEVICE_REJECTED` — Charger explicitly rejected the command.
 - `START_REJECTED` — Terminal; charger rejected or authorization invalid.
 - `TRANSACTION_STARTED` — Charging physically began (DeviceTransactionStarted received).
+- `RECONCILING` — Awaiting device outcome reconciliation after timeout.
+- `UNRESOLVED_REQUIRES_ACTION` — Reconciliation produced ambiguous or missing evidence; requires authorized manual resolution. During this state, the corresponding operational_occupation remains blocking.
 
 Permitted Transitions:
 - `AUTHORIZING` → `STARTING` | `START_REJECTED`
@@ -72,7 +78,19 @@ Permitted Transitions:
 - `DEVICE_ACCEPTED` → `TRANSACTION_STARTED` | `TIMED_OUT`
 - `DEVICE_REJECTED` → [Terminal]
 - `TIMED_OUT` → `RECONCILING`
-- `RECONCILING` → `TRANSACTION_STARTED` | `START_REJECTED`
+- `RECONCILING` → `TRANSACTION_STARTED` | `START_REJECTED` | `UNRESOLVED_REQUIRES_ACTION`
+- `UNRESOLVED_REQUIRES_ACTION` → `TRANSACTION_STARTED` (manual confirmation of actual energy transfer)
+- `UNRESOLVED_REQUIRES_ACTION` → `START_REJECTED` (manual confirmation that charging never started)
+
+*Unresolved state behavior:* An `UNRESOLVED_REQUIRES_ACTION` attempt blocks capacity until manually resolved. Escalation deadline: 24 hours. Resolution must be authorized (requires `resolved_by` and `resolution_evidence`). Notification is sent to the operator escalation path on entry. If later device evidence arrives, an authorized operator may still resolve the state manually.
+
+### 1.2a Authorization Consumption Rule
+
+Start authorization becomes consumed when the local start-intent transaction commits the attempt/session shell and outbox command. Device acceptance is unrelated to authorization consumption.
+
+- If the local transaction rolls back, consumption rolls back.
+- A definitive rejected attempt (terminal `START_REJECTED`) requires a newly issued authorization for any subsequent retry.
+- Authorization consumption is recorded on the SessionAttempt record (`authorization_id`, `consumed_at`).
 
 ### 1.3 Charging Session Lifecycle
 *The session aggregate spans the full lifecycle from first attempt to completion. `AUTHORIZING` and `FINALIZING` are internal processing substeps recorded for observability; capacity conflict detection uses `STARTING`, `CHARGING`, `SUSPENDED`, `STOPPING` as the authoritative blocking states.*
@@ -98,7 +116,7 @@ Permitted Transitions:
 - `STOPPING` → `CHARGING` or `SUSPENDED` represents reconciliation where a stop command was sent but failed to reconcile or the charger rejects/fails to stop, keeping the session active.
 - `STARTING` → `INTERRUPTED` is strictly guarded. It requires positive confirmation (via subsequent telemetry or meter sequence logs) that physical energy transfer actually began before the connection was lost. Disconnection or timeout without energy evidence leaves the session in `STARTING` with `uncertain=true`. Reconciliation may later resolve to `START_REJECTED` if the device snapshot definitively shows no transaction began, or to `CHARGING` if evidence confirms transfer.
 
-### 1.3 Start Authorization Lifecycle
+### 1.3a Start Authorization Lifecycle
 - `ISSUED` — Token generated upon successful check-in.
 - `EXPIRED` — Check-in grace period ends without session starting.
 - `CONSUMED` — Start attempt accepted for processing.
@@ -231,7 +249,7 @@ Permitted Transitions:
 
 **Key point:** Deletion follows `REQUESTED → VALIDATING → COOLING_OFF → APPROVED → PROCESSING → COMPLETED` with alternative states `BLOCKED`, `PARTIALLY_COMPLETED`, `REQUIRES_REVIEW`, `CANCELLED`. `ANONYMIZED` is an action/result, not the universal successful terminal state.
 
-### 1.13 Invitations (Staff/Operator) Lifecycle
+### 1.12 Invitations (Staff/Operator) Lifecycle
 - `SENT` — Invitation link emailed.
 - `ACCEPTED` — User clicked and linked account.
 - `EXPIRED` — Validity window elapsed.
@@ -240,7 +258,7 @@ Permitted Transitions:
 Permitted Transitions:
 - `SENT` → `ACCEPTED` | `EXPIRED` | `REVOKED`
 
-### 1.14 Ownership Transfers Lifecycle
+### 1.13 Ownership Transfers Lifecycle
 - `INITIATED` — Transfer request sent to target organization owner.
 - `ACCEPTED` — Transfer completed.
 - `EXPIRED` — Validity elapsed.
@@ -250,7 +268,7 @@ Permitted Transitions:
 Permitted Transitions:
 - `INITIATED` → `ACCEPTED` | `EXPIRED` | `REJECTED` | `CANCELLED`
 
-### 1.15 Driver Fault Reports Lifecycle
+### 1.14 Driver Fault Reports Lifecycle
 - `SUBMITTED` — Driver reported EVSE fault.
 - `REVIEWED` — Operator staff checked the report.
 - `LINKED_TO_FAULT` — Linked to an active fault incident record.
@@ -260,7 +278,7 @@ Permitted Transitions:
 - `SUBMITTED` → `REVIEWED`
 - `REVIEWED` → `LINKED_TO_FAULT` | `ARCHIVED_DUPLICATE`
 
-### 1.16 Operator Application Lifecycle
+### 1.15 Operator Application Lifecycle
 - `DRAFT` — Application created but not yet submitted.
 - `SUBMITTED` — Application submitted, awaiting review.
 - `UNDER_REVIEW` — Administrator reviewing the application.
@@ -276,7 +294,7 @@ Permitted Transitions:
 - `UNDER_REVIEW` → `APPROVED` | `REJECTED` | `WITHDRAWN`
 - `CLARIFICATION_REQUESTED` → `WITHDRAWN`
 
-### 1.17 Operator Organization Lifecycle
+### 1.16 Operator Organization Lifecycle
 - `ACTIVE` — Approved organization actively managing stations.
 - `SUSPENDED` — Suspended due to moderation or policy breach. Cannot manage stations or take bookings.
 - `CLOSED` permanent retirement. All bookings resolved.
@@ -286,13 +304,13 @@ Permitted Transitions:
 - `ACTIVE` → `CLOSED`
 - `SUSPENDED` → `CLOSED`
 
-### 1.18 Driver Account Lifecycle
+### 1.17 Driver Account Lifecycle
 - `PENDING_VERIFICATION` → `ACTIVE` | `DELETED`
 - `ACTIVE` → `SUSPENDED` | `DELETION_PENDING`
 - `SUSPENDED` → `ACTIVE` | `DELETION_PENDING`
 - `DELETION_PENDING` → `DELETED` | `ACTIVE` (cancellation during the 7-day cooling off period)
 
-### 1.19 Maintenance Planning Record Lifecycle
+### 1.18 Maintenance Planning Record Lifecycle
 *Station Operations Service owns the maintenance planning record and all its transitions. Booking and Session Service owns capacity restrictions (`FREEZE → BLOCKED → RELEASED`). Device Integration Service reports device connection evidence and executes commands, but does not own maintenance state.*
 
 **Main States:**
@@ -323,7 +341,7 @@ Permitted Transitions:
 - `ACTIVE` → `COMPLETED` (work finished successfully)
 - `ACTIVE` → `FAILED` (work aborted or failed during execution)
 
-### 1.20 Fault Incident Lifecycle
+### 1.19 Fault Incident Lifecycle
 - `OPEN` — Fault detected (via simulator telemetry or driver report).
 - `ACKNOWLEDGED` — Operator staff acknowledged the issue.
 - `IN_PROGRESS` — Maintenance/technician dispatched.

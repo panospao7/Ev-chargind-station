@@ -246,13 +246,20 @@ This prevents duplicate active claims for the same source workflow.
 
 Capacity restrictions track the maintenance freeze/block/release lifecycle independently from the interval-based `capacity_claim`. A restriction begins as a `FREEZE` (planned/imminent), transitions to `BLOCKED` (active), and ends as `RELEASED`.
 
+During `FREEZE`, the enforcing interval `capacity_claim` is inserted immediately (under the EVSE guard). This provides a clear database-backed enforcement model — every allocation transaction naturally conflicts with the overlapping claim via the exclusion constraint.
+
 ```sql
 CREATE TABLE capacity_restriction (
     restriction_ref uuid PRIMARY KEY,
     evse_ref uuid NOT NULL
         REFERENCES evse_allocation_guard(evse_ref),
     restriction_kind varchar(32) NOT NULL,
+    scope_type varchar(32),
+    scope_ref uuid,
+    effective_interval tstzrange NOT NULL,
     source_ref uuid NOT NULL,
+    source_workflow_version bigint NOT NULL,
+    idempotency_key varchar(128) NOT NULL,
     state varchar(16) NOT NULL,
     reason text,
     authorized_by varchar(128),
@@ -265,12 +272,12 @@ CREATE TABLE capacity_restriction (
     updated_at timestamptz NOT NULL,
 
     CONSTRAINT ck_restriction_kind CHECK (
-        restriction_kind IN ('MAINTENANCE', 'EMERGENCY', 'OPERATOR_RESTRICTION')
+        restriction_kind IN ('MAINTENANCE', 'EMERGENCY', 'OPERATOR_RESTRICTION', 'ADMINISTRATIVE_CLOSURE', 'ORGANIZATION_BLOCK')
     ),
     CONSTRAINT ck_restriction_state CHECK (
         state IN ('FREEZE', 'BLOCKED', 'RELEASED')
     ),
-    CONSTRAINT ck_restriction_transition CHECK (
+    CONSTRAINT ck_restriction_state_consistency CHECK (
         (state = 'FREEZE' AND blocked_at IS NULL AND released_at IS NULL)
         OR (state = 'BLOCKED' AND blocked_at IS NOT NULL AND released_at IS NULL)
         OR (state = 'RELEASED' AND released_at IS NOT NULL)
@@ -278,15 +285,42 @@ CREATE TABLE capacity_restriction (
     CONSTRAINT ck_emergency_authorization CHECK (
         (restriction_kind = 'EMERGENCY' AND authorized_by IS NOT NULL AND authorized_at IS NOT NULL)
         OR (restriction_kind <> 'EMERGENCY')
+    ),
+    CONSTRAINT uq_restriction_idempotency UNIQUE (evse_ref, idempotency_key),
+    CONSTRAINT ck_restriction_interval CHECK (
+        NOT isempty(effective_interval)
+        AND lower_inc(effective_interval)
+        AND NOT upper_inc(effective_interval)
     )
 );
 ```
 
+**State-field consistency** (`ck_restriction_state_consistency`): validates that the timestamp columns are consistent with the current state value. It does not enforce state *transitions* (SQL CHECK cannot reference previous row values). Transition enforcement is provided by:
+
+- Aggregate/service transition logic that rejects forbidden transitions (e.g. `BLOCKED → FREEZE`).
+- Optimistic version checks (`version` incremented on every update; stale versions are rejected).
+- Automated forbidden-transition tests that prove each disallowed transition is rejected.
+
+**Scope fields** (`scope_type`, `scope_ref`): support station-wide (`STATION`) or organization-wide (`ORGANIZATION`) restrictions that fan out to EVSE-level enforcement. Each fan-out creates one `capacity_restriction` row per EVSE.
+
+**Restriction-type mapping to ARC-019 taxonomy:**
+
+| ARC-019 type | ARC-006 restriction_kind | Notes |
+|---|---|---|
+| Maintenance | `MAINTENANCE` | Scheduled maintenance block |
+| Station closure | `ADMINISTRATIVE_CLOSURE` | Station-wide; fans out to one restriction per EVSE |
+| EVSE deactivation | `ADMINISTRATIVE_CLOSURE` | Single-EVSE administrative closure |
+| Organization suspension | `ORGANIZATION_BLOCK` | Organization-wide; blocks all EVSE access for that operator |
+| Emergency | `EMERGENCY` | Emergency block (requires authorized audit record) |
+| Operator restriction | `OPERATOR_RESTRICTION` | General operator-initiated restriction |
+
+**Freeze enforcement model:** At `FREEZE` commit time, a corresponding `capacity_claim` row is inserted for the `effective_interval`. This claim conflicts with any overlapping allocation via the existing exclusion constraint (`ex_capacity_claim_evse_interval`). No additional query path is needed — the exclusion constraint is the enforcement mechanism.
+
 Permitted states:
 
-- `FREEZE` — Restriction is planned or imminent; new capacity_claims for the EVSE are blocked by the guard.
-- `BLOCKED` — Restriction is active; the corresponding capacity_claim has been created and is enforced.
-- `RELEASED` — Restriction lifted; EVSE available for allocation.
+- `FREEZE` — Restriction is planned or imminent; the enforcing capacity_claim is active.
+- `BLOCKED` — Restriction is active; maintenance/emergency may proceed.
+- `RELEASED` — Restriction lifted; capacity_claim released; EVSE available for allocation.
 
 Permitted transitions:
 
@@ -294,7 +328,7 @@ Permitted transitions:
 - `FREEZE` → `RELEASED` — Restriction cancelled before taking effect.
 - `BLOCKED` → `RELEASED` — Maintenance/emergency completed.
 
-The `capacity_restriction` aggregate is write-only authoritative for the freeze/block protocol; the `capacity_claim` table remains the interval-based enforcement mechanism. When a restriction transitions `FREEZE → BLOCKED`, the maintaining workflow must also create (or already hold) a corresponding `capacity_claim` of the matching kind.
+The `capacity_restriction` aggregate is write-only authoritative for the freeze/block protocol; the `capacity_claim` table is the interval-based enforcement mechanism.
 
 ---
 
@@ -710,7 +744,7 @@ Recommended initial maximum: five candidate attempts.
 11. Require `db_now < hold_expires_at`.
 12. Require active Hold capacity and driver claims.
 13. Persist immutable Tariff and Policy Snapshots.
-14. Change capacity claim kind from `BOOKING_HOLD` to `BOOKING`.
+14. Change capacity claim kind from `BOOKING_HOLD` to `BOOKING_ALLOCATION`.
 15. Change driver claim kind from `BOOKING_HOLD` to `BOOKING`.
 16. Transition Booking to `CONFIRMED`.
 17. Write audit, outbox and idempotency outcome.
@@ -845,7 +879,7 @@ If the Booking’s current EVSE/version differs from the pre-read value, the tra
 4. Check replacement EVSE claims and occupation.
 5. Check driver schedule conflicts, excluding the current Booking.
 6. Mark old capacity and driver claims `RELEASED`.
-7. Insert new active `BOOKING` claims.
+7. Insert new active `BOOKING_ALLOCATION` claims.
 8. Update Booking assignment and schedule.
 9. Increment Booking version.
 10. Write audit and outbox.
@@ -884,40 +918,91 @@ A failed reassignment preserves the original assignment.
 
 # 20. Maintenance and emergency block installation
 
-## 20.1 Locks
+All maintenance and emergency blocks follow a unified FREEZE → BLOCKED → RELEASED lifecycle through the `capacity_restriction` aggregate. The `capacity_claim` table provides interval-based enforcement.
 
-All affected EVSE guards are locked in ascending UUID order.
+## 20.1 Lock acquisition
 
-The transaction does not lock driver guards unless it also changes driver Bookings.
+1. All affected EVSE guards are locked in ascending UUID order.
+2. Driver guards are NOT locked unless the workflow modifies driver Bookings (e.g., emergency reassignment).
 
-## 20.2 Normal maintenance
+## 20.2 Normal maintenance — freeze-to-release algorithm
 
-For every target EVSE:
+### Phase A — Freeze (DRAFT → FREEZE transition)
 
-1. Validate source workflow and version.
-2. Lazily release expired Holds.
-3. Detect unexpired Holds, confirmed Bookings and unresolved occupation.
-4. Reject installation while unresolved prohibited conflicts remain.
-5. Insert a `MAINTENANCE` capacity claim.
+Triggered when Station Operations requests a capacity freeze (before maintenance is SCHEDULED).
 
-All target claims commit together for the command.
+1. Validate source workflow identity and version against the Station Operations maintenance record.
+2. Lock all target EVSE guards in ascending UUID order.
+3. Create one `capacity_restriction` row per target EVSE in `FREEZE` state, each with:
+   - `restriction_kind = 'MAINTENANCE'`
+   - `effective_interval` matching the planned maintenance window
+   - `idempotency_key` from the source workflow
+4. For each target EVSE, insert a `capacity_claim` with `claim_kind = 'MAINTENANCE_BLOCK'` and `effective_interval` matching the restriction interval. This claim conflicts with any overlapping allocation via the exclusion constraint (`ex_capacity_claim_evse_interval`).
+5. Return affected obligation summary to Station Operations (overlapping Holds, Bookings, unresolved sessions).
+6. Commit under the EVSE guard lock.
+7. Publish `CapacityFreezeCommitted` event.
 
-Partial installation is prohibited.
+### Phase B — Obligation resolution
+
+Before transitioning FREEZE → BLOCKED, Station Operations must resolve affected obligations:
+
+- Overlapping Holds: wait for expiry or proactively cancel and notify the driver.
+- Confirmed Bookings: reschedule to a non-overlapping slot or cancel with operator/driver consent.
+- Unresolved sessions: await resolution or escalate through the emergency path.
+
+Phase B may involve multiple human-mediated steps and is not a single transaction.
+
+### Phase C — Finalize (FREEZE → BLOCKED transition)
+
+Triggered when Station Operations confirms obligations are resolved.
+
+1. Lock target EVSE guards (same order as Phase A).
+2. Verify each `capacity_restriction` is in `FREEZE` state with matching version.
+3. For each EVSE, verify that no new overlapping claims have appeared since the freeze (re-check against the exclusion constraint; reject if new conflicts exist).
+4. Transition each `capacity_restriction` to `BLOCKED` (set `blocked_at = now()`).
+5. Commit.
+6. Publish `CapacityBlockCommitted` event.
+7. Station Operations transitions the maintenance record to SCHEDULED.
+
+### Phase D — Activation (BLOCKED → maintenance ACTIVE)
+
+When maintenance window opens:
+
+1. Station Operations transitions maintenance to ACTIVE.
+2. The capacity_claim and capacity_restriction remain in BLOCKED.
+
+### Phase E — Release (BLOCKED → RELEASED transition)
+
+Triggered when Station Operations reports maintenance complete or cancelled.
+
+1. Lock target EVSE guards (same order as Phase A).
+2. Verify each `capacity_restriction` is in `BLOCKED` or `FREEZE` state with matching version.
+3. Verify no active session currently occupies the EVSE (check `operational_occupation` for unreleased rows).
+4. Transition each `capacity_restriction` to `RELEASED` (set `released_at = now()`).
+5. Release the corresponding `capacity_claim` rows (`state = 'RELEASED'`, `released_at = now()`).
+6. Commit.
+7. Publish `CapacityRestrictionReleased` event.
 
 ## 20.3 Emergency block
 
-Emergency authority may install an `EMERGENCY_BLOCK` despite affected existing claims.
+Emergency activation must commit an immediate restriction before the maintenance state changes. The emergency path compresses Phases A–C into a single transaction:
 
-Because the planned-capacity exclusion constraint would reject a direct overlap, emergency handling first performs explicit affected-Booking transitions or marks a separate immediate EVSE restriction.
+1. Lock target EVSE guards in ascending UUID order.
+2. Create `capacity_restriction` rows in `FREEZE` state with `restriction_kind = 'EMERGENCY'`, `authorized_by` and `authorized_at` populated from the emergency authorization record.
+3. Insert corresponding `EMERGENCY_BLOCK` capacity_claims for the effective interval.
+4. Identify all overlapping Bookings/sessions. Mark affected Bookings as `CANCELLED` (emergency) with a recorded reason. Do NOT silently delete claims — each affected Booking receives a cancellation event and notification.
+5. Immediately transition each `capacity_restriction` to `BLOCKED` (set `blocked_at = now()`) — compressing FREEZE → BLOCKED.
+6. Commit.
+7. Publish `EmergencyBlockInstalled` domain event with affected Booking/session summary.
 
 Emergency intervention cannot silently delete existing claims.
 
 ## 20.4 Race outcome
 
-Maintenance and Booking allocation serialize on the EVSE guard:
+Maintenance/emergency and Booking allocation serialize on the EVSE guard:
 
-- Hold first: maintenance sees the Hold and rejects or resolves it.
-- Maintenance first: Booking sees the block and fails.
+- Hold or Booking acquired first: maintenance/emergency freeze sees the claim through the exclusion constraint and reports it as an affected obligation.
+- Freeze acquired first (capacity_claim inserted): new Hold/Booking sees the `MAINTENANCE_BLOCK` or `EMERGENCY_BLOCK` claim and fails with `MAINTENANCE_CONFLICT` or `EVSE_ALLOCATION_CONFLICT`.
 - No both-success outcome is possible for conflicting intervals.
 
 ---
@@ -929,9 +1014,9 @@ When start is requested:
 1. Lock driver guard.
 2. Lock EVSE guard.
 3. Lock Booking.
-4. Lock or create Charging Session.
-5. Validate and consume Start Authorization.
-6. Create Session `STARTING`.
+4. Lock or create Charging Session (reuse existing if in start-pending state).
+5. Create SessionAttempt in `AUTHORIZING` → `STARTING`.
+6. Validate and consume Start Authorization (consumption commits with this transaction — DOM-002 §1.2a).
 7. Insert `operational_occupation` in `UNCERTAIN`.
 8. Use the Booking allocation interval as its initial finite blocking interval.
 9. Write the `StartChargingAtEVSE` command to the Outbox.
@@ -939,7 +1024,7 @@ When start is requested:
 
 The record is `UNCERTAIN` because the physical command may execute before acknowledgement is received.
 
-A definitive rejection releases the occupation.
+A definitive rejection releases the occupation and terminates this SessionAttempt (`START_REJECTED`). Booking stays `CHECKED_IN`; a new authorization and new SessionAttempt may be created for retry.
 
 A timeout or disconnection may make its upper bound unbounded until reconciliation.
 
@@ -952,17 +1037,18 @@ On accepted `DeviceTransactionStarted` evidence:
 1. Lock driver guard.
 2. Lock EVSE guard.
 3. Lock Booking.
-4. Lock Session and occupation.
+4. Lock SessionAttempt, Session and occupation.
 5. Deduplicate device evidence.
-6. Require Session `STARTING`.
-7. Transition Session to `CHARGING`.
-8. Transition Booking to `ACTIVE`.
-9. Change occupation state to `ACTIVE`.
-10. Extend blocking upper bound to at least:
+6. Require SessionAttempt `STARTING` or `RECONCILING`.
+7. Transition SessionAttempt to `TRANSACTION_STARTED`.
+8. Transition ChargingSession to `CHARGING`.
+9. Transition Booking to `ACTIVE`.
+10. Change occupation state to `ACTIVE`.
+11. Extend blocking upper bound to at least:
     - Planned allocation end, or
     - Evidence time plus turnaround buffer
-11. Write audit and outbox.
-12. Commit.
+12. Write audit and outbox.
+13. Commit.
 
 Only physical transaction-start evidence performs these transitions.
 

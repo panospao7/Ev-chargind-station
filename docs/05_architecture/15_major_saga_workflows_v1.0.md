@@ -141,8 +141,9 @@ Add internal technical state `AUTHORIZING`; public states remain unchanged.
 - Crash before authorization consumption: persisted session worker retries.
 - Crash after consumption: the persisted `AUTHORIZING` session resumes.
 - Uncertain result: no retry while unresolved. Remains in `AUTHORIZING` / `startPending` and requests a device snapshot to reconcile. (Release applicability: W1)
-- Definitive rejection: the original start attempt is terminal. Booking clears `startPending` and the session shell transitions to failed. (Release applicability: W1)
-- Retry: permitted only within the booking deadline after a definitive rejection or retryable failure is resolved. A retry requires a new attempt number, a newly issued start authorization bound to the same booking, and a new session shell. Every attempt remains fully auditable. (Release applicability: W1)
+- Definitive rejection: the SessionAttempt transitions to `START_REJECTED` (terminal for this attempt). Booking stays `CHECKED_IN`; `startPending` remains set. ChargingSession remains `STARTING` while another attempt is allowed. (Release applicability: W1)
+- Retry: permitted only within the booking deadline after a definitive rejection or retryable failure is resolved. A retry requires a new attempt number, a newly issued start authorization bound to the same booking, and a new SessionAttempt record. The ChargingSession is reused across attempts. Every attempt remains fully auditable. (Release applicability: W1)
+- Exhaustion: when the retry limit is reached, the ChargingSession transitions to `START_REJECTED` and Booking transitions to `FULFILMENT_FAILED`. (Release applicability: W1)
 
 ## 7. Stop and completion
 

@@ -550,6 +550,13 @@ A session is distinct from a booking:
 - Booking represents planned access.
 - Session represents attempted or actual usage.
 
+A ChargingSession has one or more SessionAttempts. A Booking has zero or one ChargingSession.
+
+### SessionAttempt
+- **Definition:** One attempt to start a charging session for a Booking. A Booking may have multiple SessionAttempts if earlier attempts are rejected. The Booking remains `CHECKED_IN` across attempts.
+- **Lifecycle:** DOM-002 §1.2.
+- **Relationship:** A Booking has zero or one ChargingSession; a ChargingSession has one or more SessionAttempts. Attempt rejection terminates only that attempt; the ChargingSession remains start-pending while another attempt is allowed.
+
 ## Session Aggregate
 
 The authoritative consistency boundary for:
@@ -786,12 +793,12 @@ A value making a failure scenario deterministic and reproducible.
 
 Planned or emergency work that may restrict station or EVSE operation.
 
-Lifecycle:
+Lifecycle: DOM-002 §1.18 (Maintenance Planning Record Lifecycle) — `DRAFT`, `PROPOSED`, `SCHEDULED`, `ACTIVE`, `COMPLETED`, `CANCELLED`.
 
-- `SCHEDULED`
-- `ACTIVE`
-- `COMPLETED`
-- `CANCELLED`
+### Capacity Restriction
+- **Definition:** A planned or active restriction on EVSE capacity following the FREEZE → BLOCKED → RELEASED lifecycle. Used for maintenance, emergency, and operator-initiated blocks.
+- **Table:** `capacity_restriction` in ARC-006 §4.6.
+- **Relationship:** The `capacity_restriction` aggregate is write-only authoritative for the freeze/block protocol; the `capacity_claim` table provides interval-based enforcement.
 
 ## Blocking Maintenance
 
@@ -1407,6 +1414,6 @@ Human-readable wording must be localized separately and must not be used as prog
 
 ## Status
 
-**Domain Glossary v1.0 is ready for approval.**
+**Domain Glossary v1.0 is approved.**
 
-The next foundation artifact is the **Lifecycle and Invariant Catalogue v1.0**, which will consolidate all state machines, transitions, guards, terminal states and cross-lifecycle rules.
+DOM-002 is approved and defines the canonical business lifecycles.

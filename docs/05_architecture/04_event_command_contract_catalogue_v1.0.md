@@ -605,7 +605,8 @@ Events must not include:
 | `ChargingSessionStopping` | Booking | Station Operations |
 | `ChargingSessionCompleted` | Booking | Notification, Station Operations, Insights |
 | `ChargingSessionInterrupted` | Booking | Notification, Station Operations, Governance, Insights |
-| `ChargingSessionStartRejected` | Booking | Notification, Station Operations, Governance |
+| `ChargingStartAttemptRejected` | Booking | Notification (attempt-level; Booking remains CHECKED_IN; retry available) |
+| `ChargingSessionStartRejected` | Booking | Notification, Station Operations, Governance (final exhaustion; Booking transitions to FULFILMENT_FAILED) |
 | `ChargingSessionOutcomeUncertain` | Booking | Station Operations, Governance |
 | `ChargingSessionSummaryFinalized` | Booking | Notification, Insights |
 
@@ -735,7 +736,7 @@ Passwords, tokens, secrets and unnecessary personal data are excluded.
 | Command | Sender | Handler | Outcome evidence |
 |---|---|---|---|
 | `StartChargingAtEVSE` | Booking | Device Integration | Dispatch result plus `DeviceTransactionStarted` |
-| `StopCharging` | Booking/Governance through Booking | Device Integration | Dispatch result plus `DeviceTransactionEnded` |
+| `StopChargingAtEVSE` | Booking/Governance through Booking | Device Integration | Dispatch result plus `DeviceTransactionEnded` |
 | `RequestDeviceState` | Booking | Device Integration | `DeviceCommandOutcomeReconciled` |
 | `SynchronizeReservationMirror` | Booking | Device Integration | Device command outcome |
 | `CancelReservationMirror` | Booking | Device Integration | Device command outcome |
@@ -842,29 +843,35 @@ If the workflow stops after step 5, reconciliation detects the orphaned block by
 
 # 23. Device start workflow
 
-1. Booking consumes Start Authorization.
-2. Booking creates Session `STARTING`.
-3. Booking publishes `StartChargingAtEVSE`.
-4. Device Integration records the command idempotently.
-5. Device Integration dispatches the simulator command.
-6. It emits dispatch rejection, timeout or acceptance evidence.
-7. Command acceptance leaves Session `STARTING`.
-8. `DeviceTransactionStarted` causes Booking to transition:
-   - Session to `CHARGING`
+1. Booking consumes Start Authorization (authorization becomes consumed when the start-intent transaction commits — DOM-002 §1.2a).
+2. Booking creates a new `SessionAttempt` in `AUTHORIZING`, then transitions to `STARTING`.
+3. ChargingSession is created (or reused if already existing in start-pending state) with `STARTING` state.
+4. Booking publishes `StartChargingAtEVSE`.
+5. Device Integration records the command idempotently.
+6. Device Integration dispatches the simulator command.
+7. It emits dispatch rejection, timeout or acceptance evidence.
+8. Command acceptance leaves SessionAttempt in `STARTING`.
+9. `DeviceTransactionStarted` causes:
+   - SessionAttempt to `TRANSACTION_STARTED`
+   - ChargingSession to `CHARGING`
    - Booking to `ACTIVE`
-9. Definitive rejection causes:
-   - Session `START_REJECTED`
-   - Booking `FULFILMENT_FAILED`
-10. Timeout leaves Session `STARTING` and starts reconciliation.
+10. Definitive rejection causes:
+    - SessionAttempt `START_REJECTED` (terminal for this attempt)
+    - ChargingSession remains `STARTING` (another attempt may be made)
+    - Booking stays `CHECKED_IN` (retry available)
+11. Only exhaustion of all retries causes:
+    - ChargingSession `START_REJECTED`
+    - Booking `FULFILMENT_FAILED`
+12. Timeout transitions SessionAttempt to `RECONCILING` and starts reconciliation.
 
-A consumed Start Authorization is never restored.
+A consumed Start Authorization is never restored. If the local transaction rolls back, consumption rolls back. A definitive rejected attempt requires a newly issued authorization.
 
 ---
 
 # 24. Device stop workflow
 
 1. Booking commits Session `STOPPING`.
-2. Booking publishes `StopCharging`.
+2. Booking publishes `StopChargingAtEVSE`.
 3. Device Integration dispatches idempotently.
 4. Acceptance does not finalize the Session.
 5. `DeviceTransactionEnded` determines the final outcome.

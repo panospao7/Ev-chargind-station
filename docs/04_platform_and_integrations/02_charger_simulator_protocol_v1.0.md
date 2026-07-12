@@ -166,7 +166,7 @@ The logical platform endpoint that:
 - Records device state
 - Routes accepted facts to owning capabilities
 
-Its final microservice placement remains undecided.
+The device boundary is assigned to the Device Integration Service (ARC-001).
 
 ---
 
@@ -457,6 +457,23 @@ When receiving the same command ID again, it must:
 - Not create another session
 - Not reset meter state
 - Not produce duplicate transaction beginnings
+
+### Lifecycle mappings
+
+Device Integration command-record lifecycle: tracks the platform-side record of dispatching a command (RECEIVED, DISPATCHED, RESPONDED, TIMED_OUT, FAILED).
+
+Simulator command-receipt/execution lifecycle: tracks the simulator-side handling (RECEIVED, EXECUTING, SUCCEEDED, FAILED).
+
+| Device Integration command-record state | Simulator execution state | Meaning |
+|---|---|---|
+| `RECEIVED` | — | Command received in outbox |
+| `DISPATCHED` | `RECEIVED` | Command delivered to simulator |
+| — | `EXECUTING` | Simulator processing command |
+| `RESPONDED` | `SUCCEEDED` | Successful execution evidence received |
+| `TIMED_OUT` | `FAILED` | No response within timeout |
+| `FAILED` | `FAILED` | Delivery or execution rejected |
+
+> The Device Integration command-record lifecycle is authoritative for capacity blocking; the simulator execution lifecycle is observational.
 
 ---
 
@@ -1252,3 +1269,15 @@ Primarily implements:
 - `FR-AUD-01`
 
 Supports the security, performance, reliability, observability, recovery and maintainability NFRs.
+
+---
+
+## 40. Protocol-to-integration event mapping
+
+| Raw simulator event | Normalized integration event | Direction |
+|---------------------|------------------------------|-----------|
+| `TransactionStarted` | `DeviceTransactionStarted` | Simulator → Platform |
+| `TransactionUpdated` | `DeviceTransactionUpdated` | Simulator → Platform |
+| `TransactionEnded` | `DeviceTransactionEnded` | Simulator → Platform |
+| `Heartbeat` | `DeviceHeartbeatReceived` | Simulator → Platform |
+| `StatusNotification` | `DeviceStatusNotificationReceived` | Simulator → Platform |

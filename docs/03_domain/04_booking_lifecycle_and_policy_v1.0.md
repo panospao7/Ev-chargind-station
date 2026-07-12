@@ -21,7 +21,7 @@ Authoritative for: Booking State Machine Transitions and Policies
 - **COMPLETED** — charging session concluded.
 - **CANCELLED** — cancelled by driver, operator, or administrator.
 - **EXPIRED** — hold was not confirmed in time.
-- **NO_SHOW** — driver did not check in before the grace period ended.
+- **NO_SHOW** — Driver did not check in before the grace deadline.
 - **FULFILMENT_FAILED** — booking could not be fulfilled because of equipment, platform failure, or definitive session start rejection.
 
 A generic `FAILED` state should be avoided because it does not explain what failed.

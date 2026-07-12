@@ -197,12 +197,9 @@ Configuration events contain the public projection data required by Discovery an
 | `BookingActivated` | Booking and charging-session ID | (Release applicability: W1) |
 | `BookingCompleted` | Session outcome and release time | (Release applicability: W1) |
 | `CapacityRestrictionCreated` | Scope, interval, type and phase (generic; non-maintenance restrictions) | (Release applicability: W1) |
-| `CreateCapacityFreeze` | Workflow ID, restriction ID, source maintenance ID, scope, interval, version, deadline, idempotency key (maintenance handshake) | (Release applicability: W1) |
 | `CapacityFreezeCommitted` | Workflow ID, restriction ID, scope, interval, committed timestamp | (Release applicability: W1) |
 | `CapacityFreezeRejected` | Workflow ID, restriction ID, reason, remaining interval | (Release applicability: W1) |
-| `FinalizeCapacityBlock` | Workflow ID, restriction ID, idempotency key | (Release applicability: W1) |
 | `CapacityBlockCommitted` | Workflow ID, restriction ID, block interval | (Release applicability: W1) |
-| `CapacityRestrictionReleaseRequested` | Workflow ID, restriction ID, source maintenance ID, reason, idempotency key | (Release applicability: W1) |
 | `CapacityRestrictionReleased` | Restriction ID, reason, released timestamp | (Release applicability: W1) |
 | `StartAuthorizationConsumed` | Booking/session IDs only; never token | (Release applicability: W1) |
 
@@ -218,7 +215,8 @@ Configuration events contain the public projection data required by Discovery an
 - `ChargingSessionCreated` (Release applicability: W1)
 - `ChargingStartRequested` (Release applicability: W1)
 - `ChargingSessionStarted` (Release applicability: W1)
-- `ChargingStartRejected` (Release applicability: W1)
+- `ChargingStartAttemptRejected` (Release applicability: W1) — attempt-level; Booking remains CHECKED_IN
+- `ChargingSessionStartRejected` (Release applicability: W1) — final exhaustion; Booking → FULFILMENT_FAILED
 - `ChargingSessionSuspended` (Release applicability: W1)
 - `ChargingSessionResumed` (Release applicability: W1)
 - `ChargingStopRequested` (Release applicability: W1)
@@ -297,6 +295,14 @@ Commands are idempotent by command ID. Expired commands must not execute.
 - `DeleteServiceSpecificData` (Release applicability: W3)
 
 Each service emits a success or failure event for the request and service step.
+
+### Maintenance capacity commands
+
+| Command | Sender | Handler | Timeout | Idempotency | Outcome |
+|---------|--------|---------|---------|-------------|---------|
+| `CreateCapacityFreeze` | Station Operations | Booking module | 30s | Idempotency key | `CapacityFreezeCommitted` / `CapacityFreezeRejected` |
+| `FinalizeCapacityBlock` | Station Operations | Booking module | 30s | Idempotency key | `CapacityBlockCommitted` |
+| `ReleaseCapacityRestriction` | Station Operations | Booking module | 30s | Idempotency key | `CapacityRestrictionReleased` |
 
 ### Emergency charging command (Release applicability: W1)
 

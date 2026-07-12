@@ -128,7 +128,7 @@ All microservices standardise on the following RFC 9457 error problem codes:
 | `ALLOCATION_BUSY` | 409 Conflict | Yes | `evseId`, `retryAfterSeconds` | Start charging, reserve EVSE | Transient contention only; the EVSE is locked by another concurrent process. Actual physical occupation returns `EVSE_ALLOCATION_CONFLICT`. |
 | `STATUS_UNKNOWN` | 503 Service Unavailable | Yes | `evseId` | Check-in, start charging | Current device status is unknown due to active communication loss. |
 | `IDEMPOTENCY_KEY_REUSED` | 409 Conflict | No | `idempotencyKey` | Any mutating write | Mutating request retried with same key but different request body. |
-| `NO_COMPATIBLE_EVSE` | 422 Unprocessable Entity | No | `stationId`, `connectorType`, `minPower` | Availability check, hold | No EVSE at the station matches the specified connector/power constraints. |
+| `NO_COMPATIBLE_EVSE` | 422 Unprocessable Entity | No | `stationId`, `connectorType`, `minPower` | Availability check, hold creation | No EVSE at the station matches the specified connector/power constraints. |
 | `DEPENDENCY_UNAVAILABLE` | 503 Service Unavailable | Yes | `dependencyName` | Any remote preflight | Remote preflight/lookups failed or timed out during non-locking phases. |
 
 ## 8. Schema Dialect Policy (Release applicability: W1 | Cross-cutting)
