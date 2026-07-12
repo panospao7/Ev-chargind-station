@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-07-12T23:58:00Z"
+updatedAt: "2026-07-13T00:05:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -9,18 +9,17 @@ project:
 
 tasks:
   I0-ENG-001:
-    state: "BLOCKED"
+    state: "READY"
     assignedAgent: null
     claimedAt: null
 
-    baselineCommit: "ba4b6e54f396e4dbc2ba55ff12e654f5229670ee"
+    baselineCommit: "b02bae51cd440b7f0cff7e62d29ac1df3992b132"
     candidateCommit: null
     mergeCommit: null
     branch: "main"
     pullRequest: null
 
-    blockers:
-      - "I0-DEL-001: delivery control plane must be repaired before engineering tasks can proceed"
+    blockers: []
     deviations: []
     unresolvedFindings: []
 
@@ -52,12 +51,12 @@ tasks:
       paths: []
 
   I0-DEL-001:
-    state: "READY"
+    state: "SELF_VERIFIED"
     assignedAgent: null
     claimedAt: null
 
-    baselineCommit: "ba4b6e54f396e4dbc2ba55ff12e654f5229670ee"
-    candidateCommit: null
+    baselineCommit: "b02bae51cd440b7f0cff7e62d29ac1df3992b132"
+    candidateCommit: "b02bae51cd440b7f0cff7e62d29ac1df3992b132"
     mergeCommit: null
     branch: "main"
     pullRequest: null
@@ -98,9 +97,9 @@ summary:
     BACKLOG: 0
     READY: 1
     CLAIMED: 0
-    BLOCKED: 1
+    BLOCKED: 0
     IMPLEMENTING: 0
-    SELF_VERIFIED: 0
+    SELF_VERIFIED: 1
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
     HUMAN_REVIEW: 0
@@ -113,4 +112,4 @@ summary:
     CANCELLED: 0
 
   activeTask: null
-  nextRecommendedTask: "I0-DEL-001"
+  nextRecommendedTask: "I0-ENG-001"
