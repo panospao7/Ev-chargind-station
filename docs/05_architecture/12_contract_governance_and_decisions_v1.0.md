@@ -136,6 +136,10 @@ All microservices standardise on the following RFC 9457 error problem codes:
 | `CAPACITY_RESTRICTION_STATE_CONFLICT` | 409 Conflict | No | `restrictionRef`, `expectedState`, `actualState` | Capacity restriction lifecycle | Capacity restriction in unexpected state for the requested operation. |
 | `SAFETY_EVIDENCE_REQUIRED` | 422 Unprocessable Entity | No | `maintenanceRef` | Failed maintenance release | Release of a failed maintenance restriction requires verified safety evidence. |
 | `MAINTENANCE_IMPACT_UNRESOLVED` | 409 Conflict | No | `maintenanceRef`, `affectedBookingCount` | Maintenance submission | Maintenance cannot proceed until overlapping bookings/sessions are resolved. |
+| `START_AUTHORIZATION_EXPIRED` | 409 Conflict | No | `authorizationRef` | Start charging | The start authorization has expired before it could be consumed. |
+| `START_ATTEMPT_LIMIT_REACHED` | 409 Conflict | No | `bookingRef`, `maxAttempts` | Start charging | The maximum number of start attempts has been exhausted. |
+| `START_RETRY_NOT_ELIGIBLE` | 409 Conflict | No | `bookingRef`, `reason` | Start charging | A retry is not eligible under current conditions. |
+| `SESSION_OUTCOME_UNRESOLVED` | 409 Conflict | No | `sessionRef` | Start charging | The previous session outcome is still unresolved. |
 
 ## 8. Schema Dialect Policy (Release applicability: W1 | Cross-cutting)
 To avoid tooling incompatibilities during code generation and automated contract testing:

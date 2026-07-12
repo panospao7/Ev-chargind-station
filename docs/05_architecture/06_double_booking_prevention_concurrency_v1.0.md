@@ -1077,6 +1077,7 @@ When start is requested:
 4. Lock or create Charging Session (reuse existing if in start-pending state).
 5. Create SessionAttempt in `AUTHORIZING` → `STARTING`.
 5a. Create `session_attempt` row with `attempt_number = previous + 1`, `state = AUTHORIZING`.
+5b. If this is a retry (`previous attempt = ATTEMPT_REJECTED` and retry policy permits), create a new authorization: new reference, new secret/hash, same Booking/driver/EVSE, expiry = original grace deadline, next attempt number.
 6. Validate and consume Start Authorization (consumption commits with this transaction — DOM-002 §1.2a).
 7. Insert `operational_occupation` in `UNCERTAIN`.
 8. Use the Booking allocation interval as its initial finite blocking interval.

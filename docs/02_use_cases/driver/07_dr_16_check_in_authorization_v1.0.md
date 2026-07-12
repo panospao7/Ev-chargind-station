@@ -69,7 +69,7 @@ Possession of an EVSE identifier alone never authorizes charging.
    - records an audit entry;
    - writes required outbox events.
 7. Driver receives confirmation and the earliest permitted charging-start time.
-8. The start authorization transitions to CONSUMED when a start attempt is accepted for processing, remaining consumed during any subsequent command uncertainty.
+8. The start authorization transitions to `CONSUMED` when the local start-intent transaction commits (DOM-002 §1.2a). Device acceptance is unrelated to authorization consumption.
 
 ## 6. Start-authorization rules
 
@@ -84,6 +84,33 @@ The authorization is:
 - Valid no later than the booking’s grace-period deadline.
 
 The browser should not need to send the authorization directly to the simulator. The backend validates it and issues the simulator command through the trusted device boundary.
+
+## 6a. Retry authorization
+
+Successful check-in issues the initial single-use Start Authorization. If a SessionAttempt ends in `ATTEMPT_REJECTED`, Booking and Session may issue one replacement authorization when the retry policy permits it. The replacement is issued and consumed inside the next start-intent transaction before the new SessionAttempt enters `STARTING`. An uncertain or unresolved attempt never permits a parallel retry. Retry does not extend the original booking grace deadline.
+
+Retry policy (immutable Booking Policy Snapshot):
+
+- `maxStartAttempts = 2` (one initial attempt plus one retry)
+- `retryAuthorizationExpiresAt = originalGraceDeadline`
+- retries do not extend booking time
+- retries require the same assigned EVSE
+- reassignment revokes all existing authorizations
+
+A retry is allowed only when all are true:
+
+- Booking is `CHECKED_IN`
+- ChargingSession is `STARTING`
+- Previous SessionAttempt is `ATTEMPT_REJECTED`
+- No attempt is `STARTING`, `DEVICE_ACCEPTED`, `RECONCILING` or `UNRESOLVED_REQUIRES_ACTION`
+- No `DeviceTransactionStarted` evidence exists
+- Previous operational occupation is released
+- Current time is no later than the original grace deadline
+- Attempt count is below `maxStartAttempts`
+- Booking assignment/version has not changed
+- Account remains eligible
+- EVSE status evidence is fresh
+- No blocking restriction, maintenance or fault applies
 
 ## 7. Charging-start timing
 
@@ -172,7 +199,7 @@ Check-in and no-show processing use the same authoritative booking record and co
 
 Emitted after transaction commit through the outbox:
 
-- `DriverCheckedIn`
+- `BookingCheckedIn`
 - `StartAuthorizationIssued`
 - `CheckInAbandoned`
 - `StartAuthorizationRevoked`

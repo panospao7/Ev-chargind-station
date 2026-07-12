@@ -35,10 +35,10 @@ The booking remains separate but linked:
 2. System validates the booking, EVSE, start window, authorization, and operational status.
 3. A session is created idempotently in `STARTING`.
 4. The simulator receives the start command.
-5. Command acceptance leaves the session in `STARTING`. Receipt of the OCPP-inspired `TransactionStarted` event (or `TransactionEvent(eventType=Started)`) from the charger confirms charging has begun, changing the session state to `CHARGING` and the booking state to `ACTIVE`.
-6. Rejection changes the session to START_REJECTED and the booking to FULFILMENT_FAILED, with no same-booking retry in v1.
+5. Command acceptance transitions the SessionAttempt to `DEVICE_ACCEPTED` (charger acknowledged the command — per DOM-002 §1.2). Receipt of `DeviceTransactionStarted` confirms charging has begun, changing the SessionAttempt to `TRANSACTION_STARTED`, the ChargingSession to `CHARGING`, and the Booking to `ACTIVE`.
+6. Explicit device rejection terminates the current SessionAttempt as `ATTEMPT_REJECTED`. Booking remains `CHECKED_IN` and ChargingSession remains `STARTING` while a policy-permitted retry is available. A retry creates a new SessionAttempt and a new single-use authorization. Only exhaustion of the retry policy transitions the ChargingSession to `START_REJECTED` and the Booking to `FULFILMENT_FAILED`.
 
-Only one session may exist for the booking, driver, and EVSE.
+Only one ChargingSession may exist for the Booking. That ChargingSession may contain multiple sequential SessionAttempts, but never more than one unresolved attempt.
 
 ### DR-18 — Monitor session
 

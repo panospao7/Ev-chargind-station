@@ -710,7 +710,7 @@ Base: `/api/v1/bookings`
 | `POST /bookings/{bookingRef}/cancel` | `cancelMyBooking` | `200` | Cancel eligible booking |
 | `POST /bookings/{bookingRef}/check-in` | `checkInToBooking` | `200` | Check in at assigned EVSE |
 | `POST /bookings/{bookingRef}/abandon-check-in` | `abandonBookingCheckIn` | `200` | Revoke authorization and abandon |
-| `POST /bookings/{bookingRef}/charging-session/start` | `startChargingSession` | `202` | Commit `STARTING`, queue device command |
+| `POST /bookings/{bookingRef}/charging-session/start` | `startChargingSession` | `202` | Atomically create the next SessionAttempt, consume its authorization and queue `StartChargingAtEVSE` |
 | `GET /bookings/{bookingRef}/charging-session` | `getMyChargingSession` | `200` | Current authoritative session |
 | `POST /bookings/{bookingRef}/charging-session/stop` | `stopChargingSession` | `202` | Commit `STOPPING`, queue stop |
 | `GET /bookings/{bookingRef}/charging-session/summary` | `getMySessionSummary` | `200` | Final summary |
