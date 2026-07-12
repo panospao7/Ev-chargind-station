@@ -3,14 +3,14 @@ Title: Consolidated System Specification v1.0
 Version: 1.0
 Status: APPROVED
 Owner: PO/DA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: All canonical documents
 Authoritative for: Specification Index and Entry Point
 
 # Consolidated System Specification v1.0
 
-This specification serves as the master entry point and index for all approved design documentation, use cases, domain models, and requirements of the EV Charging Booking Platform.
+This specification serves as the master entry point and index for all approved design documentation, use cases, domain models, and technical architecture specifications of the EV Charging Booking Platform.
 
 ---
 
@@ -63,6 +63,26 @@ This specification serves as the master entry point and index for all approved d
 
 ### 1.6 Security & Privacy
 - **[PRV-001] Privacy, Retention & Deletion:** [../06_security_and_privacy/01_privacy_retention_export_deletion_v1.0.md](../06_security_and_privacy/01_privacy_retention_export_deletion_v1.0.md)
+- **[ARC-007] Security Architecture & Threat Model:** [../06_security_and_privacy/02_security_architecture_threat_model_v1.0.md](../06_security_and_privacy/02_security_architecture_threat_model_v1.0.md)
+
+### 1.7 Technical Architecture Specifications
+- **[ARC-001] Boundary Analysis:** [../05_architecture/01_domain_capability_map_boundary_analysis_v1.0.md](../05_architecture/01_domain_capability_map_boundary_analysis_v1.0.md)
+- **[ARC-002] Inter-Service Communication:** [../05_architecture/02_inter_service_communication_consistency_v1.0.md](../05_architecture/02_inter_service_communication_consistency_v1.0.md)
+- **[ARC-003] REST API Contract Catalogue:** [../05_architecture/03_rest_api_contract_catalogue_v1.0.md](../05_architecture/03_rest_api_contract_catalogue_v1.0.md)
+- **[ARC-004] Event & Command Contract Catalogue:** [../05_architecture/04_event_command_contract_catalogue_v1.0.md](../05_architecture/04_event_command_contract_catalogue_v1.0.md)
+- **[ARC-005] Database Models & Ownership:** [../05_architecture/05_database_models_ownership_migration_v1.0.md](../05_architecture/05_database_models_ownership_migration_v1.0.md)
+- **[ARC-006] Double-Booking Prevention Concurrency:** [../05_architecture/06_double_booking_prevention_concurrency_v1.0.md](../05_architecture/06_double_booking_prevention_concurrency_v1.0.md)
+- **[ARC-008] Frontend UX Flow Spec:** [../05_architecture/07_frontend_ux_flow_specification_v1.0.md](../05_architecture/07_frontend_ux_flow_specification_v1.0.md)
+- **[ARC-009] Technology Selection & ADRs:** [../05_architecture/08_technology_selection_adr_set_v1.0.md](../05_architecture/08_technology_selection_adr_set_v1.0.md)
+- **[ARC-010] Cloud Provider & Cost Analysis:** [../05_architecture/09_cloud_provider_cost_analysis_v1.0.md](../05_architecture/09_cloud_provider_cost_analysis_v1.0.md)
+- **[ARC-011] Deployment Architecture & IaC:** [../05_architecture/10_deployment_architecture_iac_v1.0.md](../05_architecture/10_deployment_architecture_iac_v1.0.md)
+
+### 1.8 Quality, Operations & Delivery
+- **[ARC-012] Observability & Backup Runbooks:** [../07_quality_and_operations/01_observability_backup_runbooks_v1.0.md](../07_quality_and_operations/01_observability_backup_runbooks_v1.0.md)
+- **[ARC-013] Testing Strategy & QA:** [../07_quality_and_operations/02_testing_quality_assurance_strategy_v1.0.md](../07_quality_and_operations/02_testing_quality_assurance_strategy_v1.0.md)
+- **[ARC-014] CI/CD Strategy:** [../08_delivery_and_ai_agents/01_cicd_repository_organization_v1.0.md](../08_delivery_and_ai_agents/01_cicd_repository_organization_v1.0.md)
+- **[ARC-015] Implementation Dependency Roadmap:** [../08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md](../08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md)
+- **[ARC-016] AI-Agent Review Gates & Rules:** [../08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md](../08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md)
 
 ---
 

@@ -1,6 +1,6 @@
-# EV Charging Booking Platform — Foundation Documentation
+# EV Charging Booking Platform — Documentation Homepage
 
-Welcome to the foundation specifications and planning documentation for the **EV Charging Booking Platform**. This repository contains the complete set of business analyses, domain models, use cases, and requirements.
+Welcome to the complete specifications, domain models, and architecture design documentation for the **EV Charging Booking Platform**.
 
 ---
 
@@ -36,7 +36,7 @@ Defines the core domain logic, terminology, and workflows.
 - **[DOM-002] Lifecycle & Invariant Catalogue:** [02_lifecycle_and_invariant_catalogue_v1.0.md](docs/03_domain/02_lifecycle_and_invariant_catalogue_v1.0.md) — Master state machines catalog and business rules.
 - **[DOM-003] Infrastructure Schema:** [03_station_evse_connector_tariff_policy_model_v1.0.md](docs/03_domain/03_station_evse_connector_tariff_policy_model_v1.0.md) — Station and tariff domain designs.
 - **[DOM-004] Booking Lifecycle:** [04_booking_lifecycle_and_policy_v1.0.md](docs/03_domain/04_booking_lifecycle_and_policy_v1.0.md) — Holds, transitions, and cancellation policies.
-- **[DOM-005] Availability Model:** [05_availability_calculation_model_v1.0.md](docs/03_domain/05_availability_calculation_model_v1.0.md) — authoritative checks and search parameters.
+- **[DOM-005] Availability Model:** [05_availability_calculation_model_v1.0.md](docs/03_domain/05_availability_calculation_model_v1.0.md) — Authoritative checks and search parameters.
 - **[DOM-006] Workflows:** [06_maintenance_fault_reassignment_workflows_v1.0.md](docs/03_domain/06_maintenance_fault_reassignment_workflows_v1.0.md) — Maintenance planning and automatic booking reassignment.
 
 ### 5. [04_platform_and_integrations](docs/04_platform_and_integrations)
@@ -45,10 +45,28 @@ Specifies background logic, simulator protocols, and notification rules.
 - **[SIM-001] Charger Simulator Protocol:** [02_charger_simulator_protocol_v1.0.md](docs/04_platform_and_integrations/02_charger_simulator_protocol_v1.0.md) — OCPP-inspired commands and heartbeats.
 - **[NOT-001] Notification Rules:** [03_notification_rules_email_matrix_v1.0.md](docs/04_platform_and_integrations/03_notification_rules_email_matrix_v1.0.md) — Transactional emails matrix.
 
-### 6. [06_security_and_privacy](docs/06_security_and_privacy)
-- **[PRV-001] Privacy & Retention:** [01_privacy_retention_export_deletion_v1.0.md](docs/06_security_and_privacy/01_privacy_retention_export_deletion_v1.0.md) — GDPR data minimization, export, and deletion workflows.
+### 6. [05_architecture](docs/05_architecture)
+Specifies boundaries, communications, contracts, database models, and concurrency designs.
+- **[ARC-001] Boundary Analysis:** [01_domain_capability_map_boundary_analysis_v1.0.md](docs/05_architecture/01_domain_capability_map_boundary_analysis_v1.0.md) — Logical domain grouping and capability boundaries.
+- **[ARC-002] Inter-Service Communication:** [02_inter_service_communication_consistency_v1.0.md](docs/05_architecture/02_inter_service_communication_consistency_v1.0.md) — Communication semantics and consistency matrix.
+- **[ARC-003] REST API Contract Catalogue:** [03_rest_api_contract_catalogue_v1.0.md](docs/05_architecture/03_rest_api_contract_catalogue_v1.0.md) — Synchronous REST API surface specifications.
+- **[ARC-004] Event & Command Contract Catalogue:** [04_event_command_contract_catalogue_v1.0.md](docs/05_architecture/04_event_command_contract_catalogue_v1.0.md) — Asynchronous integration events and commands schema.
+- **[ARC-005] Database Models & Ownership:** [05_database_models_ownership_migration_v1.0.md](docs/05_architecture/05_database_models_ownership_migration_v1.0.md) — Schema ownership and migration strategy.
+- **[ARC-006] Double-Booking Prevention Concurrency:** [06_double_booking_prevention_concurrency_v1.0.md](docs/05_architecture/06_double_booking_prevention_concurrency_v1.0.md) — Locking strategies and concurrency design.
+- **[ARC-008] Frontend UX Flow Spec:** [07_frontend_ux_flow_specification_v1.0.md](docs/05_architecture/07_frontend_ux_flow_specification_v1.0.md) — Frontend BFF routing, screen maps, and UX flows.
+- **[ARC-009] Technology Selection & ADRs:** [08_technology_selection_adr_set_v1.0.md](docs/05_architecture/08_technology_selection_adr_set_v1.0.md) — Framework choices and Architectural Decision Records.
+- **[ARC-010] Cloud Provider & Cost Analysis:** [09_cloud_provider_cost_analysis_v1.0.md](docs/05_architecture/09_cloud_provider_cost_analysis_v1.0.md) — Budget allocations and cloud provider comparison.
+- **[ARC-011] Deployment Architecture & IaC:** [10_deployment_architecture_iac_v1.0.md](docs/05_architecture/10_deployment_architecture_iac_v1.0.md) — Kubernetes, GitOps, and OpenTofu infrastructure.
 
----
+### 7. [06_security_and_privacy](docs/06_security_and_privacy)
+- **[PRV-001] Privacy & Retention:** [01_privacy_retention_export_deletion_v1.0.md](docs/06_security_and_privacy/01_privacy_retention_export_deletion_v1.0.md) — GDPR data deletion and anonymization workflows.
+- **[ARC-007] Security Architecture:** [02_security_architecture_threat_model_v1.0.md](docs/06_security_and_privacy/02_security_architecture_threat_model_v1.0.md) — OAuth2/OIDC, BFF, security policies, and threat model.
 
-## 🎯 Next Steps
-With the foundation specifications approved and baselined as of version 1.0 (recorded in `GOV-005`), the project is now ready to transition into the **System Architecture Phase**, beginning with the **Domain Capability Map and Microservice Boundary Analysis v1.0**.
+### 8. [07_quality_and_operations](docs/07_quality_and_operations)
+- **[ARC-012] Observability & Backup Runbooks:** [01_observability_backup_runbooks_v1.0.md](docs/07_quality_and_operations/01_observability_backup_runbooks_v1.0.md) — SLOs, logging rules, and disaster recovery.
+- **[ARC-013] Testing Strategy & QA:** [02_testing_quality_assurance_strategy_v1.0.md](docs/07_quality_and_operations/02_testing_quality_assurance_strategy_v1.0.md) — Test levels, quality gates, and resilience verification.
+
+### 9. [08_delivery_and_ai_agents](docs/08_delivery_and_ai_agents)
+- **[ARC-014] CI/CD Strategy:** [01_cicd_repository_organization_v1.0.md](docs/08_delivery_and_ai_agents/01_cicd_repository_organization_v1.0.md) — Monorepo rules and GitHub Actions.
+- **[ARC-015] Implementation Dependency Roadmap:** [02_implementation_epics_dependency_roadmap_v1.0.md](docs/08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md) — Release epics and Gantt timeline.
+- **[ARC-016] AI-Agent Review Gates & Rules:** [03_ai_agent_rules_review_gates_v1.0.md](docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md) — Governance rules and mandatory check gates.

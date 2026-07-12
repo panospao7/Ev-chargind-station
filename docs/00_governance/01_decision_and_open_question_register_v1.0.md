@@ -517,5 +517,3 @@ Approval of Decision and Open-Question Register v1.0 means:
 | ID | Description | Impact | Gate | Owner |
 |---|---|---|---|---|
 | FE-001 | **Secondary Lifecycle Alignment:** Reconcile DOM-002 simplified states (Overrides, Device Commands, Privacy, Notifications, and secondary transitions) with detailed specs. | Non-blocking for boundaries; must be resolved before REST/event/DB contracts. | G3 | DA/BA |
-
-</12_decision_and_open_question_register_v1.0.md>

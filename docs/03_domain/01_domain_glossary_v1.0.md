@@ -12,7 +12,6 @@ Authoritative for: Canonical Terminology and Vocabulary Definition
 
 This glossary establishes canonical terminology and resolves ambiguous terms such as charger, slot, status, reservation, availability, and session.
 
-<13_domain_glossary_v1.0.md>
 # Domain Glossary v1.0
 
 ## 1. Purpose
@@ -1411,4 +1410,3 @@ Human-readable wording must be localized separately and must not be used as prog
 **Domain Glossary v1.0 is ready for approval.**
 
 The next foundation artifact is the **Lifecycle and Invariant Catalogue v1.0**, which will consolidate all state machines, transitions, guards, terminal states and cross-lifecycle rules.
-</13_domain_glossary_v1.0.md>

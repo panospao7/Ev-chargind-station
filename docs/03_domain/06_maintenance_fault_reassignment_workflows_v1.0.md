@@ -98,4 +98,3 @@ Otherwise, driver approval is required. A driver who explicitly selected an EVSE
 - Driver information shown to technicians is minimized.
 - Status overrides expire automatically.
 - Notifications occur after committed changes.
-

@@ -68,4 +68,3 @@ Support case lifecycle:
 - Audit records cannot be edited through application APIs and must exclude passwords, tokens and unnecessary personal data.
 
 These controls follow least privilege, default-deny, per-request authorization and separation-of-duty guidance. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Authorization_Cheat_Sheet.html?utm_source=openai))
-

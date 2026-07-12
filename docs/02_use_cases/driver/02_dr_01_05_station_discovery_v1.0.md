@@ -93,4 +93,3 @@ Internal hardware identifiers and operationally sensitive data must not be publi
 - Failure of live status does not crash station browsing.
 - Search remains usable without location permission.
 - Search performs efficiently across the simulated Greek dataset.
-

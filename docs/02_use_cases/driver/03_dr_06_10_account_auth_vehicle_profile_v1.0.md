@@ -88,4 +88,3 @@ Session identifiers and tokens must never be exposed. Sessions use secure expiry
 - Account deletion revokes sessions and queues personal-data anonymization.
 - Active bookings/sessions must first be resolved.
 - Authentication events and privileged profile changes are audited.
-

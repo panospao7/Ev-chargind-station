@@ -70,4 +70,3 @@ A reason is mandatory.
 ### Additional rule
 
 Rather than separate states such as `CANCELLED_BY_DRIVER` and `CANCELLED_BY_OPERATOR`, we retain one `CANCELLED` state with structured metadata describing **who cancelled it and why**.
-

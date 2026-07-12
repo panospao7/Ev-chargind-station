@@ -67,4 +67,3 @@ Targets apply under a reference load of **500 concurrent users, 2,000 simulated 
 - Automated unit, integration, contract, security, accessibility and end-to-end tests.
 - Critical booking and authorization rules require complete scenario coverage.
 - Deployments must support rollback without corrupting committed data.
-

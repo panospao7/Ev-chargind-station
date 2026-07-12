@@ -636,4 +636,3 @@ Approval of v1.1 means:
 ## Status
 
 **Gap 8 is closed at the requirements-planning level, pending approval of this v1.1 catalogue.**
-</11_consolidated_functional_requirements_and_traceability_v1.1.md>

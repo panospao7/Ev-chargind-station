@@ -150,4 +150,3 @@ Station settings override organization defaults.
 - Tariff validity periods cannot ambiguously overlap for the same scope.
 - Status timestamps and all lifecycle changes are audited.
 - Optimistic versioning prevents lost operator updates.
-
