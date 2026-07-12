@@ -12,11 +12,16 @@ Authoritative for: Operator Roles, Station Lifecycle, and Override Rules
 
 ## Operator Use Cases and Organization Model v1.0
 
-### Organization lifecycle
+### Operator Application Lifecycle
 
-`PENDING_APPROVAL → ACTIVE → SUSPENDED → CLOSED`
+`DRAFT → SUBMITTED → UNDER_REVIEW ↔ CLARIFICATION_REQUESTED → APPROVED | REJECTED`
 
-- Platform administrators approve organizations.
+### Operator Organization Lifecycle
+
+`ACTIVE → SUSPENDED → CLOSED`
+
+- Platform administrators approve operator applications.
+- An organization is atomically created as `ACTIVE` upon the approval of an `OperatorApplication` (along with its owner membership). There is no `PENDING_APPROVAL` organization state.
 - Suspended organizations cannot create stations or accept new bookings.
 - Existing bookings require resolution before closure.
 - Every station belongs to exactly one operator organization.

@@ -55,7 +55,7 @@ Permitted Transitions:
 *Note:* Terminal states (`EXPIRED`, `CANCELLED`, `NO_SHOW`, `COMPLETED`, `FULFILMENT_FAILED`) cannot be reopened.
 
 ### 1.2 Charging Session Lifecycle
-- `STARTING` — Remote start command submitted.
+- `STARTING` — Remote start command submitted. (Can be flagged with `uncertain=true` during connection timeouts or ambiguous responses, remaining in `STARTING` until resolved.)
 - `CHARGING` — Physical energy transfer in progress.
 - `SUSPENDED` — Temporarily paused (e.g., vehicle request or grid load control).
 - `STOPPING` — Stop requested, waiting for final meter values.
@@ -64,7 +64,7 @@ Permitted Transitions:
 - `START_REJECTED` — Central management system or charger rejected start.
 
 Permitted Transitions:
-- `STARTING` → `CHARGING` | `START_REJECTED` | `INTERRUPTED`
+- `STARTING` → `CHARGING` | `START_REJECTED` | `INTERRUPTED` (Timeout, lost connection, or ambiguous start result does not transition to `INTERRUPTED` or `START_REJECTED` immediately. The session remains in `STARTING` with `uncertain=true` until downstream reconciliation or a definitive charger telemetry event resolves the state.)
 - `CHARGING` → `SUSPENDED` | `STOPPING` | `INTERRUPTED` | `COMPLETED`
 - `SUSPENDED` → `CHARGING` | `STOPPING` | `INTERRUPTED` | `COMPLETED`
 - `STOPPING` → `COMPLETED` | `INTERRUPTED` | `CHARGING` | `SUSPENDED`
@@ -108,15 +108,14 @@ Permitted Transitions:
 - `DISABLED` → `DEACTIVATED`
 
 ### 1.6 EVSE Operational Status Overrides Lifecycle
-- `NONE` — Standard status determined by telemetry.
-- `ACTIVE_OVERRIDE` — Status manually forced by operator.
-- `EXPIRED` — Override duration elapsed (automatic expiry).
-- `REVOKED` — Override manually cleared.
+- `SCHEDULED` — Override created to start at a future date/time.
+- `ACTIVE` — Override currently active, masking standard telemetry.
+- `EXPIRED` — Override duration elapsed (automatic cleanup).
+- `REVOKED` — Override manually cancelled or cleared.
 
 Permitted Transitions:
-- `NONE` → `ACTIVE_OVERRIDE`
-- `ACTIVE_OVERRIDE` → `EXPIRED` | `REVOKED`
-- `EXPIRED` | `REVOKED` → `NONE`
+- `SCHEDULED` → `ACTIVE` | `REVOKED`
+- `ACTIVE` → `EXPIRED` | `REVOKED`
 
 ### 1.7 Machine Identity Lifecycle
 - `PENDING_ENROLLMENT` — Provisioned in the registry but not yet active or validated.
@@ -233,16 +232,20 @@ Permitted Transitions:
 - `REVIEWED` → `LINKED_TO_FAULT` | `ARCHIVED_DUPLICATE`
 
 ### 1.16 Operator Application Lifecycle
-- `SUBMITTED` — Operator organization request submitted.
+- `DRAFT` — Application created but not yet submitted.
+- `SUBMITTED` — Application submitted, awaiting review.
 - `UNDER_REVIEW` — Administrator reviewing the application.
 - `CLARIFICATION_REQUESTED` — Awaiting additional details from the applicant.
-- `APPROVED` — Application approved. Creates active operator organization.
+- `WITHDRAWN` — Application withdrawn by the applicant.
+- `APPROVED` — Application approved. Atomically creates active operator organization and owner membership.
 - `REJECTED` — Application rejected with structured reasons.
 
 Permitted Transitions:
-- `SUBMITTED` → `UNDER_REVIEW`
+- `DRAFT` → `SUBMITTED` | `WITHDRAWN`
+- `SUBMITTED` → `UNDER_REVIEW` | `WITHDRAWN`
 - `UNDER_REVIEW` ↔ `CLARIFICATION_REQUESTED`
-- `UNDER_REVIEW` → `APPROVED` | `REJECTED`
+- `UNDER_REVIEW` → `APPROVED` | `REJECTED` | `WITHDRAWN`
+- `CLARIFICATION_REQUESTED` → `WITHDRAWN`
 
 ### 1.17 Operator Organization Lifecycle
 - `ACTIVE` — Approved organization actively managing stations.
@@ -258,7 +261,7 @@ Permitted Transitions:
 - `PENDING_VERIFICATION` → `ACTIVE` | `DELETED`
 - `ACTIVE` → `SUSPENDED` | `DELETION_PENDING`
 - `SUSPENDED` → `ACTIVE` | `DELETION_PENDING`
-- `DELETION_PENDING` → `DELETED`
+- `DELETION_PENDING` → `DELETED` | `ACTIVE` (cancellation during the 7-day cooling off period)
 
 ### 1.19 Maintenance Lifecycle
 - `SCHEDULED` — Planned maintenance interval created.
@@ -311,3 +314,7 @@ Permitted Transitions:
 
 ### 2.5 Data Minimization & Privacy
 - **Rule:** Location history and detailed driver identities must be masked on support consoles unless actively assigned to an open support case. Personally identifiable information must be purged/anonymized within configured retention bounds after account deletion.
+
+### 2.6 Session Overrun & Downstream Booking Conflicts
+- **Rule:** When a vehicle does not unplug after its booking period ends, it creates a session overrun.
+- **Enforcement:** If a downstream booking on the same EVSE is conflicted, the Booking authority automatically attempts same-station reassignment to another compatible EVSE. The driver is alerted of the reassignment. If no reassignment is possible, the operator and driver are immediately notified of the potential delay, and capacity on the original EVSE is released only when the vehicle physically disconnects (unplugs).

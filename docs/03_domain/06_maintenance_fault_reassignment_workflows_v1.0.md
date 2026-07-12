@@ -98,3 +98,11 @@ Otherwise, driver approval is required. A driver who explicitly selected an EVSE
 - Driver information shown to technicians is minimized.
 - Status overrides expire automatically.
 - Notifications occur after committed changes.
+
+### Immediate Restriction Workflow
+To guarantee that a new maintenance or fault block immediately blocks bookings and does not create race conditions, the restriction scheduling workflow operates as a two-phase handshake:
+1. Operator proposes maintenance or registers a fault. The record is created as `PROPOSED`.
+2. The system submits a block capacity request to the Booking authority. The record transitions to `ENFORCEMENT_PENDING`.
+3. The Booking authority locks the EVSE schedules, validates that any affected bookings are reassigned or resolved, commits the capacity block, and returns an acknowledgement.
+4. Upon Booking acknowledgement, the restriction record transitions to `ENFORCED` and is officially `SCHEDULED` (or `ACTIVE` if immediately effective).
+5. If Booking fails to acknowledge (e.g., locking timeout or unresolvable conflict), the restriction transitions to `FAILED_REVIEW_REQUIRED` for manual operator override.

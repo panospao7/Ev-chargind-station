@@ -1344,3 +1344,10 @@ It must define:
 - Device-normalized events
 - Schema compatibility and evolution
 - Event-to-requirement traceability
+
+### REST Contract Implementation Roadmap
+To convert this catalogue into machine-readable OpenAPI contracts:
+- **OpenAPI Schema Generation:** Public and internal endpoints will be formally described in OpenAPI 3.0 specification files.
+- **Standardized Error Codes:** Every failure returns a RFC 7807 problem details object containing a stable error code (e.g. `BOOKING_HOLD_EXPIRED`, `EVSE_STALE_TELEMETRY`).
+- **Idempotency Key Behavior:** Booking-changing POST operations validate the `Idempotency-Key` header, returning cached responses for duplicates.
+- **Optimistic Concurrency:** HTTP ETags and `If-Match` headers are evaluated to verify configuration state consistency.

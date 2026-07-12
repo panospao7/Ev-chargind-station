@@ -308,9 +308,9 @@ Drivers cannot disable:
 
 | Use case | Requirements |
 |---|---|
-| DR-13 | FR-BKG-01, FR-BKG-04, FR-AVL-02 |
-| DR-21 | FR-CHG-03, FR-BKG-06 |
-| DR-22 | FR-OPS-02, FR-SUP-01, FR-AUD-01 |
-| DR-23 | FR-NOT-01 |
+| DR-13 | FR-BKG-07 |
+| DR-21 | FR-HIS-01 |
+| DR-22 | FR-FLT-01 |
+| DR-23 | FR-NOT-02 |
 | DR-24 | FR-PRV-01 |
 | DR-25 | FR-IAM-01, FR-PRV-01, FR-PLT-01 |

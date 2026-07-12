@@ -67,3 +67,16 @@ Targets apply under a reference load of **500 concurrent users, 2,000 simulated 
 - Automated unit, integration, contract, security, accessibility and end-to-end tests.
 - Critical booking and authorization rules require complete scenario coverage.
 - Deployments must support rollback without corrupting committed data.
+
+### Dependency-Outage Resilience Matrix
+To satisfy reliability requirements, platform operations must behave as follows when downstream services are offline:
+
+| Operational Request | Downstream Dependency | Fail-Safe Behavior |
+|---|---|---|
+| View/Cancel Booking | Discovery & Analytics | **Succeeds**: Operates directly against the Booking database. |
+| Check-In / Start Charging | Station Operations | **Succeeds**: Uses Booking-local cached configuration projections. |
+| Cancel Booking | Station Operations | **Succeeds**: Capacity released immediately; notification queued in outbox. |
+| Create Booking Hold | Station Operations | **Fails Closed**: Blocked if local config projections are stale or unavailable. |
+| Event Publishing | RabbitMQ Broker | **Succeeds**: Events are safely persisted in the outbox table for retry. |
+| Send Notification | Email Provider | **Succeeds**: Keeps the booking intact; retries email rendering and dispatch. |
+| Simulator Status Update | Booking Service | **Succeeds**: Event queue buffers heartbeats; state reconciled on reconnect. |

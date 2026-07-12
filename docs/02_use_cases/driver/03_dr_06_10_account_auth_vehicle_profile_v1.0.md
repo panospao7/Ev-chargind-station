@@ -41,6 +41,7 @@ Rules:
 - “Logout all devices” revokes all sessions.
 - Password recovery uses an expiring, single-use email link.
 - Sensitive changes require recent reauthentication.
+- Email-Address Ownership: The Identity Provider owns the credentials and verified login/contact email. The Account Service profile stores only a read-only projection of this email and must not modify it independently.
 - Operators and administrators require MFA; drivers may enable it voluntarily.
 
 This follows current OAuth guidance: PKCE is used for browser clients, implicit flow is avoided, and passwords are not sent directly to application services. ([rfc-editor.org](https://www.rfc-editor.org/info/rfc9700/?utm_source=openai))
@@ -50,7 +51,7 @@ This follows current OAuth guidance: PKCE is used for browser clients, implicit 
 Driver profile:
 
 - Display name
-- Email
+- Email (Read-only projection authoritative in the Identity Provider)
 - Preferred language
 - Notification preferences
 - Time-zone/display preferences

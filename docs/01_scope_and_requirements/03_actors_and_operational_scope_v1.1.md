@@ -12,7 +12,7 @@ Authoritative for: Actors and General Access/Permission Bounds
 
 1. **Formal lifecycle models**
    - Booking: `HELD → CONFIRMED → CHECKED_IN → ACTIVE → COMPLETED`
-   - Alternative outcomes: `CANCELLED`, `EXPIRED`, `NO_SHOW`, `FAILED`
+   - Alternative outcomes: `CANCELLED`, `EXPIRED`, `NO_SHOW`, `FULFILMENT_FAILED`
    - Separate charging-session and EVSE-status lifecycles
    - Rescheduling must be atomic so the original booking remains valid if the new time fails.
 

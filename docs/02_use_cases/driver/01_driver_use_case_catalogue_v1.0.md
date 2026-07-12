@@ -72,10 +72,12 @@ Authoritative for: Driver Journey Use Cases and Priority Index
 - Drivers may access only their own bookings, sessions and personal data.
 - Drivers cannot hold overlapping bookings.
 - Only one active charging session is permitted per driver.
-- Availability returned by the server is authoritative.
+- Search and station-detail availability is advisory. Only a committed allocation from the Booking authority reserves capacity.
 - Booking requests must be idempotent.
 - Concurrent requests for the same EVSE/time cannot both succeed.
-- Faulted, offline, stale or maintained EVSEs cannot be booked.
+- Near-term bookings (e.g. check-in starting within 15 minutes) require fresh operational evidence, meaning offline, stale, or faulted EVSEs are blocked.
+- Future bookings allow scheduling even if the EVSE is temporarily offline or stale at the present moment, as current status is not predictive of future status.
+- EVSEs under active/scheduled blocking maintenance, administrative closure, or critical hardware faults are always blocked from booking.
 - Rescheduling must preserve the original booking if the replacement fails.
 - All times are stored in UTC and displayed in `Europe/Athens`.
 - Security-sensitive and booking-changing actions are audited.

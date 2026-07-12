@@ -1257,3 +1257,9 @@ It must define:
 - Backward-compatible migration rules
 - Backup and restoration considerations
 - Data retention implementation
+
+### Event Contract Implementation Roadmap
+To convert this catalogue into machine-readable AsyncAPI schemas:
+- **AsyncAPI Schemas:** Event and command channels will be documented using AsyncAPI 2.6/3.0.
+- **Event Versioning:** Schema changes use backwards-compatible addition of fields; breaking upgrades require versioned channels.
+- **Broker Quality Gates:** Event schema validation checks are integrated into CI/CD pipelines to prevent schema drift.

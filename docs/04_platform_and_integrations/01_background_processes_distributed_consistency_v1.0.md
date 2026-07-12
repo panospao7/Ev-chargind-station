@@ -52,6 +52,7 @@ The terms **Booking capability**, **Infrastructure capability**, and similar nam
 13. Scheduled jobs must be safe when executed more than once.
 14. Failed secondary processing must not reverse an already committed booking.
 15. All deadlines use authoritative database time in UTC.
+16. Authoritative audit evidence remains local to each service performing the action. A central audit view (Governance Service) is an eventually consistent, searchable projection.
 
 ---
 

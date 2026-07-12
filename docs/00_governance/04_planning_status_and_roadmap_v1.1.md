@@ -52,3 +52,29 @@ Now that the foundation specifications are approved and baselined, the project s
 - **Cloud Deployment and Cost Design:** Outline containerization, container registry, IaC scripts, and cost projections.
 - **Testing & CI/CD Pipelines:** Setup build, test, and validation automation scripts.
 - **Final Readiness Review:** Formal checklist sign-off before implementation.
+
+## 3. Release 1 MVP Scope & Deferrals
+
+To ensure a realistic scope for an individual developer, the platform's features are divided into Release 1 (MVP) and Release 2 (Deferred):
+
+### Release 1 MVP (In-Scope)
+1. **Station Discovery:** Map/list browsing and filters in Greece (`Europe/Athens`).
+2. **Connector Details:** Inspect EVSE connector compatibility.
+3. **Interval Availability:** Projections mapping allocations, maintenance, and faults.
+4. **Registration & Auth:** OIDC/PKCE verified sign-in/recovery, plus privileged MFA.
+5. **Holds & Bookings:** Create/confirm booking holds, view bookings, cancel bookings.
+6. **Station Operations:** Basic operator settings, EVSE configurations, and tariff profiles.
+7. **Basic Analytics:** Simple metrics for utilization and cancellations.
+8. **Double-Booking Proof:** Pessimistic lock ordering and constraints in Booking.
+9. **Basic Simulation:** Simulator protocol showing start, stop, and heartbeats.
+10. **Essential Emails:** Booking confirmation, cancellation, and security alerts.
+11. **Cloud Deployment:** Hetzner container deployment baseline.
+
+### Release 2 (Deferred to Later Releases)
+1. **Operator Applications:** Full sign-up review workflow (handled manually in MVP).
+2. **Staff Invitations:** Automated invitation emails (provisioned manually in MVP).
+3. **Platform Support Cases:** Central ticket management system.
+4. **Data Privacy Exports:** GDPR data packaging worker.
+5. **Data Deletion Coordination:** Automated deletion workers.
+6. **Advanced Simulation:** OCPP 2.1 sequence replay and queue reconciliation.
+7. **Marketing Notifications:** Reminders, push alerts, and SMS integrations.

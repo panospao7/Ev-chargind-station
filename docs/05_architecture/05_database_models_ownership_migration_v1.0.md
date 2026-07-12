@@ -1736,3 +1736,8 @@ It must finalize:
 - Deadlock handling
 - Exact SQL transaction patterns
 - Concurrency and property-based test strategy
+
+### Initial Data Bootstrap Strategy
+- **Liquibase Seed Migrations:** Seed data (operator organizations, station maps, compatibility grids, default policies, and simulator profiles) must be versioned and executed through database-level Liquibase seed migration classes.
+- **Service API Isolation:** Seeding must never rely on cross-database SQL scripts. External systems populate seed records via the respective service's API endpoints, preserving data encapsulation.
+- ** repeat reset:** Non-production environments expose a protected reset API that safely truncates tables and replays seed migrations.

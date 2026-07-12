@@ -51,29 +51,30 @@ A station can contain multiple EVSEs but cannot exist without an operator.
 A separately reservable charging point that can serve one vehicle at a time.
 
 **Core data**
-- Station ID
-- Public EVSE identifier
-- Operator-assigned label
-- Maximum power
-- Administrative state
-- Current operational state
-- Last heartbeat/status timestamp
-- Simulator assignment
-- Version for concurrent updates
+- Station ID (Authoritative source: Station Operations Service)
+- Public EVSE identifier (Authoritative source: Station Operations Service)
+- Operator-assigned label (Authoritative source: Station Operations Service)
+- Maximum power (Authoritative source: Station Operations Service)
+- Administrative state (Authoritative source: Station Operations Service)
+- Current operational state shown with EVSE (Non-authoritative projection; Authoritative source: Device Integration Service)
+- Last heartbeat/status timestamp (Authoritative source: Device Integration Service)
+- Simulator assignment (Authoritative source: Station Operations Service)
+- Version for concurrent updates (Authoritative source: Station Operations Service)
 
 **Administrative states**
 - `ACTIVE`
 - `DISABLED`
 - `DEACTIVATED`
 
-**Operational states**
-- `AVAILABLE`
-- `RESERVED`
-- `OCCUPIED`
-- `FAULTED`
-- `OFFLINE`
-- `UNKNOWN`
-- `MAINTENANCE`
+**Operational states (Normalised against Glossary)**
+- `AVAILABLE` — Online, available for bookings.
+- `OCCUPIED` — Connector physically connected to a vehicle.
+- `CHARGING` — Physical energy transfer in progress.
+- `SUSPENDED` — Energy transfer temporarily paused (vehicle/grid).
+- `FAULTED` — Active equipment fault detected.
+- `OFFLINE` — Heartbeats missing beyond freshness threshold.
+- `MAINTENANCE` — Scheduled maintenance block active.
+- `UNKNOWN` — Initial or unverified state.
 
 Administrative and operational states remain separate. For example, an active EVSE may temporarily be offline.
 

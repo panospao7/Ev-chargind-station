@@ -69,8 +69,8 @@ The following architectural directions are provisionally accepted but require va
 ## 4. Git Baseline Sign-off
 - **Approving Authority:** Repository Owner
 - **AI Assistant & Reviewer:** Antigravity AI
-- **Sign-off Date:** 2026-07-11
-- **Baseline Git Tag:** `planning-foundation-v1.1`
+- **Sign-off Date:** 2026-07-12
+- **Baseline Git Tag:** `planning-foundation-v1.2`
 
 ## 5. Foundation Errata
 
@@ -82,4 +82,4 @@ The following architectural directions are provisionally accepted but require va
   - Notification delivery states differ from the detailed notification specification.
   - Some secondary transitions remain omitted, such as deletion cooling-off cancellation and the full operator-application draft/withdrawal flow.
 - **Impact:** Non-blocking for capability decomposition or service-boundary analysis.
-- **Resolution:** These lifecycles must be reconciled and aligned before REST, event, and database contracts (Gate G3) are approved.
+- **Resolution:** **RESOLVED & ALIGNED**. All secondary lifecycles (Overrides, Device Commands, Privacy, Notifications, Operator Applications, Deletion cancellation) have been fully reconciled in DOM-002 as of 2026-07-12.

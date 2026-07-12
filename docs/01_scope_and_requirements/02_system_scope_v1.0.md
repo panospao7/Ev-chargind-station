@@ -33,12 +33,18 @@ Authoritative for: In-Scope, Out-of-Scope, and Deferred Capabilities
 - Administrator platform management
 - Authentication and role-based authorization
 - Basic analytics and audit logging
+- Essential transactional emails (booking holds, confirmations, cancellations, faults, and session issues)
 - EUR, kilometres and `Europe/Athens` defaults
 - Cloud-native microservices deployment
 
 ### Deferred
 
-- Email and in-app notifications
+- SMS, push, in-app notification center, and marketing communications
+- Optional reminder emails and campaigns
+- Operator applications and organization ownership transfer
+- Platform support cases and administrative audit projections
+- Privacy export and coordinated deletion workers (local anonymization is included)
+- Advanced charger command reconciliation (replayed offline events and automatic queue reconciliation)
 - Payment-provider sandbox integration
 - Real charging-network integrations
 - Internationalization and expansion outside Greece
