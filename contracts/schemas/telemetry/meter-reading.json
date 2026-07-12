@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/telemetry/meter-reading.json",
+  "title": "MeterReading",
+  "description": "Telemetry meter reading from an EVSE",
+  "type": "object",
+  "properties": {
+    "meterRef": {
+      "type": "string",
+      "description": "Meter identifier"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "sessionRef": {
+      "type": "string",
+      "description": "Associated charging session reference"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Reading timestamp"
+    },
+    "energyActiveImportKwh": {
+      "type": "number",
+      "description": "Total active energy imported in kWh"
+    },
+    "powerActiveW": {
+      "type": "number",
+      "description": "Instantaneous active power in watts"
+    },
+    "currentL1A": {
+      "type": "number",
+      "description": "Current on phase L1 in amperes"
+    },
+    "currentL2A": {
+      "type": "number",
+      "description": "Current on phase L2 in amperes"
+    },
+    "currentL3A": {
+      "type": "number",
+      "description": "Current on phase L3 in amperes"
+    },
+    "voltageL1V": {
+      "type": "number",
+      "description": "Voltage on phase L1 in volts"
+    },
+    "voltageL2V": {
+      "type": "number",
+      "description": "Voltage on phase L2 in volts"
+    },
+    "voltageL3V": {
+      "type": "number",
+      "description": "Voltage on phase L3 in volts"
+    }
+  },
+  "required": ["meterRef", "evseRef", "timestamp", "energyActiveImportKwh", "powerActiveW"]
+}

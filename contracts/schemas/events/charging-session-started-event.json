@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/charging-session-started-event.json",
+  "title": "ChargingSessionStartedEvent",
+  "description": "Payload for the ChargingSessionStarted event",
+  "type": "object",
+  "properties": {
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference"
+    },
+    "bookingRef": {
+      "type": "string",
+      "description": "Associated booking reference"
+    },
+    "stationRef": {
+      "type": "string",
+      "description": "Station reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "driverRef": {
+      "type": "string",
+      "description": "Driver account reference"
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Session start timestamp"
+    },
+    "initialMeterReading": {
+      "type": "number",
+      "description": "Initial meter reading in kWh"
+    }
+  },
+  "required": ["sessionRef", "bookingRef", "stationRef", "evseRef", "driverRef", "startedAt"]
+}

@@ -1,0 +1,353 @@
+# =============================================================================
+# Problem Codes Registry v1
+# =============================================================================
+# This registry defines every problem code (RFC 9457-compliant error detail)
+# used across the EV charging platform.  Source: ARC-018 §7 + GAP-001/002.
+# =============================================================================
+
+release_waves:
+  W1: &w1 "W1 — Foundation (MVP)"
+  W2: &w2 "W2 — Operations & Observability"
+
+# ── Reusable defaults ─────────────────────────────────────────────────────
+x-defaults:
+  not-retryable: &not-retryable { retryable: false }
+  retryable:     &retryable     { retryable: true }
+
+problemCodes:
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Conflict / State Errors
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - code: VERSION_CONFLICT
+    httpStatus: 409
+    <<: *not-retryable
+    title: Version conflict
+    detailTemplate: The resource has been modified by another request. Expected version {expectedVersion}, actual version {actualVersion}.
+    parameters: [expectedVersion, actualVersion]
+    applicableOperations:
+      - POST /bookings/{bookingId}/confirm
+      - POST /bookings/{bookingId}/cancel
+      - POST /capacity-restrictions/{id}/freeze
+      - PATCH /charging-sessions/{sessionId}
+    releaseWave: *w1
+
+  - code: EVSE_ALLOCATION_CONFLICT
+    httpStatus: 409
+    <<: *not-retryable
+    title: EVSE allocation conflict
+    detailTemplate: EVSE {evseId} is already allocated to another booking or session. Current status: {evseStatus}.
+    parameters: [evseId, evseStatus]
+    applicableOperations:
+      - POST /bookings
+      - POST /bookings/{bookingId}/check-in
+    releaseWave: *w1
+
+  - code: BOOKING_HOLD_EXPIRED
+    httpStatus: 409
+    <<: *not-retryable
+    title: Booking hold expired
+    detailTemplate: The temporary hold on booking {bookingId} has expired. A new booking must be created.
+    parameters: [bookingId]
+    applicableOperations:
+      - POST /bookings/{bookingId}/confirm
+    releaseWave: *w1
+
+  - code: BOOKING_STATE_CONFLICT
+    httpStatus: 409
+    <<: *not-retryable
+    title: Booking state conflict
+    detailTemplate: Booking {bookingId} is in state {currentState} and cannot perform operation {operation}.
+    parameters: [bookingId, currentState, operation]
+    applicableOperations:
+      - POST /bookings/{bookingId}/confirm
+      - POST /bookings/{bookingId}/cancel
+      - POST /bookings/{bookingId}/check-in
+      - POST /bookings/{bookingId}/reschedule
+    releaseWave: *w1
+
+  - code: CAPACITY_RESTRICTION_STATE_CONFLICT
+    httpStatus: 409
+    <<: *not-retryable
+    title: Capacity restriction state conflict
+    detailTemplate: Capacity restriction {restrictionId} is in state {currentState} and cannot be {operation}.
+    parameters: [restrictionId, currentState, operation]
+    applicableOperations:
+      - POST /capacity-restrictions/{id}/freeze
+      - POST /capacity-restrictions/{id}/block
+      - POST /capacity-restrictions/{id}/release
+    releaseWave: *w1
+
+  - code: SESSION_OUTCOME_UNRESOLVED
+    httpStatus: 409
+    <<: *retryable
+    title: Session outcome unresolved
+    detailTemplate: Charging session {sessionId} has no confirmed outcome. Retry after reconciling with the EVSE.
+    parameters: [sessionId]
+    applicableOperations:
+      - POST /charging-sessions/{sessionId}/stop
+      - POST /charging-sessions/{sessionId}/reconcile
+    releaseWave: *w1
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Precondition / Availability Errors
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - code: EVSE_STALE_TELEMETRY
+    httpStatus: 503
+    <<: *retryable
+    title: EVSE telemetry is stale
+    detailTemplate: EVSE {evseId} last reported {duration} ago. Current capacity cannot be determined.
+    parameters: [evseId, duration]
+    applicableOperations:
+      - POST /bookings
+      - GET /stations/{stationId}/availability
+    releaseWave: *w1
+
+  - code: EVSE_OFFLINE
+    httpStatus: 503
+    <<: *retryable
+    title: EVSE is offline
+    detailTemplate: EVSE {evseId} is currently offline. Last seen {lastSeen}.
+    parameters: [evseId, lastSeen]
+    applicableOperations:
+      - POST /bookings
+      - POST /charging-sessions/{sessionId}/start
+    releaseWave: *w1
+
+  - code: ALLOCATION_BUSY
+    httpStatus: 503
+    <<: *retryable
+    title: Allocation system busy
+    detailTemplate: The allocation system is temporarily unavailable. Please retry.
+    parameters: []
+    applicableOperations:
+      - POST /bookings
+    releaseWave: *w1
+
+  - code: STATUS_UNKNOWN
+    httpStatus: 503
+    <<: *retryable
+    title: EVSE status unknown
+    detailTemplate: The operational status of EVSE {evseId} cannot be determined at this time.
+    parameters: [evseId]
+    applicableOperations:
+      - POST /bookings/{bookingId}/check-in
+      - POST /charging-sessions/{sessionId}/start
+    releaseWave: *w1
+
+  - code: NO_COMPATIBLE_EVSE
+    httpStatus: 409
+    <<: *not-retryable
+    title: No compatible EVSE available
+    detailTemplate: No EVSE at station {stationId} is compatible with connector type {connectorType} in the requested time window.
+    parameters: [stationId, connectorType]
+    applicableOperations:
+      - POST /bookings
+    releaseWave: *w1
+
+  - code: DEPENDENCY_UNAVAILABLE
+    httpStatus: 503
+    <<: *retryable
+    title: Downstream dependency unavailable
+    detailTemplate: The operation cannot be completed because {dependency} is unreachable.
+    parameters: [dependency]
+    applicableOperations:
+      - POST /bookings
+      - POST /charging-sessions
+      - POST /capacity-restrictions
+    releaseWave: *w1
+
+  - code: MAINTENANCE_CONFLICT
+    httpStatus: 409
+    <<: *not-retryable
+    title: Maintenance window conflict
+    detailTemplate: The requested time window overlaps with scheduled maintenance for EVSE(s): {evseIds}.
+    parameters: [evseIds]
+    applicableOperations:
+      - POST /bookings
+      - POST /maintenance
+    releaseWave: *w2
+
+  - code: MAINTENANCE_STATE_CONFLICT
+    httpStatus: 409
+    <<: *not-retryable
+    title: Maintenance state conflict
+    detailTemplate: Maintenance record {maintenanceId} is in state {currentState} and cannot be {operation}.
+    parameters: [maintenanceId, currentState, operation]
+    applicableOperations:
+      - POST /maintenance/{id}/complete
+      - POST /maintenance/{id}/cancel
+    releaseWave: *w2
+
+  - code: MAINTENANCE_IMPACT_UNRESOLVED
+    httpStatus: 409
+    <<: *not-retryable
+    title: Maintenance impact unresolved
+    detailTemplate: Maintenance {maintenanceId} has active bookings that must be handled before proceeding. Count: {activeBookingCount}.
+    parameters: [maintenanceId, activeBookingCount]
+    applicableOperations:
+      - POST /maintenance/{id}/schedule
+      - POST /maintenance/{id}/complete
+    releaseWave: *w2
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Authentication / Authorization Errors
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - code: INVALID_CREDENTIALS
+    httpStatus: 401
+    <<: *not-retryable
+    title: Invalid credentials
+    detailTemplate: The provided credentials are invalid or expired.
+    parameters: []
+    applicableOperations:
+      - POST /auth/login
+      - POST /auth/refresh
+    releaseWave: *w1
+
+  - code: START_AUTHORIZATION_EXPIRED
+    httpStatus: 410
+    <<: *not-retryable
+    title: Start authorization expired
+    detailTemplate: Start authorization {authorizationId} expired at {expiredAt}. A new authorization must be obtained.
+    parameters: [authorizationId, expiredAt]
+    applicableOperations:
+      - POST /charging-sessions/{sessionId}/start
+    releaseWave: *w1
+
+  - code: START_AUTHORIZATION_INVALID
+    httpStatus: 403
+    <<: *not-retryable
+    title: Start authorization invalid
+    detailTemplate: Start authorization {authorizationId} is not valid for EVSE {evseId}.
+    parameters: [authorizationId, evseId]
+    applicableOperations:
+      - POST /charging-sessions/{sessionId}/start
+    releaseWave: *w1
+
+  - code: START_AUTHORIZATION_CONSUMED
+    httpStatus: 409
+    <<: *not-retryable
+    title: Start authorization already consumed
+    detailTemplate: Start authorization {authorizationId} was already consumed at {consumedAt}.
+    parameters: [authorizationId, consumedAt]
+    applicableOperations:
+      - POST /charging-sessions/{sessionId}/start
+    releaseWave: *w1
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Idempotency Errors
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - code: IDEMPOTENCY_KEY_REUSED
+    httpStatus: 422
+    <<: *not-retryable
+    title: Idempotency key reused with different request
+    detailTemplate: Idempotency key {idempotencyKey} was already used for a different request payload on {originalTimestamp}.
+    parameters: [idempotencyKey, originalTimestamp]
+    applicableOperations:
+      - POST /bookings
+      - POST /bookings/{bookingId}/confirm
+      - POST /charging-sessions
+      - POST /capacity-restrictions
+    releaseWave: *w1
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Safety / Guard Errors
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - code: SAFETY_EVIDENCE_REQUIRED
+    httpStatus: 422
+    <<: *not-retryable
+    title: Safety evidence required
+    detailTemplate: Operation {operation} requires safety evidence. Provide {missingEvidence}.
+    parameters: [operation, missingEvidence]
+    applicableOperations:
+      - POST /capacity-restrictions/{id}/release
+      - POST /charging-sessions/{sessionId}/emergency-stop
+    releaseWave: *w1
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Retry / Attempt Errors
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - code: START_ATTEMPT_LIMIT_REACHED
+    httpStatus: 429
+    <<: *not-retryable
+    title: Start attempt limit reached
+    detailTemplate: Maximum start attempts ({maxAttempts}) reached for this authorization. Obtain a new authorization.
+    parameters: [maxAttempts]
+    applicableOperations:
+      - POST /charging-sessions/{sessionId}/start
+    releaseWave: *w1
+
+  - code: START_RETRY_NOT_ELIGIBLE
+    httpStatus: 409
+    <<: *not-retryable
+    title: Start retry not eligible
+    detailTemplate: Authorization {authorizationId} is not eligible for retry. Reason: {reason}.
+    parameters: [authorizationId, reason]
+    applicableOperations:
+      - POST /charging-sessions/{sessionId}/start/retry
+    releaseWave: *w1
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Booking / Check-in Errors
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - code: CHECK_IN_WINDOW_CLOSED
+    httpStatus: 409
+    <<: *not-retryable
+    title: Check-in window closed
+    detailTemplate: The check-in window for booking {bookingId} closed at {windowEnd}. It is now {currentTime}.
+    parameters: [bookingId, windowEnd, currentTime]
+    applicableOperations:
+      - POST /bookings/{bookingId}/check-in
+    releaseWave: *w1
+
+  - code: WRONG_EVSE
+    httpStatus: 409
+    <<: *not-retryable
+    title: Wrong EVSE
+    detailTemplate: Driver is at EVSE {reportedEvseId}, but booking {bookingId} is assigned to EVSE {assignedEvseId}.
+    parameters: [reportedEvseId, assignedEvseId, bookingId]
+    applicableOperations:
+      - POST /bookings/{bookingId}/check-in
+    releaseWave: *w1
+
+  - code: INVALID_INTERVAL
+    httpStatus: 422
+    <<: *not-retryable
+    title: Invalid interval
+    detailTemplate: The provided interval {start}–{end} is invalid. Duration must be between {minDuration} and {maxDuration}.
+    parameters: [start, end, minDuration, maxDuration]
+    applicableOperations:
+      - POST /bookings
+      - POST /bookings/{bookingId}/reschedule
+    releaseWave: *w1
+
+  - code: OUTSIDE_ADVANCE_WINDOW
+    httpStatus: 422
+    <<: *not-retryable
+    title: Outside advance booking window
+    detailTemplate: The requested start time {requestedStart} is outside the booking window. Bookings open {windowOpens} before the slot.
+    parameters: [requestedStart, windowOpens]
+    applicableOperations:
+      - POST /bookings
+    releaseWave: *w1
+
+  - code: OUTSIDE_OPENING_HOURS
+    httpStatus: 422
+    <<: *not-retryable
+    title: Outside station opening hours
+    detailTemplate: Station {stationId} is closed at {requestedTime}. Opening hours: {openingHours}.
+    parameters: [stationId, requestedTime, openingHours]
+    applicableOperations:
+      - POST /bookings
+    releaseWave: *w1
+
+# =============================================================================
+# End of Problem Codes Registry
+# =============================================================================

@@ -1,0 +1,185 @@
+openapi: 3.0.3
+info:
+  title: Station Operations Internal API
+  version: 1.0.0
+  description: Internal API for Station Operations Service
+servers:
+  - url: https://internal-api.example.com
+    description: Internal production server
+paths:
+  /internal/v1/booking-operations/impact-previews:
+    post:
+      operationId: previewBookingImpact
+      summary: Preview booking impact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImpactPreviewRequest'
+      responses:
+        '200':
+          description: Impact preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImpactPreviewResponse'
+  /internal/v1/booking-operations/capacity-restrictions/{ref}:
+    get:
+      operationId: getCapacityRestriction
+      summary: Get capacity restriction
+      parameters:
+        - name: ref
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Capacity restriction details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapacityRestriction'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /internal/v1/booking-operations/capacity-restrictions/{ref}/reconciliation-requests:
+    post:
+      operationId: requestReconciliation
+      summary: Request reconciliation for a capacity restriction
+      parameters:
+        - name: ref
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Reconciliation requested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReconciliationRequest'
+components:
+  securitySchemes:
+    mTLS:
+      type: mutualTLS
+      description: mTLS-based authentication
+    serviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Service token authentication
+  schemas:
+    ImpactPreviewRequest:
+      type: object
+      properties:
+        stationRef:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        restrictionType:
+          type: string
+          enum:
+            - maintenance
+            - capacity_reduction
+            - outage
+      required:
+        - stationRef
+        - startTime
+        - endTime
+        - restrictionType
+    ImpactPreviewResponse:
+      type: object
+      properties:
+        stationRef:
+          type: string
+        estimatedBookingsAffected:
+          type: integer
+        affectedTimeSlots:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimeSlot'
+        riskLevel:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+      required:
+        - stationRef
+        - estimatedBookingsAffected
+        - riskLevel
+    TimeSlot:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        bookingsAffected:
+          type: integer
+      required:
+        - start
+        - end
+        - bookingsAffected
+    CapacityRestriction:
+      type: object
+      properties:
+        ref:
+          type: string
+        stationRef:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - reconciling
+            - resolved
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        reason:
+          type: string
+      required:
+        - ref
+        - stationRef
+        - status
+    ReconciliationRequest:
+      type: object
+      properties:
+        ref:
+          type: string
+        restrictionRef:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - in_progress
+            - completed
+            - failed
+        requestedAt:
+          type: string
+          format: date-time
+      required:
+        - ref
+        - restrictionRef
+        - status
+        - requestedAt
+security:
+  - mTLS: []
+  - serviceToken: []

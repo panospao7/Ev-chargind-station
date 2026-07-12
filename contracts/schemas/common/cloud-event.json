@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/common/cloud-event.json",
+  "title": "CloudEvent 1.0",
+  "description": "CloudEvents 1.0 event envelope",
+  "type": "object",
+  "properties": {
+    "specversion": {
+      "type": "string",
+      "const": "1.0",
+      "description": "The version of the CloudEvents specification"
+    },
+    "type": {
+      "type": "string",
+      "description": "The type of event"
+    },
+    "source": {
+      "type": "string",
+      "format": "uri-reference",
+      "description": "The source of the event"
+    },
+    "id": {
+      "type": "string",
+      "description": "Unique event identifier"
+    },
+    "time": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event timestamp"
+    },
+    "datacontenttype": {
+      "type": "string",
+      "description": "Content type of the data attribute"
+    },
+    "data": {
+      "description": "Event payload"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Subject of the event"
+    }
+  },
+  "required": ["specversion", "type", "source", "id"]
+}

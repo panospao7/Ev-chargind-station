@@ -1,0 +1,99 @@
+openapi: 3.0.3
+info:
+  title: Platform BFF API
+  version: 1.0.0
+  description: BFF for the platform admin dashboard
+servers:
+  - url: https://api.example.com
+    description: Production server
+paths:
+  /api/v1/platform/health:
+    get:
+      operationId: getPlatformHealth
+      summary: Get platform health overview
+      responses:
+        '200':
+          description: Platform health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformHealth'
+  /api/v1/platform/metrics:
+    get:
+      operationId: getPlatformMetrics
+      summary: Get platform metrics
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum:
+              - today
+              - week
+              - month
+      responses:
+        '200':
+          description: Platform metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformMetrics'
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
+  schemas:
+    PlatformHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - healthy
+            - degraded
+            - down
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServiceHealth'
+      required:
+        - status
+    ServiceHealth:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum:
+            - healthy
+            - degraded
+            - down
+        lastChecked:
+          type: string
+          format: date-time
+      required:
+        - name
+        - status
+    PlatformMetrics:
+      type: object
+      properties:
+        totalStations:
+          type: integer
+        totalDrivers:
+          type: integer
+        totalSessions:
+          type: integer
+        energyDeliveredKwh:
+          type: number
+        period:
+          type: string
+      required:
+        - totalStations
+        - totalDrivers
+        - totalSessions
+        - period
+security:
+  - sessionCookie: []

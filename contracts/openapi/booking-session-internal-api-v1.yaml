@@ -1,0 +1,188 @@
+openapi: 3.0.3
+info:
+  title: Booking & Session Internal API
+  version: 1.0.0
+  description: Internal API for Booking & Session Service
+servers:
+  - url: https://internal-api.example.com
+    description: Internal production server
+paths:
+  /bookings/{bookingRef}/operator-cancellations:
+    post:
+      operationId: cancelBookingOperator
+      summary: Operator-initiated booking cancellation
+      parameters:
+        - name: bookingRef
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OperatorCancellationRequest'
+      responses:
+        '200':
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperatorCancellationResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /bookings/{bookingRef}/reassignments:
+    post:
+      operationId: reassignBooking
+      summary: Reassign a booking to a different EVSE
+      parameters:
+        - name: bookingRef
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReassignmentRequest'
+      responses:
+        '200':
+          description: Booking reassigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReassignmentResponse'
+        '404':
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /sessions/{sessionRef}/emergency-stops:
+    post:
+      operationId: emergencyStopSession
+      summary: Emergency stop a charging session
+      parameters:
+        - name: sessionRef
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmergencyStopRequest'
+      responses:
+        '200':
+          description: Session emergency stopped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmergencyStopResponse'
+        '404':
+          description: Session not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+components:
+  securitySchemes:
+    mTLS:
+      type: mutualTLS
+      description: mTLS-based authentication
+    serviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Service token authentication
+  schemas:
+    OperatorCancellationRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+        notifyUser:
+          type: boolean
+          default: true
+      required:
+        - reason
+    OperatorCancellationResponse:
+      type: object
+      properties:
+        bookingRef:
+          type: string
+        cancellationRef:
+          type: string
+        cancelledAt:
+          type: string
+          format: date-time
+      required:
+        - bookingRef
+        - cancellationRef
+        - cancelledAt
+    ReassignmentRequest:
+      type: object
+      properties:
+        targetEvseRef:
+          type: string
+        reason:
+          type: string
+      required:
+        - targetEvseRef
+        - reason
+    ReassignmentResponse:
+      type: object
+      properties:
+        bookingRef:
+          type: string
+        previousEvseRef:
+          type: string
+        newEvseRef:
+          type: string
+        reassignedAt:
+          type: string
+          format: date-time
+      required:
+        - bookingRef
+        - previousEvseRef
+        - newEvseRef
+        - reassignedAt
+    EmergencyStopRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+        initiatedBy:
+          type: string
+          enum:
+            - operator
+            - system
+            - driver
+      required:
+        - reason
+        - initiatedBy
+    EmergencyStopResponse:
+      type: object
+      properties:
+        sessionRef:
+          type: string
+        stoppedAt:
+          type: string
+          format: date-time
+        finalMeterReading:
+          type: number
+      required:
+        - sessionRef
+        - stoppedAt
+security:
+  - mTLS: []
+  - serviceToken: []

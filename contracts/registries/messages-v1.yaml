@@ -1,0 +1,1582 @@
+# =============================================================================
+# Message Registry v1 — com.evplatform message catalogue
+# =============================================================================
+# This file defines every event and command flowing through the EV charging
+# platform.  It is the single source of truth for message metadata.
+# =============================================================================
+
+release_waves:
+  W1: &w1 "W1 — Foundation (MVP)"
+  W2: &w2 "W2 — Operations & Observability"
+  W3: &w3 "W3 — Ecosystem & Optimisation"
+
+# ── Reusable anchors borrowed from YAML aliases ──────────────────────────
+x-defaults:
+  correlation: &corr-required
+    correlationRequired: true
+    correlationIdField: correlationId
+  idempotent: &idempotent
+    idempotencyRequired: true
+    idempotencyKeyField: idempotencyKey
+  non-idempotent: &non-idempotent
+    idempotencyRequired: false
+  retry-default: &retry-default
+    retryable: false
+    maxRetries: 0
+  retry-3: &retry-3
+    retryable: true
+    maxRetries: 3
+    backoff: exponential
+  status-active: &active ACTIVE
+  status-deprecated: &deprecated DEPRECATED
+  status-retired: &retired RETIRED
+
+# ── Exchange aliases ─────────────────────────────────────────────────────
+ex:
+  domain:  &ex-domain  com.evplatform.domain
+  ops:     &ex-ops     com.evplatform.ops
+  telemetry: &ex-telemetry com.evplatform.telemetry
+  command: &ex-command com.evplatform.command
+  notification: &ex-notification com.evplatform.notification
+
+============================================================================
+# BOOKING AGGREGATE
+============================================================================
+messages:
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Booking Events
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: BookingHeld
+    kind: EVENT
+    versionedType: com.evplatform.booking.booking-held.v1
+    producer: ChargingService
+    consumers: [UserNotifier, BillingService, AnalyticsService, StationManager, CapacityService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.held
+    schemaPath: schemas/events/booking-held.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: BookingConfirmed
+    kind: EVENT
+    versionedType: com.evplatform.booking.booking-confirmed.v1
+    producer: ChargingService
+    consumers: [UserNotifier, BillingService, StationManager, CapacityService, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.confirmed
+    schemaPath: schemas/events/booking-confirmed.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: BookingRescheduled
+    kind: EVENT
+    versionedType: com.evplatform.booking.booking-rescheduled.v1
+    producer: ChargingService
+    consumers: [UserNotifier, BillingService, StationManager, CapacityService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.rescheduled
+    schemaPath: schemas/events/booking-rescheduled.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: [BookingModified]
+    status: *active
+
+  - name: BookingReassigned
+    kind: EVENT
+    versionedType: com.evplatform.booking.booking-reassigned.v1
+    producer: ChargingService
+    consumers: [UserNotifier, StationManager]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.reassigned
+    schemaPath: schemas/events/booking-reassigned.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: BookingCancelled
+    kind: EVENT
+    versionedType: com.evplatform.booking.booking-cancelled.v1
+    producer: ChargingService
+    consumers: [UserNotifier, BillingService, StationManager, CapacityService, PricingService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.cancelled
+    schemaPath: schemas/events/booking-cancelled.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: BookingHoldExpired
+    kind: EVENT
+    versionedType: com.evplatform.booking.booking-hold-expired.v1
+    producer: ChargingService
+    consumers: [UserNotifier, StationManager, CapacityService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.hold-expired
+    schemaPath: schemas/events/booking-hold-expired.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: [BookingHoldTimeout]
+    status: *active
+
+  - name: BookingCheckedIn
+    kind: EVENT
+    versionedType: com.evplatform.booking.booking-checked-in.v1
+    producer: StationManager
+    consumers: [ChargingService, UserNotifier, CapacityService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.checked-in
+    schemaPath: schemas/events/booking-checked-in.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: CheckInAbandoned
+    kind: EVENT
+    versionedType: com.evplatform.booking.check-in-abandoned.v1
+    producer: StationManager
+    consumers: [ChargingService, UserNotifier, CapacityService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.check-in-abandoned
+    schemaPath: schemas/events/check-in-abandoned.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: BookingNoShow
+    kind: EVENT
+    versionedType: com.evplatform.booking.booking-no-show.v1
+    producer: StationManager
+    consumers: [ChargingService, UserNotifier, BillingService, CapacityService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.no-show
+    schemaPath: schemas/events/booking-no-show.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: BookingFulfilmentFailed
+    kind: EVENT
+    versionedType: com.evplatform.booking.booking-fulfilment-failed.v1
+    producer: ChargingService
+    consumers: [UserNotifier, StationManager, CapacityService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.fulfilment-failed
+    schemaPath: schemas/events/booking-fulfilment-failed.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: BookingActivated
+    kind: EVENT
+    versionedType: com.evplatform.booking.booking-activated.v1
+    producer: ChargingService
+    consumers: [UserNotifier, BillingService, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.activated
+    schemaPath: schemas/events/booking-activated.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: BookingCompleted
+    kind: EVENT
+    versionedType: com.evplatform.booking.booking-completed.v1
+    producer: ChargingService
+    consumers: [UserNotifier, BillingService, AnalyticsService, PricingService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: booking.completed
+    schemaPath: schemas/events/booking-completed.v1.json
+    classification: BUSINESS
+    aggregateType: Booking
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Capacity / EVSE Events
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - name: EVSECapacityChanged
+    kind: EVENT
+    versionedType: com.evplatform.capacity.evse-capacity-changed.v1
+    producer: CapacityService
+    consumers: [ChargingService, StationManager, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: capacity.evse-capacity-changed
+    schemaPath: schemas/events/evse-capacity-changed.v1.json
+    classification: BUSINESS
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: StationBookableCountChanged
+    kind: EVENT
+    versionedType: com.evplatform.capacity.station-bookable-count-changed.v1
+    producer: CapacityService
+    consumers: [ChargingService, StationManager, AnalyticsService, DiscoveryService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: capacity.station-bookable-count-changed
+    schemaPath: schemas/events/station-bookable-count-changed.v1.json
+    classification: BUSINESS
+    aggregateType: Station
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: AvailabilityProjectionInvalidated
+    kind: EVENT
+    versionedType: com.evplatform.capacity.availability-projection-invalidated.v1
+    producer: CapacityService
+    consumers: [ChargingService, DiscoveryService, AnalyticsService]
+    releaseWave: *w2
+    exchange: *ex-domain
+    routingKey: capacity.availability-projection-invalidated
+    schemaPath: schemas/events/availability-projection-invalidated.v1.json
+    classification: BUSINESS
+    aggregateType: Station
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Capacity Restriction Events
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - name: CapacityRestrictionCreated
+    kind: EVENT
+    versionedType: com.evplatform.capacity-restriction.capacity-restriction-created.v1
+    producer: CapacityService
+    consumers: [ChargingService, StationManager, OpsConsole]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: capacity-restriction.created
+    schemaPath: schemas/events/capacity-restriction-created.v1.json
+    classification: BUSINESS
+    aggregateType: CapacityRestriction
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: CapacityFreezeCommitted
+    kind: EVENT
+    versionedType: com.evplatform.capacity-restriction.capacity-freeze-committed.v1
+    producer: CapacityService
+    consumers: [ChargingService, StationManager, OpsConsole]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: capacity-restriction.freeze-committed
+    schemaPath: schemas/events/capacity-freeze-committed.v1.json
+    classification: BUSINESS
+    aggregateType: CapacityRestriction
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: CapacityFreezeRejected
+    kind: EVENT
+    versionedType: com.evplatform.capacity-restriction.capacity-freeze-rejected.v1
+    producer: CapacityService
+    consumers: [ChargingService, StationManager, OpsConsole]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: capacity-restriction.freeze-rejected
+    schemaPath: schemas/events/capacity-freeze-rejected.v1.json
+    classification: BUSINESS
+    aggregateType: CapacityRestriction
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: CapacityBlockCommitted
+    kind: EVENT
+    versionedType: com.evplatform.capacity-restriction.capacity-block-committed.v1
+    producer: CapacityService
+    consumers: [ChargingService, StationManager, OpsConsole]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: capacity-restriction.block-committed
+    schemaPath: schemas/events/capacity-block-committed.v1.json
+    classification: BUSINESS
+    aggregateType: CapacityRestriction
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: CapacityRestrictionReleased
+    kind: EVENT
+    versionedType: com.evplatform.capacity-restriction.capacity-restriction-released.v1
+    producer: CapacityService
+    consumers: [ChargingService, StationManager, OpsConsole]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: capacity-restriction.released
+    schemaPath: schemas/events/capacity-restriction-released.v1.json
+    classification: BUSINESS
+    aggregateType: CapacityRestriction
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Charging Session Events
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - name: ChargingSessionCreated
+    kind: EVENT
+    versionedType: com.evplatform.charging.session-created.v1
+    producer: ChargingService
+    consumers: [UserNotifier, BillingService, AnalyticsService, StationManager]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: charging.session-created
+    schemaPath: schemas/events/charging-session-created.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: ChargingStartRequested
+    kind: EVENT
+    versionedType: com.evplatform.charging.start-requested.v1
+    producer: ChargingService
+    consumers: [StationManager, UserNotifier, SessionAttemptManager]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: charging.start-requested
+    schemaPath: schemas/events/charging-start-requested.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: ChargingSessionStarted
+    kind: EVENT
+    versionedType: com.evplatform.charging.session-started.v1
+    producer: StationManager
+    consumers: [ChargingService, UserNotifier, BillingService, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: charging.session-started
+    schemaPath: schemas/events/charging-session-started.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: ChargingStartAttemptRejected
+    kind: EVENT
+    versionedType: com.evplatform.charging.start-attempt-rejected.v1
+    producer: StationManager
+    consumers: [ChargingService, UserNotifier, SessionAttemptManager]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: charging.start-attempt-rejected
+    schemaPath: schemas/events/charging-start-attempt-rejected.v1.json
+    classification: BUSINESS
+    aggregateType: SessionAttempt
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: ChargingSessionStartRejected
+    kind: EVENT
+    versionedType: com.evplatform.charging.session-start-rejected.v1
+    producer: StationManager
+    consumers: [ChargingService, UserNotifier]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: charging.session-start-rejected
+    schemaPath: schemas/events/charging-session-start-rejected.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: ChargingSessionSuspended
+    kind: EVENT
+    versionedType: com.evplatform.charging.session-suspended.v1
+    producer: StationManager
+    consumers: [ChargingService, UserNotifier, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: charging.session-suspended
+    schemaPath: schemas/events/charging-session-suspended.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: ChargingSessionResumed
+    kind: EVENT
+    versionedType: com.evplatform.charging.session-resumed.v1
+    producer: StationManager
+    consumers: [ChargingService, UserNotifier, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: charging.session-resumed
+    schemaPath: schemas/events/charging-session-resumed.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: ChargingStopRequested
+    kind: EVENT
+    versionedType: com.evplatform.charging.stop-requested.v1
+    producer: ChargingService
+    consumers: [StationManager, UserNotifier]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: charging.stop-requested
+    schemaPath: schemas/events/charging-stop-requested.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: 30000
+    outcomeMessages: [ChargingSessionCompleted, ChargingSessionInterrupted]
+    deprecatedAliases: []
+    status: *active
+
+  - name: ChargingSessionProgressed
+    kind: EVENT
+    versionedType: com.evplatform.charging.session-progressed.v1
+    producer: StationManager
+    consumers: [ChargingService, AnalyticsService, BillingService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: charging.session-progressed
+    schemaPath: schemas/events/charging-session-progressed.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: [ChargingSessionTick]
+    status: *active
+
+  - name: ChargingSessionCompleted
+    kind: EVENT
+    versionedType: com.evplatform.charging.session-completed.v1
+    producer: StationManager
+    consumers: [ChargingService, UserNotifier, BillingService, AnalyticsService, PricingService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: charging.session-completed
+    schemaPath: schemas/events/charging-session-completed.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: ChargingSessionInterrupted
+    kind: EVENT
+    versionedType: com.evplatform.charging.session-interrupted.v1
+    producer: StationManager
+    consumers: [ChargingService, UserNotifier, BillingService, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: charging.session-interrupted
+    schemaPath: schemas/events/charging-session-interrupted.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: ChargingReconciliationRequired
+    kind: EVENT
+    versionedType: com.evplatform.charging.reconciliation-required.v1
+    producer: ChargingService
+    consumers: [BillingService, OpsConsole]
+    releaseWave: *w2
+    exchange: *ex-domain
+    routingKey: charging.reconciliation-required
+    schemaPath: schemas/events/charging-reconciliation-required.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: ChargingReconciliationResolved
+    kind: EVENT
+    versionedType: com.evplatform.charging.reconciliation-resolved.v1
+    producer: BillingService
+    consumers: [ChargingService, OpsConsole]
+    releaseWave: *w2
+    exchange: *ex-domain
+    routingKey: charging.reconciliation-resolved
+    schemaPath: schemas/events/charging-reconciliation-resolved.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Device Events (telemetry & lifecycle)
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - name: DeviceOnline
+    kind: EVENT
+    versionedType: com.evplatform.device.online.v1
+    producer: DeviceGateway
+    consumers: [StationManager, HeartbeatMonitor, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.online
+    schemaPath: schemas/events/device-online.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceOffline
+    kind: EVENT
+    versionedType: com.evplatform.device.offline.v1
+    producer: DeviceGateway
+    consumers: [StationManager, HeartbeatMonitor, CapacityService, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.offline
+    schemaPath: schemas/events/device-offline.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceHeartbeatStale
+    kind: EVENT
+    versionedType: com.evplatform.device.heartbeat-stale.v1
+    producer: HeartbeatMonitor
+    consumers: [DeviceGateway, StationManager, OpsConsole]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.heartbeat-stale
+    schemaPath: schemas/events/device-heartbeat-stale.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: [HeartbeatTimeout]
+    status: *active
+
+  - name: DeviceRecovered
+    kind: EVENT
+    versionedType: com.evplatform.device.recovered.v1
+    producer: DeviceGateway
+    consumers: [StationManager, HeartbeatMonitor, CapacityService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.recovered
+    schemaPath: schemas/events/device-recovered.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: EVSEStatusChanged
+    kind: EVENT
+    versionedType: com.evplatform.device.evse-status-changed.v1
+    producer: StationManager
+    consumers: [ChargingService, CapacityService, DiscoveryService, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: device.evse-status-changed
+    schemaPath: schemas/events/evse-status-changed.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceCommandResult
+    kind: EVENT
+    versionedType: com.evplatform.device.command-result.v1
+    producer: DeviceGateway
+    consumers: [StationManager, ChargingService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.command-result
+    schemaPath: schemas/events/device-command-result.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceTransactionStarted
+    kind: EVENT
+    versionedType: com.evplatform.device.transaction-started.v1
+    producer: DeviceGateway
+    consumers: [StationManager, ChargingService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.transaction-started
+    schemaPath: schemas/events/device-transaction-started.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceTransactionUpdated
+    kind: EVENT
+    versionedType: com.evplatform.device.transaction-updated.v1
+    producer: DeviceGateway
+    consumers: [StationManager, ChargingService, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.transaction-updated
+    schemaPath: schemas/events/device-transaction-updated.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceTransactionEnded
+    kind: EVENT
+    versionedType: com.evplatform.device.transaction-ended.v1
+    producer: DeviceGateway
+    consumers: [StationManager, ChargingService, BillingService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.transaction-ended
+    schemaPath: schemas/events/device-transaction-ended.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceSnapshotReceived
+    kind: EVENT
+    versionedType: com.evplatform.device.snapshot-received.v1
+    producer: DeviceGateway
+    consumers: [StationManager, AnalyticsService, OpsConsole]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.snapshot-received
+    schemaPath: schemas/events/device-snapshot-received.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceFaultRaised
+    kind: EVENT
+    versionedType: com.evplatform.device.fault-raised.v1
+    producer: DeviceGateway
+    consumers: [StationManager, OpsConsole, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.fault-raised
+    schemaPath: schemas/events/device-fault-raised.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceFaultCleared
+    kind: EVENT
+    versionedType: com.evplatform.device.fault-cleared.v1
+    producer: DeviceGateway
+    consumers: [StationManager, OpsConsole, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.fault-cleared
+    schemaPath: schemas/events/device-fault-cleared.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceTelemetryAnomalyDetected
+    kind: TELEMETRY
+    versionedType: com.evplatform.device.telemetry-anomaly-detected.v1
+    producer: AnalyticsService
+    consumers: [StationManager, OpsConsole]
+    releaseWave: *w2
+    exchange: *ex-telemetry
+    routingKey: device.telemetry-anomaly-detected
+    schemaPath: schemas/events/device-telemetry-anomaly-detected.v1.json
+    classification: TELEMETRY
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Start Authorization Events
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - name: StartAuthorizationConsumed
+    kind: EVENT
+    versionedType: com.evplatform.authorization.start-authorization-consumed.v1
+    producer: ChargingService
+    consumers: [AuthorizationService, SessionAttemptManager, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: authorization.start-consumed
+    schemaPath: schemas/events/start-authorization-consumed.v1.json
+    classification: BUSINESS
+    aggregateType: StartAuthorization
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: StartAuthorizationIssued
+    kind: EVENT
+    versionedType: com.evplatform.authorization.start-authorization-issued.v1
+    producer: AuthorizationService
+    consumers: [ChargingService, UserNotifier]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: authorization.start-issued
+    schemaPath: schemas/events/start-authorization-issued.v1.json
+    classification: BUSINESS
+    aggregateType: StartAuthorization
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: StartAuthorizationRevoked
+    kind: EVENT
+    versionedType: com.evplatform.authorization.start-authorization-revoked.v1
+    producer: AuthorizationService
+    consumers: [ChargingService, UserNotifier]
+    releaseWave: *w1
+    exchange: *ex-domain
+    routingKey: authorization.start-revoked
+    schemaPath: schemas/events/start-authorization-revoked.v1.json
+    classification: BUSINESS
+    aggregateType: StartAuthorization
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Account & User Events
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - name: AccountDeleted
+    kind: EVENT
+    versionedType: com.evplatform.account.deleted.v1
+    producer: IdentityService
+    consumers: [ChargingService, BillingService, UserNotifier]
+    releaseWave: *w2
+    exchange: *ex-domain
+    routingKey: account.deleted
+    schemaPath: schemas/events/account-deleted.v1.json
+    classification: BUSINESS
+    aggregateType: Account
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: AccountSuspended
+    kind: EVENT
+    versionedType: com.evplatform.account.suspended.v1
+    producer: IdentityService
+    consumers: [ChargingService, BillingService, UserNotifier]
+    releaseWave: *w2
+    exchange: *ex-domain
+    routingKey: account.suspended
+    schemaPath: schemas/events/account-suspended.v1.json
+    classification: BUSINESS
+    aggregateType: Account
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: AccountReactivated
+    kind: EVENT
+    versionedType: com.evplatform.account.reactivated.v1
+    producer: IdentityService
+    consumers: [ChargingService, BillingService, UserNotifier]
+    releaseWave: *w2
+    exchange: *ex-domain
+    routingKey: account.reactivated
+    schemaPath: schemas/events/account-reactivated.v1.json
+    classification: BUSINESS
+    aggregateType: Account
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: BookingEligibilityChanged
+    kind: EVENT
+    versionedType: com.evplatform.account.booking-eligibility-changed.v1
+    producer: IdentityService
+    consumers: [ChargingService, UserNotifier]
+    releaseWave: *w2
+    exchange: *ex-domain
+    routingKey: account.booking-eligibility-changed
+    schemaPath: schemas/events/booking-eligibility-changed.v1.json
+    classification: BUSINESS
+    aggregateType: Account
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  ============================================================================
+  # COMMANDS
+  ============================================================================
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Capacity Restriction Commands
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - name: CreateCapacityFreeze
+    kind: COMMAND
+    versionedType: com.evplatform.command.create-capacity-freeze.v1
+    producer: OpsConsole
+    consumers: [CapacityService]
+    releaseWave: *w1
+    exchange: *ex-command
+    routingKey: command.capacity.create-freeze
+    schemaPath: schemas/commands/create-capacity-freeze.v1.json
+    classification: BUSINESS
+    aggregateType: CapacityRestriction
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *idempotent, *retry-default]
+    timeoutMs: 10000
+    outcomeMessages: [CapacityFreezeCommitted, CapacityFreezeRejected]
+    deprecatedAliases: []
+    status: *active
+
+  - name: FinalizeCapacityBlock
+    kind: COMMAND
+    versionedType: com.evplatform.command.finalize-capacity-block.v1
+    producer: OpsConsole
+    consumers: [CapacityService]
+    releaseWave: *w1
+    exchange: *ex-command
+    routingKey: command.capacity.finalize-block
+    schemaPath: schemas/commands/finalize-capacity-block.v1.json
+    classification: BUSINESS
+    aggregateType: CapacityRestriction
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *idempotent, *retry-default]
+    timeoutMs: 10000
+    outcomeMessages: [CapacityBlockCommitted]
+    deprecatedAliases: []
+    status: *active
+
+  - name: ReleaseCapacityRestriction
+    kind: COMMAND
+    versionedType: com.evplatform.command.release-capacity-restriction.v1
+    producer: OpsConsole
+    consumers: [CapacityService]
+    releaseWave: *w1
+    exchange: *ex-command
+    routingKey: command.capacity.release-restriction
+    schemaPath: schemas/commands/release-capacity-restriction.v1.json
+    classification: BUSINESS
+    aggregateType: CapacityRestriction
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *idempotent, *retry-default]
+    timeoutMs: 10000
+    outcomeMessages: [CapacityRestrictionReleased]
+    deprecatedAliases: []
+    status: *active
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Charging Commands
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - name: StartChargingAtEVSE
+    kind: COMMAND
+    versionedType: com.evplatform.command.start-charging-at-evse.v1
+    producer: ChargingService
+    consumers: [StationManager]
+    releaseWave: *w1
+    exchange: *ex-command
+    routingKey: command.charging.start-at-evse
+    schemaPath: schemas/commands/start-charging-at-evse.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *idempotent, *retry-3]
+    timeoutMs: 30000
+    outcomeMessages: [ChargingSessionStarted, ChargingStartAttemptRejected, ChargingSessionStartRejected]
+    deprecatedAliases: []
+    status: *active
+
+  - name: StopChargingAtEVSE
+    kind: COMMAND
+    versionedType: com.evplatform.command.stop-charging-at-evse.v1
+    producer: ChargingService
+    consumers: [StationManager]
+    releaseWave: *w1
+    exchange: *ex-command
+    routingKey: command.charging.stop-at-evse
+    schemaPath: schemas/commands/stop-charging-at-evse.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *idempotent, *retry-3]
+    timeoutMs: 30000
+    outcomeMessages: [ChargingSessionCompleted, ChargingSessionInterrupted]
+    deprecatedAliases: []
+    status: *active
+
+  - name: RequestDeviceSnapshot
+    kind: COMMAND
+    versionedType: com.evplatform.command.request-device-snapshot.v1
+    producer: StationManager
+    consumers: [DeviceGateway]
+    releaseWave: *w1
+    exchange: *ex-command
+    routingKey: command.device.request-snapshot
+    schemaPath: schemas/commands/request-device-snapshot.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *idempotent, *retry-3]
+    timeoutMs: 15000
+    outcomeMessages: [DeviceSnapshotReceived]
+    deprecatedAliases: []
+    status: *active
+
+  - name: EmergencyStopChargingSession
+    kind: COMMAND
+    versionedType: com.evplatform.command.emergency-stop-session.v1
+    producer: OpsConsole
+    consumers: [StationManager]
+    releaseWave: *w1
+    exchange: *ex-command
+    routingKey: command.charging.emergency-stop
+    schemaPath: schemas/commands/emergency-stop-charging-session.v1.json
+    classification: BUSINESS
+    aggregateType: ChargingSession
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *idempotent, *retry-default]
+    timeoutMs: 10000
+    outcomeMessages: [ChargingSessionInterrupted]
+    deprecatedAliases: []
+    status: *active
+
+  - name: InstallDriverRestriction
+    kind: COMMAND
+    versionedType: com.evplatform.command.install-driver-restriction.v1
+    producer: OpsConsole
+    consumers: [AuthorizationService, ChargingService]
+    releaseWave: *w2
+    exchange: *ex-command
+    routingKey: command.authorization.install-driver-restriction
+    schemaPath: schemas/commands/install-driver-restriction.v1.json
+    classification: BUSINESS
+    aggregateType: Account
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *idempotent, *retry-default]
+    timeoutMs: 10000
+    outcomeMessages: [BookingEligibilityChanged]
+    deprecatedAliases: []
+    status: *active
+
+  - name: ReleaseDriverRestriction
+    kind: COMMAND
+    versionedType: com.evplatform.command.release-driver-restriction.v1
+    producer: OpsConsole
+    consumers: [AuthorizationService, ChargingService]
+    releaseWave: *w2
+    exchange: *ex-command
+    routingKey: command.authorization.release-driver-restriction
+    schemaPath: schemas/commands/release-driver-restriction.v1.json
+    classification: BUSINESS
+    aggregateType: Account
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *idempotent, *retry-default]
+    timeoutMs: 10000
+    outcomeMessages: [BookingEligibilityChanged]
+    deprecatedAliases: []
+    status: *active
+
+  ============================================================================
+  # OPERATOR EVENTS
+  ============================================================================
+
+  - name: FaultOpened
+    kind: EVENT
+    versionedType: com.evplatform.ops.fault-opened.v1
+    producer: OpsConsole
+    consumers: [StationManager, NotificationService, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: ops.fault.opened
+    schemaPath: schemas/events/operator/fault-opened.v1.json
+    classification: OPERATOR
+    aggregateType: Fault
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: FaultStateChanged
+    kind: EVENT
+    versionedType: com.evplatform.ops.fault-state-changed.v1
+    producer: OpsConsole
+    consumers: [StationManager, NotificationService, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: ops.fault.state-changed
+    schemaPath: schemas/events/operator/fault-state-changed.v1.json
+    classification: OPERATOR
+    aggregateType: Fault
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: FaultResolved
+    kind: EVENT
+    versionedType: com.evplatform.ops.fault-resolved.v1
+    producer: OpsConsole
+    consumers: [StationManager, NotificationService, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: ops.fault.resolved
+    schemaPath: schemas/events/operator/fault-resolved.v1.json
+    classification: OPERATOR
+    aggregateType: Fault
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: FaultReopened
+    kind: EVENT
+    versionedType: com.evplatform.ops.fault-reopened.v1
+    producer: OpsConsole
+    consumers: [StationManager, NotificationService, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: ops.fault.reopened
+    schemaPath: schemas/events/operator/fault-reopened.v1.json
+    classification: OPERATOR
+    aggregateType: Fault
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: OperationalOverrideApplied
+    kind: EVENT
+    versionedType: com.evplatform.ops.operational-override-applied.v1
+    producer: OpsConsole
+    consumers: [StationManager, CapacityService, AnalyticsService]
+    releaseWave: *w2
+    exchange: *ex-ops
+    routingKey: ops.override.applied
+    schemaPath: schemas/events/operator/operational-override-applied.v1.json
+    classification: OPERATOR
+    aggregateType: EVSEOperationalStatus
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: OperationalOverrideExpired
+    kind: EVENT
+    versionedType: com.evplatform.ops.operational-override-expired.v1
+    producer: OpsConsole
+    consumers: [StationManager, CapacityService, AnalyticsService]
+    releaseWave: *w2
+    exchange: *ex-ops
+    routingKey: ops.override.expired
+    schemaPath: schemas/events/operator/operational-override-expired.v1.json
+    classification: OPERATOR
+    aggregateType: EVSEOperationalStatus
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: OperationalOverrideRevoked
+    kind: EVENT
+    versionedType: com.evplatform.ops.operational-override-revoked.v1
+    producer: OpsConsole
+    consumers: [StationManager, CapacityService, AnalyticsService]
+    releaseWave: *w2
+    exchange: *ex-ops
+    routingKey: ops.override.revoked
+    schemaPath: schemas/events/operator/operational-override-revoked.v1.json
+    classification: OPERATOR
+    aggregateType: EVSEOperationalStatus
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: MaintenanceScheduled
+    kind: EVENT
+    versionedType: com.evplatform.ops.maintenance-scheduled.v1
+    producer: OpsConsole
+    consumers: [StationManager, CapacityService, NotificationService]
+    releaseWave: *w2
+    exchange: *ex-ops
+    routingKey: ops.maintenance.scheduled
+    schemaPath: schemas/events/operator/maintenance-scheduled.v1.json
+    classification: OPERATOR
+    aggregateType: Maintenance
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: MaintenanceCompleted
+    kind: EVENT
+    versionedType: com.evplatform.ops.maintenance-completed.v1
+    producer: OpsConsole
+    consumers: [StationManager, CapacityService, NotificationService]
+    releaseWave: *w2
+    exchange: *ex-ops
+    routingKey: ops.maintenance.completed
+    schemaPath: schemas/events/operator/maintenance-completed.v1.json
+    classification: OPERATOR
+    aggregateType: Maintenance
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: MaintenanceCancelled
+    kind: EVENT
+    versionedType: com.evplatform.ops.maintenance-cancelled.v1
+    producer: OpsConsole
+    consumers: [StationManager, CapacityService, NotificationService]
+    releaseWave: *w2
+    exchange: *ex-ops
+    routingKey: ops.maintenance.cancelled
+    schemaPath: schemas/events/operator/maintenance-cancelled.v1.json
+    classification: OPERATOR
+    aggregateType: Maintenance
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  ============================================================================
+  # NOTIFICATION EVENTS
+  ============================================================================
+
+  - name: NotificationInboxDelivered
+    kind: EVENT
+    versionedType: com.evplatform.notification.inbox-delivered.v1
+    producer: NotificationService
+    consumers: [UserNotifier, AnalyticsService]
+    releaseWave: *w1
+    exchange: *ex-notification
+    routingKey: notification.inbox-delivered
+    schemaPath: schemas/events/notification-inbox-delivered.v1.json
+    classification: BUSINESS
+    aggregateType: Notification
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: NotificationDispatchFailed
+    kind: EVENT
+    versionedType: com.evplatform.notification.dispatch-failed.v1
+    producer: NotificationService
+    consumers: [UserNotifier, OpsConsole]
+    releaseWave: *w1
+    exchange: *ex-notification
+    routingKey: notification.dispatch-failed
+    schemaPath: schemas/events/notification-dispatch-failed.v1.json
+    classification: BUSINESS
+    aggregateType: Notification
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  ============================================================================
+  # DEVICE COMMAND OUTCOME EVENTS
+  ============================================================================
+
+  - name: DeviceCommandDispatchAccepted
+    kind: EVENT
+    versionedType: com.evplatform.device.command-dispatch-accepted.v1
+    producer: DeviceGateway
+    consumers: [StationManager]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.command-dispatch-accepted
+    schemaPath: schemas/events/device-command-dispatch-accepted.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: [CommandEnqueued]
+    status: *active
+
+  - name: DeviceCommandRejected
+    kind: EVENT
+    versionedType: com.evplatform.device.command-rejected.v1
+    producer: DeviceGateway
+    consumers: [StationManager]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.command-rejected
+    schemaPath: schemas/events/device-command-rejected.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceCommandTimedOut
+    kind: EVENT
+    versionedType: com.evplatform.device.command-timed-out.v1
+    producer: DeviceGateway
+    consumers: [StationManager]
+    releaseWave: *w1
+    exchange: *ex-ops
+    routingKey: device.command-timed-out
+    schemaPath: schemas/events/device-command-timed-out.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+  - name: DeviceCommandOutcomeReconciled
+    kind: EVENT
+    versionedType: com.evplatform.device.command-outcome-reconciled.v1
+    producer: StationManager
+    consumers: [ChargingService, OpsConsole]
+    releaseWave: *w2
+    exchange: *ex-ops
+    routingKey: device.command-outcome-reconciled
+    schemaPath: schemas/events/device-command-outcome-reconciled.v1.json
+    classification: LIFECYCLE
+    aggregateType: EVSE
+    versionField: aggregateVersion
+    orderingField: sequenceNumber
+    <<: [*corr-required, *non-idempotent, *retry-default]
+    timeoutMs: null
+    outcomeMessages: []
+    deprecatedAliases: []
+    status: *active
+
+# =============================================================================
+# End of Message Registry
+# =============================================================================

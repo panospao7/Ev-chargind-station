@@ -1,0 +1,221 @@
+# =============================================================================
+# Domain Policy Registry v1
+# =============================================================================
+# This file documents every domain policy that governs the behaviour of the
+# EV charging platform.  Policies are the "business rules" that constrain
+# how aggregates, commands, and events may interact.
+# =============================================================================
+
+release_waves:
+  W1: &w1 "W1 — Foundation (MVP)"
+  W2: &w2 "W2 — Operations & Observability"
+
+policies:
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Authorization & Session Management
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - policyId: AUTH-CONSUMPTION-001
+    description: >
+      A StartAuthorization SHALL be consumed (transitioned to CONSUMED) exactly
+      once when a charging session starts successfully.  Once consumed, it MUST
+      NOT be reused.  (DOM-002 §1.2a)
+    applicableTo: StartAuthorization aggregate, StartChargingAtEVSE command
+    releaseWave: *w1
+    status: ACTIVE
+
+  - policyId: AUTH-RETRY-GAP-002
+    description: >
+      When a start attempt is rejected, the system MAY retry using the same
+      StartAuthorization up to N times (N=3 configurable) within its TTL.
+      After N failures the authorization is EXHAUSTED.  (GAP-002)
+    applicableTo: SessionAttempt aggregate, StartAuthorization aggregate
+    releaseWave: *w2
+    status: ACTIVE
+
+  - policyId: AUTH-TTL-ENFORCEMENT
+    description: >
+      A StartAuthorization MUST expire after its configured TTL (default 5 min)
+      regardless of retry count.  Expired authorizations cannot be used.
+    applicableTo: StartAuthorization aggregate
+    releaseWave: *w1
+    status: ACTIVE
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Maintenance & Operational Overrides
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - policyId: MAINT-IMPACT-RESOLUTION-GAP-001
+    description: >
+      Before a maintenance record can transition to SCHEDULED or COMPLETED,
+      all active bookings that overlap with the maintenance window MUST be
+      resolved (reassigned, cancelled, or the driver notified).  The system
+      SHALL reject the transition if MAINTENANCE_IMPACT_UNRESOLVED.
+      (GAP-001)
+    applicableTo: Maintenance lifecycle, Booking aggregate
+    releaseWave: *w2
+    status: ACTIVE
+
+  - policyId: MAINT-CAPACITY-FREEZE
+    description: >
+      When maintenance is SCHEDULED, the system SHALL automatically create a
+      CapacityRestriction (FREEZE) for the affected EVSEs for the duration of
+      the maintenance window.  The freeze SHALL be released when maintenance
+      completes.
+    applicableTo: Maintenance lifecycle, CapacityRestriction aggregate
+    releaseWave: *w2
+    status: ACTIVE
+
+  - policyId: OVERRIDE-AUTHORIZATION
+    description: >
+      An OperationalOverride MAY only be applied by an authenticated operator
+      with the 'ops.override' permission.  Overrides MUST have a reason code
+      and an optional TTL.  (ARC-020 §3)
+    applicableTo: EVSEOperationalStatus aggregate
+    releaseWave: *w2
+    status: ACTIVE
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Privacy & Compliance
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - policyId: PRIVACY-ROUTING-ARC-020
+    description: >
+      All PII-bearing events (driver identity, location, payment details) MUST
+      be routed through a privacy filter that redacts sensitive fields before
+      publishing to the domain exchange.  Non-redacted events MUST only travel
+      on internal service buses.  (ARC-020)
+    applicableTo: NotificationService, all event publishers
+    releaseWave: *w2
+    status: ACTIVE
+
+  - policyId: DATA-RETENTION-W1
+    description: >
+      Booking and session data MUST be retained for at least 90 days post
+      completion.  Anonymised analytics data MAY be retained indefinitely.
+      (GDPR compliance)
+    applicableTo: ChargingService, BillingService, AnalyticsService
+    releaseWave: *w1
+    status: ACTIVE
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Capacity & Allocation
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - policyId: FREEZE-ENFORCEMENT-MODEL-ARC-006
+    description: >
+      A CapacityRestriction in FROZEN state SHALL prevent new bookings on
+      affected EVSEs.  Existing CONFIRMED bookings are unaffected.  In BLOCKED
+      state, the system SHALL also attempt to reassign or cancel existing
+      bookings.  (ARC-006 §4.6)
+    applicableTo: CapacityRestriction aggregate, Booking aggregate
+    releaseWave: *w1
+    status: ACTIVE
+
+  - policyId: CONFLICT-PREDICATE-ARC-006
+    description: >
+      Before a CapacityRestriction can transition from PENDING_FREEZE to
+      FROZEN, the system MUST verify that no conflicting restriction exists
+      (overlapping EVSEs, time windows, or incompatible types).
+      (ARC-006 §10)
+    applicableTo: CapacityRestriction aggregate
+    releaseWave: *w1
+    status: ACTIVE
+
+  - policyId: SAFETY-EVIDENCE-BEFORE-RELEASE
+    description: >
+      A CapacityRestriction in BLOCKED state MAY only transition to RELEASED
+      if the operator provides safety evidence (maintenance completion report,
+      testing verification).  This enforces SAFETY_EVIDENCE_REQUIRED.
+    applicableTo: CapacityRestriction aggregate
+    releaseWave: *w1
+    status: ACTIVE
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Booking & Check-in
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - policyId: HOLD-TTL-ENFORCEMENT
+    description: >
+      A Booking in PENDING_HOLD state MUST automatically expire after the
+      configured hold TTL (default 120s).  On expiry, the booking transitions
+      to HOLD_EXPIRED and the EVSE capacity is released.
+    applicableTo: Booking aggregate
+    releaseWave: *w1
+    status: ACTIVE
+
+  - policyId: CHECK-IN-WINDOW
+    description: >
+      A Booking in CONFIRMED state has a configurable check-in window
+      (default 15 min before to 5 min after the slot start).  If the driver
+      does not check in, the booking transitions to NO_SHOW.
+    applicableTo: Booking aggregate, StationManager
+    releaseWave: *w1
+    status: ACTIVE
+
+  - policyId: WRONG-EVSE-CHECK-IN
+    description: >
+      When a driver attempts to check in at an EVSE that does not match the
+      assigned EVSE for the booking, the system SHALL reject with
+      WRONG_EVSE unless the station allows free EVSE selection.
+    applicableTo: Booking aggregate, StationManager
+    releaseWave: *w1
+    status: ACTIVE
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Observability & Reconciliation
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - policyId: DEAD-LETTER-OBSERVABILITY
+    description: >
+      All messages that cannot be delivered after configured retries MUST be
+      routed to a dead-letter queue.  Dead-letter entries MUST include the
+      original message headers, error details, and timestamp.
+    applicableTo: Message bus infrastructure
+    releaseWave: *w1
+    status: ACTIVE
+
+  - policyId: RECONCILIATION-TRIGGER
+    description: >
+      A ChargingSession SHALL enter RECONCILIATION_REQUIRED state when the
+      energy delivered reported by the device differs by more than the
+      configured threshold (default 5%) from the session's recorded energy.
+    applicableTo: ChargingSession aggregate
+    releaseWave: *w2
+    status: ACTIVE
+
+  - policyId: SESSION-OUTCOME-RECONCILIATION
+    description: >
+      DeviceCommandOutcomeReconciled SHALL be emitted when the StationManager
+      resolves a discrepancy between a dispatched command and the actual device
+      outcome.  This event drives session state correction.
+    applicableTo: StationManager, ChargingSession aggregate
+    releaseWave: *w2
+    status: ACTIVE
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Idempotency & Ordering
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - policyId: IDEMPOTENCY-KEY-ENFORCEMENT
+    description: >
+      All COMMAND messages MUST carry an idempotency key.  The receiver SHALL
+      reject a command with a reused idempotency key if the payload differs
+      from the original request (IDEMPOTENCY_KEY_REUSED).
+    applicableTo: All command handlers
+    releaseWave: *w1
+    status: ACTIVE
+
+  - policyId: MESSAGE-ORDERING-GUARANTEE
+    description: >
+      Events for a given aggregate instance SHALL be published in sequence
+      order.  Consumers SHOULD use the sequenceNumber field to detect gaps
+      and request replay if necessary.
+    applicableTo: All event publishers
+    releaseWave: *w1
+    status: ACTIVE
+
+# =============================================================================
+# End of Policy Registry
+# =============================================================================

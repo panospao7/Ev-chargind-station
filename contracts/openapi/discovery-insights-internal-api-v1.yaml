@@ -1,0 +1,131 @@
+openapi: 3.0.3
+info:
+  title: Discovery & Insights Internal API
+  version: 1.0.0
+  description: Internal API for Discovery & Insights Service
+servers:
+  - url: https://internal-api.example.com
+    description: Internal production server
+paths:
+  /stations/{stationRef}/utilization:
+    get:
+      operationId: getStationUtilization
+      summary: Get station utilization data
+      parameters:
+        - name: stationRef
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum:
+              - day
+              - week
+              - month
+      responses:
+        '200':
+          description: Utilization data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationUtilization'
+        '404':
+          description: Station not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /insights/trends:
+    get:
+      operationId: getTrends
+      summary: Get charging trends
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Trends data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TrendDataPoint'
+components:
+  securitySchemes:
+    mTLS:
+      type: mutualTLS
+      description: mTLS-based authentication
+    serviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Service token authentication
+  schemas:
+    StationUtilization:
+      type: object
+      properties:
+        stationRef:
+          type: string
+        totalSessions:
+          type: integer
+        totalEnergyKwh:
+          type: number
+        averageUtilizationPercent:
+          type: number
+        peakUtilizationPercent:
+          type: number
+        dataPoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/UtilizationDataPoint'
+      required:
+        - stationRef
+        - totalSessions
+        - totalEnergyKwh
+        - averageUtilizationPercent
+    UtilizationDataPoint:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        activeSessions:
+          type: integer
+        utilizationPercent:
+          type: number
+      required:
+        - timestamp
+        - activeSessions
+        - utilizationPercent
+    TrendDataPoint:
+      type: object
+      properties:
+        period:
+          type: string
+        totalSessions:
+          type: integer
+        totalEnergyKwh:
+          type: number
+        averageSessionDurationMinutes:
+          type: number
+      required:
+        - period
+        - totalSessions
+        - totalEnergyKwh
+security:
+  - mTLS: []
+  - serviceToken: []

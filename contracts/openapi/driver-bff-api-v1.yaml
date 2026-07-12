@@ -1,0 +1,170 @@
+openapi: 3.0.3
+info:
+  title: Driver BFF API
+  version: 1.0.0
+  description: BFF for the driver mobile/web application
+servers:
+  - url: https://api.example.com
+    description: Production server
+paths:
+  /api/v1/stations/{stationRef}:
+    get:
+      operationId: getStation
+      summary: Get station details
+      parameters:
+        - name: stationRef
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Station details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Station'
+        '404':
+          description: Station not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /api/v1/bookings/{bookingRef}/check-in:
+    post:
+      operationId: checkIn
+      summary: Check in to a booking
+      parameters:
+        - name: bookingRef
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Check-in successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckInResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /api/v1/bookings/{bookingRef}/charging-session/start:
+    post:
+      operationId: startChargingSession
+      summary: Start a charging session
+      parameters:
+        - name: bookingRef
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartChargingRequest'
+      responses:
+        '200':
+          description: Charging session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargingSession'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /api/v1/bookings/{bookingRef}/charging-session/stop:
+    post:
+      operationId: stopChargingSession
+      summary: Stop a charging session
+      parameters:
+        - name: bookingRef
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Charging session stopped
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargingSession'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
+  schemas:
+    Station:
+      type: object
+      properties:
+        ref:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+      required:
+        - ref
+        - name
+    CheckInResponse:
+      type: object
+      properties:
+        bookingRef:
+          type: string
+        status:
+          type: string
+          enum:
+            - checked_in
+            - already_checked_in
+      required:
+        - bookingRef
+        - status
+    StartChargingRequest:
+      type: object
+      properties:
+        evseRef:
+          type: string
+      required:
+        - evseRef
+    ChargingSession:
+      type: object
+      properties:
+        sessionRef:
+          type: string
+        bookingRef:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - stopped
+        startedAt:
+          type: string
+          format: date-time
+      required:
+        - sessionRef
+        - bookingRef
+        - status
+security:
+  - sessionCookie: []

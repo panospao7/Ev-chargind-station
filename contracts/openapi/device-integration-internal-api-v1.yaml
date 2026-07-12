@@ -1,0 +1,134 @@
+openapi: 3.0.3
+info:
+  title: Device Integration Internal API
+  version: 1.0.0
+  description: Internal API for Device Integration Service
+servers:
+  - url: https://internal-api.example.com
+    description: Internal production server
+paths:
+  /devices/{deviceRef}/status:
+    get:
+      operationId: getDeviceStatus
+      summary: Get device status
+      parameters:
+        - name: deviceRef
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Device status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceStatus'
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /devices/{deviceRef}/commands:
+    post:
+      operationId: sendDeviceCommand
+      summary: Send a command to a device
+      parameters:
+        - name: deviceRef
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceCommandRequest'
+      responses:
+        '202':
+          description: Command accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceCommandResponse'
+        '404':
+          description: Device not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+components:
+  securitySchemes:
+    mTLS:
+      type: mutualTLS
+      description: mTLS-based authentication
+    serviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Service token authentication
+  schemas:
+    DeviceStatus:
+      type: object
+      properties:
+        deviceRef:
+          type: string
+        status:
+          type: string
+          enum:
+            - online
+            - offline
+            - faulted
+            - unavailable
+        lastSeenAt:
+          type: string
+          format: date-time
+        firmwareVersion:
+          type: string
+      required:
+        - deviceRef
+        - status
+        - lastSeenAt
+    DeviceCommandRequest:
+      type: object
+      properties:
+        command:
+          type: string
+          enum:
+            - reboot
+            - reset
+            - update_firmware
+            - set_availability
+        payload:
+          type: object
+      required:
+        - command
+    DeviceCommandResponse:
+      type: object
+      properties:
+        commandRef:
+          type: string
+        deviceRef:
+          type: string
+        command:
+          type: string
+        status:
+          type: string
+          enum:
+            - queued
+            - sent
+            - failed
+        queuedAt:
+          type: string
+          format: date-time
+      required:
+        - commandRef
+        - deviceRef
+        - command
+        - status
+        - queuedAt
+security:
+  - mTLS: []
+  - serviceToken: []

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/commands/start-charging-command.json",
+  "title": "StartChargingAtEVSE",
+  "description": "Command payload to start charging at a specific EVSE",
+  "type": "object",
+  "properties": {
+    "commandRef": {
+      "type": "string",
+      "description": "Unique command reference"
+    },
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "Target EVSE reference"
+    },
+    "maxCurrentAmps": {
+      "type": "number",
+      "description": "Maximum current in amperes"
+    },
+    "maxEnergyKwh": {
+      "type": "number",
+      "description": "Maximum energy in kWh"
+    },
+    "chargeProfile": {
+      "type": "object",
+      "description": "Optional charge profile",
+      "properties": {
+        "phases": {
+          "type": "integer",
+          "enum": [1, 3]
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "normal", "high"]
+        }
+      }
+    },
+    "issuedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Command issuance timestamp"
+    }
+  },
+  "required": ["commandRef", "sessionRef", "evseRef", "issuedAt"]
+}

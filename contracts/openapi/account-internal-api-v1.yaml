@@ -1,0 +1,125 @@
+openapi: 3.0.3
+info:
+  title: Account Internal API
+  version: 1.0.0
+  description: Internal API for Account Service
+servers:
+  - url: https://internal-api.example.com
+    description: Internal production server
+paths:
+  /accounts/{accountRef}:
+    get:
+      operationId: getAccount
+      summary: Get account details
+      parameters:
+        - name: accountRef
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Account details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /accounts/{accountRef}/billing-agreements:
+    post:
+      operationId: createBillingAgreement
+      summary: Create a billing agreement
+      parameters:
+        - name: accountRef
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBillingAgreementRequest'
+      responses:
+        '201':
+          description: Billing agreement created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingAgreement'
+components:
+  securitySchemes:
+    mTLS:
+      type: mutualTLS
+      description: mTLS-based authentication
+    serviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Service token authentication
+  schemas:
+    Account:
+      type: object
+      properties:
+        ref:
+          type: string
+        email:
+          type: string
+          format: email
+        displayName:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - suspended
+            - closed
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - ref
+        - email
+        - status
+    CreateBillingAgreementRequest:
+      type: object
+      properties:
+        paymentMethodRef:
+          type: string
+        terms:
+          type: string
+          enum:
+            - prepaid
+            - postpaid
+      required:
+        - paymentMethodRef
+        - terms
+    BillingAgreement:
+      type: object
+      properties:
+        ref:
+          type: string
+        accountRef:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - suspended
+            - cancelled
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - ref
+        - accountRef
+        - status
+security:
+  - mTLS: []
+  - serviceToken: []

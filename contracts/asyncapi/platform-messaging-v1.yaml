@@ -1,0 +1,171 @@
+asyncapi: 2.6.0
+info:
+  title: Platform Messaging
+  version: 1.0.0
+  description: Event-driven messaging for the EV Charging Platform using CloudEvents 1.0
+  contact:
+    name: Platform Team
+    url: https://example.com/platform
+  x-message-registry:
+    url: https://schema-registry.example.com
+    description: Central message schema registry
+  license:
+    name: Proprietary
+servers:
+  rabbitmq:
+    url: amqps://rabbitmq.example.com:5671
+    protocol: amqp
+    protocolVersion: 0.9.1
+    description: RabbitMQ production cluster
+    security:
+      - plain: []
+defaultContentType: application/cloudevents+json
+channels:
+  booking.booking.confirmed:
+    publish:
+      operationId: publishBookingConfirmed
+      summary: Booking confirmed event
+      message:
+        $ref: '#/components/messages/BookingConfirmed'
+      bindings:
+        amqp:
+          exchange:
+            name: booking
+            type: topic
+            durable: true
+          routingKey: booking.confirmed
+  session.charging.started:
+    publish:
+      operationId: publishChargingSessionStarted
+      summary: Charging session started event
+      message:
+        $ref: '#/components/messages/ChargingSessionStarted'
+      bindings:
+        amqp:
+          exchange:
+            name: session
+            type: topic
+            durable: true
+          routingKey: charging.started
+  station.capacity.restriction.created:
+    publish:
+      operationId: publishCapacityRestrictionCreated
+      summary: Capacity restriction created event
+      message:
+        $ref: '#/components/messages/CapacityRestrictionCreated'
+      bindings:
+        amqp:
+          exchange:
+            name: station
+            type: topic
+            durable: true
+          routingKey: capacity.restriction.created
+  device.online:
+    publish:
+      operationId: publishDeviceOnline
+      summary: Device online event
+      message:
+        $ref: '#/components/messages/DeviceOnline'
+      bindings:
+        amqp:
+          exchange:
+            name: device
+            type: topic
+            durable: true
+          routingKey: device.online
+components:
+  securitySchemes:
+    plain:
+      type: userPassword
+      description: RabbitMQ plain authentication
+  messages:
+    BookingConfirmed:
+      name: BookingConfirmed
+      title: Booking Confirmed
+      summary: Event emitted when a booking is confirmed
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/booking-confirmed-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: booking.confirmed
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+    ChargingSessionStarted:
+      name: ChargingSessionStarted
+      title: Charging Session Started
+      summary: Event emitted when a charging session starts
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/charging-session-started-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: charging.session.started
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+    CapacityRestrictionCreated:
+      name: CapacityRestrictionCreated
+      title: Capacity Restriction Created
+      summary: Event emitted when a capacity restriction is created
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        type: object
+        properties:
+          ref:
+            type: string
+          stationRef:
+            type: string
+          startTime:
+            type: string
+            format: date-time
+          endTime:
+            type: string
+            format: date-time
+          reason:
+            type: string
+        required:
+          - ref
+          - stationRef
+          - startTime
+          - endTime
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: capacity.restriction.created
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+    DeviceOnline:
+      name: DeviceOnline
+      title: Device Online
+      summary: Event emitted when a device comes online
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        type: object
+        properties:
+          deviceRef:
+            type: string
+          deviceType:
+            type: string
+          firmwareVersion:
+            type: string
+          ipAddress:
+            type: string
+          onlineAt:
+            type: string
+            format: date-time
+        required:
+          - deviceRef
+          - deviceType
+          - onlineAt
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: device.online
+      headers:
+        $ref: ../schemas/common/cloud-event.json

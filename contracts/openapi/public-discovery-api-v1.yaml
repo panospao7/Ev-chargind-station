@@ -1,0 +1,123 @@
+openapi: 3.0.3
+info:
+  title: Public Discovery & Insights API
+  version: 1.0.0
+  description: Public API for Discovery & Insights
+servers:
+  - url: https://api.example.com
+    description: Production server
+paths:
+  /api/v1/stations:
+    get:
+      operationId: listStations
+      summary: List charging stations
+      parameters:
+        - name: latitude
+          in: query
+          schema:
+            type: number
+        - name: longitude
+          in: query
+          schema:
+            type: number
+        - name: radius
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of stations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StationSummary'
+  /api/v1/stations/{stationRef}/availability:
+    get:
+      operationId: getStationAvailability
+      summary: Get station availability
+      parameters:
+        - name: stationRef
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Station availability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationAvailability'
+        '404':
+          description: Station not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+components:
+  securitySchemes:
+    apiKey:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    anonymous:
+      type: http
+      scheme: bearer
+      description: Anonymous access with rate limiting
+  schemas:
+    StationSummary:
+      type: object
+      properties:
+        ref:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        availableEvses:
+          type: integer
+        totalEvses:
+          type: integer
+      required:
+        - ref
+        - name
+        - latitude
+        - longitude
+    StationAvailability:
+      type: object
+      properties:
+        stationRef:
+          type: string
+        status:
+          type: string
+          enum:
+            - available
+            - busy
+            - offline
+            - limited
+        availableEvses:
+          type: integer
+        totalEvses:
+          type: integer
+        nextAvailableSlot:
+          type: string
+          format: date-time
+      required:
+        - stationRef
+        - status
+        - availableEvses
+        - totalEvses
+security:
+  - apiKey: []
+  - anonymous: []

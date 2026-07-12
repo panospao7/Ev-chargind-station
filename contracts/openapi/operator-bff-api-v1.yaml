@@ -1,0 +1,167 @@
+openapi: 3.0.3
+info:
+  title: Operator BFF API
+  version: 1.0.0
+  description: BFF for operator dashboard
+servers:
+  - url: https://api.example.com
+    description: Production server
+paths:
+  /api/v1/stations/{stationRef}/booking-impact:
+    get:
+      operationId: getBookingImpact
+      summary: Get booking impact for a station
+      parameters:
+        - name: stationRef
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Booking impact details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingImpact'
+  /api/v1/maintenances:
+    post:
+      operationId: createMaintenance
+      summary: Create a maintenance request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMaintenanceRequest'
+      responses:
+        '201':
+          description: Maintenance created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+  /api/v1/maintenances/{ref}/submit:
+    post:
+      operationId: submitMaintenance
+      summary: Submit a maintenance request
+      parameters:
+        - name: ref
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Maintenance submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+  /api/v1/maintenances/{ref}/cancel:
+    post:
+      operationId: cancelMaintenance
+      summary: Cancel a maintenance request
+      parameters:
+        - name: ref
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Maintenance cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+  /api/v1/maintenances/{ref}:
+    get:
+      operationId: getMaintenance
+      summary: Get maintenance details
+      parameters:
+        - name: ref
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Maintenance details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+        '404':
+          description: Maintenance not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: session
+  schemas:
+    BookingImpact:
+      type: object
+      properties:
+        stationRef:
+          type: string
+        estimatedReduction:
+          type: number
+        affectedBookings:
+          type: integer
+        impactStart:
+          type: string
+          format: date-time
+        impactEnd:
+          type: string
+          format: date-time
+      required:
+        - stationRef
+        - estimatedReduction
+        - affectedBookings
+    CreateMaintenanceRequest:
+      type: object
+      properties:
+        stationRef:
+          type: string
+        description:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        estimatedDurationMinutes:
+          type: integer
+      required:
+        - stationRef
+        - description
+    Maintenance:
+      type: object
+      properties:
+        ref:
+          type: string
+        stationRef:
+          type: string
+        status:
+          type: string
+          enum:
+            - draft
+            - submitted
+            - in_progress
+            - completed
+            - cancelled
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - ref
+        - stationRef
+        - status
+security:
+  - sessionCookie: []

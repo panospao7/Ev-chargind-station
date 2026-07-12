@@ -1,0 +1,152 @@
+openapi: 3.0.3
+info:
+  title: Notification Internal API
+  version: 1.0.0
+  description: Internal API for Notification Service
+servers:
+  - url: https://internal-api.example.com
+    description: Internal production server
+paths:
+  /notifications/send:
+    post:
+      operationId: sendNotification
+      summary: Send a notification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendNotificationRequest'
+      responses:
+        '202':
+          description: Notification accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDelivery'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /notifications/preferences/{accountRef}:
+    get:
+      operationId: getNotificationPreferences
+      summary: Get notification preferences
+      parameters:
+        - name: accountRef
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /notifications/preferences/{accountRef}:
+    put:
+      operationId: updateNotificationPreferences
+      summary: Update notification preferences
+      parameters:
+        - name: accountRef
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreferences'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreferences'
+components:
+  securitySchemes:
+    mTLS:
+      type: mutualTLS
+      description: mTLS-based authentication
+    serviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Service token authentication
+  schemas:
+    SendNotificationRequest:
+      type: object
+      properties:
+        accountRef:
+          type: string
+        channel:
+          type: string
+          enum:
+            - email
+            - push
+            - sms
+        templateRef:
+          type: string
+        templateData:
+          type: object
+      required:
+        - accountRef
+        - channel
+        - templateRef
+    NotificationDelivery:
+      type: object
+      properties:
+        deliveryRef:
+          type: string
+        accountRef:
+          type: string
+        channel:
+          type: string
+        status:
+          type: string
+          enum:
+            - queued
+            - sent
+            - delivered
+            - failed
+        queuedAt:
+          type: string
+          format: date-time
+      required:
+        - deliveryRef
+        - accountRef
+        - channel
+        - status
+        - queuedAt
+    NotificationPreferences:
+      type: object
+      properties:
+        accountRef:
+          type: string
+        email:
+          type: boolean
+        push:
+          type: boolean
+        sms:
+          type: boolean
+      required:
+        - accountRef
+        - email
+        - push
+        - sms
+security:
+  - mTLS: []
+  - serviceToken: []

@@ -1,0 +1,535 @@
+# =============================================================================
+# Traceability Registry v1
+# =============================================================================
+# Maps requirement IDs to their implementation artefacts (APIs, messages,
+# commands, tests).  Sourced from REQ-001, ARC-006, ARC-018, ARC-020,
+# GAP-001, GAP-002, and the various approval documents.
+# =============================================================================
+
+release_waves:
+  W1: &w1 "W1 — Foundation"
+  W2: &w2 "W2 — Operations"
+  W3: &w3 "W3 — Optimisation"
+
+traceability:
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # FR-BKG — Booking Functional Requirements
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: FR-BKG-01
+    description: >
+      The system MUST allow a driver to create a booking for a specific EVSE
+      at a specific time.
+    releaseWave: *w1
+    apis:
+      - POST /bookings
+    messages:
+      - BookingHeld
+    commands:
+      - null
+    tests:
+      - tests/api/bookings/create-booking-success.int.test.ts
+      - tests/api/bookings/create-booking-validation.unit.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-BKG-02
+    description: >
+      The system MUST hold the EVSE for a configurable hold period (default
+      120 s) while the driver confirms.  If not confirmed, the hold SHALL
+      expire and the EVSE returned to AVAILABLE.
+    releaseWave: *w1
+    apis:
+      - POST /bookings
+    messages:
+      - BookingHeld
+      - BookingHoldExpired
+    commands:
+      - null
+    tests:
+      - tests/api/bookings/hold-expiry.int.test.ts
+      - tests/unit/services/booking-hold-ttl.service.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-BKG-03
+    description: >
+      The driver MUST confirm the booking within the hold period.  Confirmation
+      transitions the booking to CONFIRMED.
+    releaseWave: *w1
+    apis:
+      - POST /bookings/{bookingId}/confirm
+    messages:
+      - BookingConfirmed
+    commands:
+      - null
+    tests:
+      - tests/api/bookings/confirm-booking.int.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-BKG-04
+    description: >
+      A confirmed booking MUST be cancellable by the driver or operator.
+      Cancellation releases the EVSE and triggers billing adjustments if
+      applicable.
+    releaseWave: *w1
+    apis:
+      - POST /bookings/{bookingId}/cancel
+    messages:
+      - BookingCancelled
+    commands:
+      - null
+    tests:
+      - tests/api/bookings/cancel-booking.int.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-BKG-05
+    description: >
+      Confirmed bookings that are not checked in within the check-in window
+      SHALL automatically transition to NO_SHOW.
+    releaseWave: *w1
+    apis:
+      - POST /bookings/{bookingId}/check-in
+    messages:
+      - BookingNoShow
+    commands:
+      - null
+    tests:
+      - tests/unit/services/no-show-detector.service.test.ts
+      - tests/int/booking-no-show-flow.int.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-BKG-06
+    description: >
+      The system MUST support rescheduling (modifying time/EVSE) of a
+      confirmed booking, subject to availability.
+    releaseWave: *w1
+    apis:
+      - POST /bookings/{bookingId}/reschedule
+    messages:
+      - BookingRescheduled
+      - BookingReassigned
+    commands:
+      - null
+    tests:
+      - tests/api/bookings/reschedule-booking.int.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-BKG-07
+    description: >
+      Fulfilment failures (e.g. EVSE fault after booking) MUST transition the
+      booking to FULFILMENT_FAILED and notify the driver.
+    releaseWave: *w1
+    apis:
+      - null
+    messages:
+      - BookingFulfilmentFailed
+    commands:
+      - null
+    tests:
+      - tests/unit/services/fulfilment-failure-handler.service.test.ts
+    status: VERIFIED
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # FR-CHG — Charging Functional Requirements
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: FR-CHG-01
+    description: >
+      The system MUST allow a driver to start a charging session at an EVSE
+      after a successful check-in.
+    releaseWave: *w1
+    apis:
+      - POST /charging-sessions/{sessionId}/start
+    messages:
+      - ChargingStartRequested
+      - ChargingSessionStarted
+      - ChargingStartAttemptRejected
+    commands:
+      - StartChargingAtEVSE
+    tests:
+      - tests/api/charging/start-session.int.test.ts
+      - tests/int/charging-start-flow.int.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-CHG-02
+    description: >
+      The system MUST allow a driver or operator to stop an active charging
+      session.  The session SHALL be marked COMPLETED or INTERRUPTED.
+    releaseWave: *w1
+    apis:
+      - POST /charging-sessions/{sessionId}/stop
+    messages:
+      - ChargingStopRequested
+      - ChargingSessionCompleted
+      - ChargingSessionInterrupted
+    commands:
+      - StopChargingAtEVSE
+      - EmergencyStopChargingSession
+    tests:
+      - tests/api/charging/stop-session.int.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-CHG-03
+    description: >
+      Charging session progress data MUST be published at regular intervals
+      for billing and analytics.
+    releaseWave: *w1
+    apis:
+      - null
+    messages:
+      - ChargingSessionProgressed
+      - DeviceTransactionUpdated
+    commands:
+      - null
+    tests:
+      - tests/unit/services/session-progress-publisher.service.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-CHG-04
+    description: >
+      The system MUST support suspend/resume of an active charging session
+      (e.g. for load balancing).
+    releaseWave: *w1
+    apis:
+      - POST /charging-sessions/{sessionId}/suspend
+      - POST /charging-sessions/{sessionId}/resume
+    messages:
+      - ChargingSessionSuspended
+      - ChargingSessionResumed
+    commands:
+      - null
+    tests:
+      - tests/api/charging/suspend-resume-session.int.test.ts
+    status: VERIFIED
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # FR-AUD — Audit & Observability Requirements
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: FR-AUD-01
+    description: >
+      All state transitions on aggregate roots MUST be recorded in an event
+      log with correlationId, sequenceNumber, and timestamp.
+    releaseWave: *w1
+    apis:
+      - null
+    messages:
+      - All events (via event sourcing framework)
+    commands:
+      - null
+    tests:
+      - tests/unit/infrastructure/event-store.test.ts
+      - tests/int/event-sourcing-replay.int.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-AUD-02
+    description: >
+      Dead-lettered messages MUST be persisted with original headers, error
+      details, and timestamp for operator review.
+    releaseWave: *w1
+    apis:
+      - null
+    messages:
+      - null
+    commands:
+      - null
+    tests:
+      - tests/unit/infrastructure/dead-letter-queue.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-AUD-03
+    description: >
+      Charging session reconciliation events MUST be logged separately for
+      audit trail purposes.
+    releaseWave: *w2
+    apis:
+      - POST /charging-sessions/{sessionId}/reconcile
+    messages:
+      - ChargingReconciliationRequired
+      - ChargingReconciliationResolved
+    commands:
+      - null
+    tests:
+      - tests/api/charging/reconcile-session.int.test.ts
+    status: IMPLEMENTED
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # FR-PLT — Platform / Infrastructure Requirements
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: FR-PLT-01
+    description: >
+      All command messages MUST support idempotency via an idempotencyKey
+      header.  Duplicate requests with the same key and payload SHALL be
+      idempotent.
+    releaseWave: *w1
+    apis:
+      - All POST endpoints
+    messages:
+      - All COMMAND messages
+    commands:
+      - All commands
+    tests:
+      - tests/unit/middleware/idempotency-middleware.test.ts
+      - tests/int/idempotent-command-retry.int.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-PLT-02
+    description: >
+      All event messages MUST carry a correlationId for distributed tracing.
+    releaseWave: *w1
+    apis:
+      - null
+    messages:
+      - All event messages
+    commands:
+      - null
+    tests:
+      - tests/unit/middleware/correlation-middleware.test.ts
+    status: VERIFIED
+
+  - requirementId: FR-PLT-03
+    description: >
+      The platform MUST enforce idempotency key uniqueness per aggregate type.
+      Reuse with a different payload SHALL result in IDEMPOTENCY_KEY_REUSED.
+    releaseWave: *w1
+    apis:
+      - All POST endpoints
+    messages:
+      - null
+    commands:
+      - null
+    tests:
+      - tests/unit/middleware/idempotency-key-collision.test.ts
+    status: VERIFIED
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # W1 — Release Wave 1 (Foundation) Requirements
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: W1-CAP-01
+    description: >
+      Capacity Service MUST expose the bookable count per station and publish
+      StationBookableCountChanged when capacity changes.
+    releaseWave: *w1
+    apis:
+      - GET /stations/{stationId}/availability
+    messages:
+      - StationBookableCountChanged
+    commands:
+      - null
+    tests:
+      - tests/api/capacity/station-availability.int.test.ts
+    status: VERIFIED
+
+  - requirementId: W1-CAP-02
+    description: >
+      Operators MUST be able to freeze and block capacity via capacity
+      restrictions.
+    releaseWave: *w1
+    apis:
+      - POST /capacity-restrictions
+      - POST /capacity-restrictions/{id}/freeze
+      - POST /capacity-restrictions/{id}/block
+      - POST /capacity-restrictions/{id}/release
+    messages:
+      - CapacityRestrictionCreated
+      - CapacityFreezeCommitted
+      - CapacityFreezeRejected
+      - CapacityBlockCommitted
+      - CapacityRestrictionReleased
+    commands:
+      - CreateCapacityFreeze
+      - FinalizeCapacityBlock
+      - ReleaseCapacityRestriction
+    tests:
+      - tests/api/capacity/manage-restriction.int.test.ts
+    status: VERIFIED
+
+  - requirementId: W1-DEV-01
+    description: >
+      Device Gateway MUST handle EVSE online/offline lifecycle and report
+      device faults.
+    releaseWave: *w1
+    apis:
+      - null
+    messages:
+      - DeviceOnline
+      - DeviceOffline
+      - DeviceHeartbeatStale
+      - DeviceRecovered
+      - DeviceFaultRaised
+      - DeviceFaultCleared
+    commands:
+      - RequestDeviceSnapshot
+    tests:
+      - tests/int/device-lifecycle-flow.int.test.ts
+    status: VERIFIED
+
+  - requirementId: W1-DEV-02
+    description: >
+      Device commands MUST be dispatched with timeout tracking and outcome
+      reporting.
+    releaseWave: *w1
+    apis:
+      - null
+    messages:
+      - DeviceCommandDispatchAccepted
+      - DeviceCommandRejected
+      - DeviceCommandTimedOut
+      - DeviceCommandResult
+    commands:
+      - null
+    tests:
+      - tests/int/device-command-dispatch.int.test.ts
+    status: VERIFIED
+
+  - requirementId: W1-NOT-01
+    description: >
+      Notification Service MUST deliver inbox-style notifications and report
+      delivery status.
+    releaseWave: *w1
+    apis:
+      - GET /notifications/inbox
+    messages:
+      - NotificationInboxDelivered
+      - NotificationDispatchFailed
+    commands:
+      - null
+    tests:
+      - tests/api/notifications/inbox-delivery.int.test.ts
+    status: VERIFIED
+
+  - requirementId: W1-START-AUTH-01
+    description: >
+      StartAuthorization MUST be issued, consumed, or revoked with a defined
+      lifecycle.
+    releaseWave: *w1
+    apis:
+      - POST /authorizations/start
+      - POST /authorizations/start/{id}/revoke
+    messages:
+      - StartAuthorizationIssued
+      - StartAuthorizationConsumed
+      - StartAuthorizationRevoked
+    commands:
+      - null
+    tests:
+      - tests/api/authorizations/start-auth-lifecycle.int.test.ts
+    status: VERIFIED
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # W2 — Release Wave 2 (Operations) Requirements
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: W2-OPS-01
+    description: >
+      Operator console MUST support fault management with full lifecycle
+      (open, state change, resolve, reopen).
+    releaseWave: *w2
+    apis:
+      - POST /ops/faults
+      - PATCH /ops/faults/{id}
+    messages:
+      - FaultOpened
+      - FaultStateChanged
+      - FaultResolved
+      - FaultReopened
+    commands:
+      - null
+    tests:
+      - tests/api/ops/fault-lifecycle.int.test.ts
+    status: IMPLEMENTED
+
+  - requirementId: W2-OPS-02
+    description: >
+      Operator console MUST support maintenance scheduling with booking impact
+      resolution.
+    releaseWave: *w2
+    apis:
+      - POST /maintenance
+      - POST /maintenance/{id}/schedule
+      - POST /maintenance/{id}/complete
+      - POST /maintenance/{id}/cancel
+    messages:
+      - MaintenanceScheduled
+      - MaintenanceCompleted
+      - MaintenanceCancelled
+    commands:
+      - null
+    tests:
+      - tests/api/ops/maintenance-lifecycle.int.test.ts
+    status: IMPLEMENTED
+
+  - requirementId: W2-OPS-03
+    description: >
+      Operator console MUST support EVSE operational status overrides with
+      TTL and revocation.
+    releaseWave: *w2
+    apis:
+      - POST /ops/overrides
+      - POST /ops/overrides/{id}/revoke
+    messages:
+      - OperationalOverrideApplied
+      - OperationalOverrideExpired
+      - OperationalOverrideRevoked
+    commands:
+      - null
+    tests:
+      - tests/api/ops/evse-override.int.test.ts
+    status: IMPLEMENTED
+
+  - requirementId: W2-ACC-01
+    description: >
+      Account lifecycle events (deleted, suspended, reactivated) MUST be
+      published for downstream consumers.
+    releaseWave: *w2
+    apis:
+      - DELETE /accounts/{id}
+      - POST /accounts/{id}/suspend
+      - POST /accounts/{id}/reactivate
+    messages:
+      - AccountDeleted
+      - AccountSuspended
+      - AccountReactivated
+    commands:
+      - null
+    tests:
+      - tests/api/accounts/account-lifecycle.int.test.ts
+    status: IMPLEMENTED
+
+  - requirementId: W2-ANA-01
+    description: >
+      Telemetry anomaly detection MUST publish DeviceTelemetryAnomalyDetected
+      events for operator review.
+    releaseWave: *w2
+    apis:
+      - null
+    messages:
+      - DeviceTelemetryAnomalyDetected
+    commands:
+      - null
+    tests:
+      - tests/unit/analytics/anomaly-detection.test.ts
+    status: IMPLEMENTED
+
+  - requirementId: W2-DRV-01
+    description: >
+      Driver restrictions (install/release) MUST be supported for compliance
+      and eligibility management.
+    releaseWave: *w2
+    apis:
+      - POST /drivers/{id}/restrictions
+      - DELETE /drivers/{id}/restrictions/{restrictionId}
+    messages:
+      - BookingEligibilityChanged
+    commands:
+      - InstallDriverRestriction
+      - ReleaseDriverRestriction
+    tests:
+      - tests/api/drivers/driver-restrictions.int.test.ts
+    status: IMPLEMENTED
+
+# =============================================================================
+# End of Traceability Registry
+# =============================================================================

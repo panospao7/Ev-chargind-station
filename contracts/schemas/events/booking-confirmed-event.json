@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/booking-confirmed-event.json",
+  "title": "BookingConfirmedEvent",
+  "description": "Payload for the BookingConfirmed event",
+  "type": "object",
+  "properties": {
+    "bookingRef": {
+      "type": "string",
+      "description": "Booking reference"
+    },
+    "stationRef": {
+      "type": "string",
+      "description": "Station reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "driverRef": {
+      "type": "string",
+      "description": "Driver account reference"
+    },
+    "startTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Booking start time"
+    },
+    "endTime": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Booking end time"
+    },
+    "confirmedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Confirmation timestamp"
+    }
+  },
+  "required": ["bookingRef", "stationRef", "evseRef", "driverRef", "startTime", "endTime", "confirmedAt"]
+}

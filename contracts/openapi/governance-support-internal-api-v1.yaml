@@ -1,0 +1,145 @@
+openapi: 3.0.3
+info:
+  title: Governance & Support Internal API
+  version: 1.0.0
+  description: Internal API for Governance & Support Service
+servers:
+  - url: https://internal-api.example.com
+    description: Internal production server
+paths:
+  /compliance/audit-logs:
+    get:
+      operationId: listAuditLogs
+      summary: List audit logs
+      parameters:
+        - name: entityRef
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditLogEntry'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /support/tickets:
+    post:
+      operationId: createSupportTicket
+      summary: Create a support ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTicketRequest'
+      responses:
+        '201':
+          description: Ticket created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportTicket'
+components:
+  securitySchemes:
+    mTLS:
+      type: mutualTLS
+      description: mTLS-based authentication
+    serviceToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Service token authentication
+  schemas:
+    AuditLogEntry:
+      type: object
+      properties:
+        ref:
+          type: string
+        action:
+          type: string
+        entityRef:
+          type: string
+        performedBy:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        details:
+          type: object
+      required:
+        - ref
+        - action
+        - entityRef
+        - performedBy
+        - timestamp
+    CreateTicketRequest:
+      type: object
+      properties:
+        subject:
+          type: string
+        description:
+          type: string
+        priority:
+          type: string
+          enum:
+            - low
+            - medium
+            - high
+            - critical
+        relatedEntityRef:
+          type: string
+      required:
+        - subject
+        - description
+        - priority
+    SupportTicket:
+      type: object
+      properties:
+        ref:
+          type: string
+        subject:
+          type: string
+        status:
+          type: string
+          enum:
+            - open
+            - in_progress
+            - resolved
+            - closed
+        priority:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - ref
+        - subject
+        - status
+        - createdAt
+security:
+  - mTLS: []
+  - serviceToken: []

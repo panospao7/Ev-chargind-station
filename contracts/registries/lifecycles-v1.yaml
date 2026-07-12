@@ -1,0 +1,604 @@
+# =============================================================================
+# Lifecycle State Machine Registry v1
+# =============================================================================
+# This file defines every lifecycle state machine used in the EV charging
+# platform.  Each aggregate has its own set of states, transitions, guards,
+# and emitted facts.
+# =============================================================================
+
+release_waves:
+  W1: &w1 "W1 — Foundation (MVP)"
+  W2: &w2 "W2 — Operations & Observability"
+
+lifecycles:
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Booking Lifecycle
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: Booking
+    owningService: ChargingService
+    states:
+      - name: PENDING_HOLD
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: |
+          Temporary hold placed on EVSE while driver confirms.  Hold has a TTL.
+      - name: HELD
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Driver has been given the hold confirmation; awaiting explicit confirm.
+      - name: CONFIRMED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Booking is confirmed and assigned to a specific EVSE.
+      - name: ACTIVE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Driver has checked in and charging has started.
+      - name: COMPLETED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Charging session completed successfully.
+      - name: CANCELLED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Booking cancelled by driver or system.
+      - name: NO_SHOW
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Driver did not check in within the check-in window.
+      - name: HOLD_EXPIRED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Hold TTL elapsed without confirmation.
+      - name: FULFILMENT_FAILED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Unable to fulfil the booking (e.g. EVSE fault, allocation error).
+
+    permittedTransitions:
+      - [null, PENDING_HOLD]
+      - [PENDING_HOLD, HELD]
+      - [PENDING_HOLD, HOLD_EXPIRED]
+      - [HELD, CONFIRMED]
+      - [HELD, HOLD_EXPIRED]
+      - [HELD, CANCELLED]
+      - [CONFIRMED, ACTIVE]
+      - [CONFIRMED, CANCELLED]
+      - [CONFIRMED, NO_SHOW]
+      - [CONFIRMED, FULFILMENT_FAILED]
+      - [ACTIVE, COMPLETED]
+      - [ACTIVE, CANCELLED]
+
+    guards:
+      - transition: [null, PENDING_HOLD]
+        condition: EVSE must be bookable and available in requested interval
+      - transition: [PENDING_HOLD, HELD]
+        condition: Hold must be within TTL and driver notified
+      - transition: [HELD, CONFIRMED]
+        condition: Driver confirmed within hold TTL
+      - transition: [HELD, HOLD_EXPIRED]
+        condition: TTL elapsed without confirmation
+      - transition: [CONFIRMED, ACTIVE]
+        condition: Check-in successful, charging session started
+      - transition: [CONFIRMED, NO_SHOW]
+        condition: Check-in window closed without driver arrival
+
+    emittedFacts:
+      - transition: [null, PENDING_HOLD]
+        event: BookingHeld
+      - transition: [PENDING_HOLD, HELD]
+        event: BookingHeld
+      - transition: [HELD, CONFIRMED]
+        event: BookingConfirmed
+      - transition: [HELD, HOLD_EXPIRED]
+        event: BookingHoldExpired
+      - transition: [HELD, CANCELLED]
+        event: BookingCancelled
+      - transition: [CONFIRMED, ACTIVE]
+        event: BookingActivated
+      - transition: [CONFIRMED, CANCELLED]
+        event: BookingCancelled
+      - transition: [CONFIRMED, NO_SHOW]
+        event: BookingNoShow
+      - transition: [CONFIRMED, FULFILMENT_FAILED]
+        event: BookingFulfilmentFailed
+      - transition: [ACTIVE, COMPLETED]
+        event: BookingCompleted
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # SessionAttempt Lifecycle
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: SessionAttempt
+    owningService: ChargingService
+    states:
+      - name: PENDING_DISPATCH
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Start command dispatched to EVSE; awaiting outcome.
+      - name: ACCEPTED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: EVSE accepted the start command; awaiting transaction start.
+      - name: REJECTED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: EVSE rejected the start command.
+      - name: TIMED_OUT
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: No response from EVSE within timeout window.
+      - name: SUCCEEDED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Charging transaction started successfully.
+
+    permittedTransitions:
+      - [null, PENDING_DISPATCH]
+      - [PENDING_DISPATCH, ACCEPTED]
+      - [PENDING_DISPATCH, REJECTED]
+      - [PENDING_DISPATCH, TIMED_OUT]
+      - [ACCEPTED, SUCCEEDED]
+      - [ACCEPTED, REJECTED]
+
+    guards:
+      - transition: [null, PENDING_DISPATCH]
+        condition: Valid authorization, EVSE online, no conflicting session
+      - transition: [PENDING_DISPATCH, ACCEPTED]
+        condition: DeviceCommandDispatchAccepted received
+      - transition: [PENDING_DISPATCH, REJECTED]
+        condition: DeviceCommandRejected received
+      - transition: [PENDING_DISPATCH, TIMED_OUT]
+        condition: No response within command timeout (30s)
+      - transition: [ACCEPTED, SUCCEEDED]
+        condition: DeviceTransactionStarted received
+
+    emittedFacts:
+      - transition: [null, PENDING_DISPATCH]
+        event: ChargingStartRequested
+      - transition: [PENDING_DISPATCH, ACCEPTED]
+        event: DeviceCommandDispatchAccepted
+      - transition: [PENDING_DISPATCH, REJECTED]
+        event: ChargingStartAttemptRejected
+      - transition: [ACCEPTED, SUCCEEDED]
+        event: ChargingSessionStarted
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # ChargingSession Lifecycle
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: ChargingSession
+    owningService: ChargingService
+    states:
+      - name: CREATED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Session record created in the system.
+      - name: STARTED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Charging is in progress.
+      - name: SUSPENDED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Charging temporarily suspended (e.g. load balancing).
+      - name: COMPLETED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Charging completed normally.
+      - name: INTERRUPTED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Charging interrupted by fault, emergency stop, or error.
+      - name: RECONCILIATION_REQUIRED
+        persistent: true
+        terminal: false
+        quasiTerminal: true
+        description: Session outcome differs from device-reported state; manual reconciliation needed.
+
+    permittedTransitions:
+      - [null, CREATED]
+      - [CREATED, STARTED]
+      - [STARTED, SUSPENDED]
+      - [SUSPENDED, STARTED]
+      - [STARTED, COMPLETED]
+      - [STARTED, INTERRUPTED]
+      - [COMPLETED, RECONCILIATION_REQUIRED]
+      - [INTERRUPTED, RECONCILIATION_REQUIRED]
+      - [RECONCILIATION_REQUIRED, COMPLETED]
+
+    guards:
+      - transition: [null, CREATED]
+        condition: Booking must be ACTIVE or no booking required
+      - transition: [CREATED, STARTED]
+        condition: DeviceTransactionStarted received
+      - transition: [STARTED, SUSPENDED]
+        condition: ChargingSessionSuspended received
+      - transition: [SUSPENDED, STARTED]
+        condition: ChargingSessionResumed received
+      - transition: [STARTED, COMPLETED]
+        condition: DeviceTransactionEnded with normal stop reason
+      - transition: [COMPLETED, RECONCILIATION_REQUIRED]
+        condition: Energy totals mismatch with device report
+
+    emittedFacts:
+      - transition: [null, CREATED]
+        event: ChargingSessionCreated
+      - transition: [CREATED, STARTED]
+        event: ChargingSessionStarted
+      - transition: [STARTED, SUSPENDED]
+        event: ChargingSessionSuspended
+      - transition: [SUSPENDED, STARTED]
+        event: ChargingSessionResumed
+      - transition: [STARTED, COMPLETED]
+        event: ChargingSessionCompleted
+      - transition: [STARTED, INTERRUPTED]
+        event: ChargingSessionInterrupted
+      - transition: [COMPLETED, RECONCILIATION_REQUIRED]
+        event: ChargingReconciliationRequired
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # StartAuthorization Lifecycle
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: StartAuthorization
+    owningService: AuthorizationService
+    states:
+      - name: ISSUED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Authorization token issued for a specific EVSE and time window.
+      - name: CONSUMED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Authorization has been used to successfully start a session.
+      - name: REVOKED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Authorization revoked by operator or system.
+      - name: EXPIRED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Authorization TTL elapsed without consumption.
+      - name: EXHAUSTED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: All retry attempts consumed without success.
+
+    permittedTransitions:
+      - [null, ISSUED]
+      - [ISSUED, CONSUMED]
+      - [ISSUED, REVOKED]
+      - [ISSUED, EXPIRED]
+      - [ISSUED, EXHAUSTED]
+
+    guards:
+      - transition: [null, ISSUED]
+        condition: Driver eligible, valid payment method, station bookable
+      - transition: [ISSUED, CONSUMED]
+        condition: Session started successfully via this authorization
+      - transition: [ISSUED, EXHAUSTED]
+        condition: All retry attempts (max 3) failed
+
+    emittedFacts:
+      - transition: [null, ISSUED]
+        event: StartAuthorizationIssued
+      - transition: [ISSUED, CONSUMED]
+        event: StartAuthorizationConsumed
+      - transition: [ISSUED, REVOKED]
+        event: StartAuthorizationRevoked
+      - transition: [ISSUED, EXPIRED]
+        event: StartAuthorizationRevoked
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Station Lifecycle
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: Station
+    owningService: StationManager
+    states:
+      - name: ACTIVE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Station is operational and accepting bookings.
+      - name: LIMITED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Station is operational but some EVSEs are unavailable.
+      - name: OFFLINE
+        persistent: true
+        terminal: false
+        quasiTerminal: true
+        description: Station is offline; no EVSEs are reachable.
+      - name: RETIRED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Station permanently removed from service.
+
+    permittedTransitions:
+      - [null, ACTIVE]
+      - [ACTIVE, LIMITED]
+      - [ACTIVE, OFFLINE]
+      - [LIMITED, ACTIVE]
+      - [LIMITED, OFFLINE]
+      - [LIMITED, RETIRED]
+      - [OFFLINE, ACTIVE]
+      - [OFFLINE, LIMITED]
+      - [OFFLINE, RETIRED]
+
+    guards:
+      - transition: [ACTIVE, LIMITED]
+        condition: At least one EVSE offline or restricted
+      - transition: [ACTIVE, OFFLINE]
+        condition: All EVSEs offline for > configured threshold
+      - transition: [OFFLINE, ACTIVE]
+        condition: All EVSEs back online and healthy
+
+    emittedFacts:
+      - transition: [ACTIVE, LIMITED]
+        event: StationBookableCountChanged
+      - transition: [ACTIVE, OFFLINE]
+        event: StationBookableCountChanged
+      - transition: [OFFLINE, ACTIVE]
+        event: StationBookableCountChanged
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # EVSE Administration Lifecycle
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: EVSE
+    owningService: StationManager
+    states:
+      - name: AVAILABLE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: EVSE is online and ready for bookings.
+      - name: RESERVED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: EVSE is held for a booking.
+      - name: CHARGING
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: EVSE is actively charging.
+      - name: OFFLINE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: EVSE is not reachable from the backend.
+      - name: FAULTED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: EVSE has reported a fault.
+      - name: RETIRED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: EVSE permanently removed from service.
+
+    permittedTransitions:
+      - [null, AVAILABLE]
+      - [AVAILABLE, RESERVED]
+      - [AVAILABLE, OFFLINE]
+      - [AVAILABLE, FAULTED]
+      - [RESERVED, AVAILABLE]
+      - [RESERVED, CHARGING]
+      - [CHARGING, AVAILABLE]
+      - [CHARGING, FAULTED]
+      - [CHARGING, OFFLINE]
+      - [FAULTED, AVAILABLE]
+      - [FAULTED, OFFLINE]
+      - [OFFLINE, AVAILABLE]
+      - [OFFLINE, FAULTED]
+
+    guards:
+      - transition: [AVAILABLE, RESERVED]
+        condition: Booking hold placed successfully
+      - transition: [RESERVED, CHARGING]
+        condition: Transaction started on this EVSE
+      - transition: [CHARGING, AVAILABLE]
+        condition: Transaction ended normally
+
+    emittedFacts:
+      - transition: [AVAILABLE, RESERVED]
+        event: EVSEStatusChanged
+      - transition: [RESERVED, CHARGING]
+        event: EVSEStatusChanged
+      - transition: [CHARGING, AVAILABLE]
+        event: EVSEStatusChanged
+      - transition: [AVAILABLE, OFFLINE]
+        event: DeviceOffline
+      - transition: [OFFLINE, AVAILABLE]
+        event: DeviceOnline
+      - transition: [*, FAULTED]
+        event: DeviceFaultRaised
+      - transition: [FAULTED, *]
+        event: DeviceFaultCleared
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # EVSE Operational Status Override Lifecycle
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: EVSEOperationalStatus
+    owningService: OpsConsole
+    states:
+      - name: NONE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: No override active; EVSE status reflects device-reported state.
+      - name: OVERRIDDEN
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Operator has applied a manual override to the EVSE status.
+
+    permittedTransitions:
+      - [null, NONE]
+      - [NONE, OVERRIDDEN]
+      - [OVERRIDDEN, NONE]
+
+    guards:
+      - transition: [NONE, OVERRIDDEN]
+        condition: Authorized operator, valid reason code, impact assessment completed
+      - transition: [OVERRIDDEN, NONE]
+        condition: Override expired or operator revoked it
+
+    emittedFacts:
+      - transition: [NONE, OVERRIDDEN]
+        event: OperationalOverrideApplied
+      - transition: [OVERRIDDEN, NONE]
+        event: [OperationalOverrideExpired, OperationalOverrideRevoked]
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Maintenance Lifecycle
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: Maintenance
+    owningService: OpsConsole
+    states:
+      - name: DRAFT
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Maintenance record created; not yet scheduled.
+      - name: SCHEDULED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Maintenance scheduled with a defined time window.
+      - name: IN_PROGRESS
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Maintenance work is underway.
+      - name: COMPLETED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Maintenance completed successfully.
+      - name: CANCELLED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Maintenance cancelled before completion.
+
+    permittedTransitions:
+      - [null, DRAFT]
+      - [DRAFT, SCHEDULED]
+      - [DRAFT, CANCELLED]
+      - [SCHEDULED, IN_PROGRESS]
+      - [SCHEDULED, CANCELLED]
+      - [IN_PROGRESS, COMPLETED]
+      - [IN_PROGRESS, CANCELLED]
+
+    guards:
+      - transition: [DRAFT, SCHEDULED]
+        condition: Conflict check passed, impacted bookings notified
+      - transition: [SCHEDULED, IN_PROGRESS]
+        condition: Maintenance window start has been reached
+      - transition: [IN_PROGRESS, COMPLETED]
+        condition: Work completed, EVSEs tested and back online
+
+    emittedFacts:
+      - transition: [DRAFT, SCHEDULED]
+        event: MaintenanceScheduled
+      - transition: [SCHEDULED, IN_PROGRESS]
+        event: EVSEStatusChanged
+      - transition: [IN_PROGRESS, COMPLETED]
+        event: MaintenanceCompleted
+      - transition: [*, CANCELLED]
+        event: MaintenanceCancelled
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Capacity Restriction Lifecycle
+  # ──────────────────────────────────────────────────────────────────────────
+  - name: CapacityRestriction
+    owningService: CapacityService
+    states:
+      - name: PENDING_FREEZE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Freeze requested; awaiting validation and commitment.
+      - name: FROZEN
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Capacity frozen; no new bookings in affected EVSEs.
+      - name: PENDING_BLOCK
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Block requested but not yet committed.
+      - name: BLOCKED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Capacity blocked; existing bookings may be impacted.
+      - name: RELEASED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Restriction released; capacity restored.
+
+    permittedTransitions:
+      - [null, PENDING_FREEZE]
+      - [PENDING_FREEZE, FROZEN]
+      - [PENDING_FREEZE, RELEASED]
+      - [FROZEN, PENDING_BLOCK]
+      - [FROZEN, RELEASED]
+      - [PENDING_BLOCK, BLOCKED]
+      - [PENDING_BLOCK, RELEASED]
+      - [BLOCKED, RELEASED]
+
+    guards:
+      - transition: [null, PENDING_FREEZE]
+        condition: Valid operator credentials, non-conflicting restriction exists
+      - transition: [PENDING_FREEZE, FROZEN]
+        condition: Freeze committed; affected bookings notified
+      - transition: [FROZEN, PENDING_BLOCK]
+        condition: Block requested with confinement scope
+      - transition: [BLOCKED, RELEASED]
+        condition: Safety evidence provided, operator authorized
+
+    emittedFacts:
+      - transition: [null, PENDING_FREEZE]
+        event: CapacityRestrictionCreated
+      - transition: [PENDING_FREEZE, FROZEN]
+        event: CapacityFreezeCommitted
+      - transition: [PENDING_FREEZE, RELEASED]
+        event: CapacityFreezeRejected
+      - transition: [PENDING_BLOCK, BLOCKED]
+        event: CapacityBlockCommitted
+      - transition: [*, RELEASED]
+        event: CapacityRestrictionReleased
+
+# =============================================================================
+# End of Lifecycle Registry
+# =============================================================================
