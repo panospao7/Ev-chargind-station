@@ -93,13 +93,11 @@ No service contract is considered complete until it maps back to a functional re
 
 ## 5. Remaining implementation-level decisions
 
-- BFF token exchange versus audience-specific forwarded user tokens
-- Device reservation synchronization horizon; recommended starting value: 24 hours
-- RabbitMQ queue sizing, retry timing, and event retention
-- Exact meter-summary quality classifications
-- Whether device commands use RabbitMQ exclusively or allow an internal REST fallback
-- Object-storage provider for privacy exports
-- Event-schema registry tooling
+- Device reservation synchronization horizon (Release applicability: W2); recommended starting value: 60 minutes
+- RabbitMQ queue sizing, retry timing, and event retention (Release applicability: W1 | Cross-cutting)
+- Exact meter-summary quality classifications (Release applicability: W1 | Cross-cutting)
+- Object-storage provider for privacy exports (Release applicability: W3)
+- Event-schema registry tooling (Release applicability: W1 | Cross-cutting)
 
 These do not block the architectural model.
 
@@ -109,11 +107,11 @@ With these documents approved, service interaction planning is approximately **c
 
 The next planning phase should be:
 
-1. Database model and table ownership per service
-2. Detailed OpenAPI contracts for Booking, Network, and Charging
-3. AsyncAPI/event-schema definitions
-4. Security architecture and threat model
-5. Deployment topology and cloud design
+1. Database model and table ownership per service (Release applicability: W1 | Cross-cutting)
+2. Detailed OpenAPI contracts for Booking and Session Service, and Station Operations Service (Release applicability: W1 | Cross-cutting)
+3. AsyncAPI/event-schema definitions (Release applicability: W1 | Cross-cutting)
+4. Security architecture and threat model (Release applicability: W1 | Cross-cutting)
+5. Deployment topology and cloud design (Release applicability: W1 | Cross-cutting)
 
 ## 4. Shared Problem-Code Registry
 All microservices standardise on the following RFC 9457 error problem codes:

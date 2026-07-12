@@ -72,8 +72,8 @@ Version numbers below are baseline release lines. Patch releases may advance aut
 | Migration tool | Flyway | 12.6.x |
 | Identity Provider | Keycloak | 26.6.x |
 | Message broker | RabbitMQ | 4.3.x |
-| REST contract | OpenAPI | 3.1.2 |
-| Event contract | AsyncAPI | 3.1.0 |
+| REST contract | OpenAPI | 3.0.3 |
+| Event contract | AsyncAPI | 2.6.0 |
 | Payload schema | JSON Schema | 2020-12 |
 | API code generation | OpenAPI Generator | 7.22.x |
 | Event envelope | CloudEvents | 1.0 |
@@ -526,9 +526,9 @@ The checked-in OpenAPI file remains authoritative.
 
 ## 11.4 AsyncAPI
 
-Use AsyncAPI 3.1.0 and JSON Schema 2020-12.
+Use AsyncAPI 2.6.0 and JSON Schema 2020-12.
 
-AsyncAPI 3.1.0 is backward compatible with 3.0 and has official tool support. ([asyncapi.com](https://www.asyncapi.com/blog/release-notes-3.1.0?utm_source=openai))
+AsyncAPI 2.6.0 is the selected standard for messaging interface definitions due to its mature code generation and tooling ecosystems. ([asyncapi.com](https://www.asyncapi.com/docs/reference/specification/v2.6.0?utm_source=openai))
 
 Use:
 
@@ -887,7 +887,7 @@ No dependency update merges only because it is newer.
 ## ADR-015 — Asynchronous contract standard
 
 **Status:** Accepted  
-**Decision:** AsyncAPI 3.1, JSON Schema 2020-12 and CloudEvents 1.0.
+**Decision:** AsyncAPI 2.6.0, JSON Schema 2020-12 and CloudEvents 1.0.
 
 ## ADR-016 — Mapping
 

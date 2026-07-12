@@ -31,70 +31,76 @@ Release applicability: W1 | W2 | W3 | Cross-cutting
 
 **Owner:** Booking module (Booking and Session Service)  
 **Type:** Primarily one local transaction, not a distributed saga.
+**Release applicability:** W1
 
-1. Resolve reservation context from Network.
-2. For near-term requests, obtain fresh Device Integration Service status.
-3. Select compatible EVSE candidates.
-4. In one Booking transaction:
-   - Check capacity restrictions.
-   - Create allocation and hold.
+1. Optionally resolve advisory preflight reservation context from Station Operations Service (outside transaction locks). (Release applicability: W1)
+2. Optionally obtain fresh Device Integration Service status for near-term requests (outside transaction locks). (Release applicability: W1)
+3. Select compatible EVSE candidates using Booking-local projections. (Release applicability: W1)
+4. In one Booking transaction (holding no remote synchronous locks):
+   - Check capacity restrictions using local projections (fail closed if stale/incomplete).
+   - Create allocation and exclusive hold (`BOOKING_HOLD` claim).
    - Store tariff/policy/configuration snapshots.
-   - Store idempotency result and outbox event.
-5. Confirm within the hold deadline.
-6. Emit `BookingConfirmed`.
-7. Optionally mirror the reservation to the charger.
+   - Store idempotency result and outbox event. (Release applicability: W1)
+5. Confirm within the 5-minute hold deadline. (Release applicability: W1)
+6. Emit `BookingConfirmed` event (triggers mandatory confirmation email). (Release applicability: W1)
+7. Optionally mirror the reservation to the charger (optional W2 feature; mirror failure does not rollback the platform booking). (Release applicability: W2)
 
 The allocation table uses range/exclusion protection so overlapping EVSE allocations cannot both commit. PostgreSQL supports non-overlap enforcement using range types and exclusion constraints. ([postgresql.org](https://www.postgresql.org/docs/current/ddl-constraints.html?utm_source=openai))
 
-Failures before the local commit create no booking. Hold expiration is the compensation after a successful hold.
+Lower-level validation checks are performed locally inside the Booking db.
 
 A device-side reservation rejection does not silently undo a confirmed platform booking. It creates an operational-risk flag and starts reassignment/reconciliation.
 
 ## 3. Rescheduling and reassignment
 
 **Owner:** Booking module (Booking and Session Service)
+**Release applicability:** W1
 
 ### Driver rescheduling
+**Release applicability:** W1
 
-- Resolve updated Network context.
+- Optionally resolve updated Station Operations Service context (advisory preflight check only).
 - Lock booking/version.
-- Atomically change interval/EVSE and snapshots.
+- Atomically check compatibility and capacity using Booking-local projections.
+- Change interval/EVSE and snapshots.
 - Release old allocation within the same transaction.
 - On conflict, roll back completely and preserve the original booking.
 
 ### Fault-driven reassignment
+**Release applicability:** W1
 
 - Freeze the affected EVSE for new bookings.
-- Find compatible candidates.
+- Find compatible candidates using Booking-local projections.
 - Automatically reassign only under approved equivalence rules.
 - Otherwise request driver approval.
 - Update assignment atomically.
-- Send cancellation/reservation commands to the relevant simulated chargers.
+- Send cancellation/reservation commands to the relevant simulated chargers via Device Integration Service commands (asynchronous outbox).
 - Command failures create reconciliation tasks, not duplicate assignments.
 
 ## 4. Maintenance and closure workflow
 
-**Owner:** Station Operations Service, with Booking owning capacity.
+**Owner:** Station Operations Service owns the maintenance planning record lifecycle. Booking module (Booking and Session Service) owns the capacity-restriction lifecycle.
+**Release applicability:** W1
 
 This introduces a necessary **capacity-freeze phase**.
 
-1. Network creates a planning workflow.
-2. Network asks Booking to create a `FREEZE` restriction.
-3. Booking atomically:
-   - Blocks new holds, confirmations, and rescheduling in the interval.
-   - Returns existing affected bookings/sessions.
-4. Reassign or cancel affected bookings.
-5. Stop or resolve active sessions when required.
-6. Once no conflicts remain, Booking promotes the freeze to a hard block.
-7. Network changes maintenance to `SCHEDULED`.
-8. At start:
-   - Maintenance becomes `ACTIVE`.
-   - Device availability command is sent.
-   - Query projections update.
+1. Station Operations Service creates a maintenance planning record in `DRAFT` or `PROPOSED` (Release applicability: W1).
+2. Station Operations Service asks the Booking module to create a `FREEZE` capacity restriction (Release applicability: W1).
+3. The Booking module commits the `FREEZE` restriction (Release applicability: W1) to:
+   - Block new holds, confirmations, and rescheduling in the interval.
+   - Return existing affected bookings/sessions.
+4. The Booking module coordinates reassignment or cancellation of affected bookings (Release applicability: W1).
+5. Stop or resolve active sessions when required (Release applicability: W1).
+6. Once no conflicts remain, Booking module commits the restriction to `BLOCKED` (hard block) (Release applicability: W1).
+7. Station Operations Service changes the maintenance planning record to `SCHEDULED` (using the Booking restriction commitment acknowledgement as transition evidence; Station Operations Service retains overall ownership of the maintenance plan) (Release applicability: W1).
+8. At start of the maintenance window:
+   - Maintenance becomes `ACTIVE` (Station Operations Service). (Release applicability: W1)
+   - Device availability command is sent (asynchronous command via Device Integration Service). (Release applicability: W1)
+   - Query projections in Discovery and Insights Service update. (Release applicability: W1)
 9. At completion:
-   - Maintenance becomes `COMPLETED`.
-   - Capacity block is released.
-   - EVSE becomes `UNKNOWN` until a fresh device report.
+   - Maintenance becomes `COMPLETED` (Station Operations Service). (Release applicability: W1)
+   - Capacity block is released in the Booking module (`RELEASED` state). (Release applicability: W1)
+   - EVSE becomes `UNKNOWN` in local projections until a fresh device report is received. (Release applicability: W1)
 
 If planning is abandoned, the freeze is released. Emergency maintenance may activate before normal resolution only with an emergency reason, active-session handling, notification, and audit.
 
@@ -130,13 +136,13 @@ Add internal technical state `AUTHORIZING`; public states remain unchanged.
 9. Booking consumes the event and becomes `ACTIVE`.
 
 ### Recovery
+**Release applicability:** W1
 
 - Crash before authorization consumption: persisted session worker retries.
 - Crash after consumption: the persisted `AUTHORIZING` session resumes.
-- Definitive rejection: `START_REJECTED`; Booking clears `startPending`.
-- Timeout: remain uncertain and request a device snapshot.
-- A retryable rejection may permit another attempt within the booking deadline.
-- No new session or authorization is created while an existing start is uncertain.
+- Uncertain result: no retry while unresolved. Remains in `AUTHORIZING` / `startPending` and requests a device snapshot to reconcile. (Release applicability: W1)
+- Definitive rejection: the original start attempt is terminal. Booking clears `startPending` and the session shell transitions to failed. (Release applicability: W1)
+- Retry: permitted only within the booking deadline after a definitive rejection or retryable failure is resolved. A retry requires a new attempt number, a newly issued start authorization bound to the same booking, and a new session shell. Every attempt remains fully auditable. (Release applicability: W1)
 
 ## 7. Stop and completion
 

@@ -279,20 +279,21 @@ Each service emits a success or failure event for the request and service step.
 
 ### Emergency charging command
 
-`EmergencyStopChargingSession` is sent only after Network or Governance authorizes and audits the action.
+`EmergencyStopChargingSession` is sent only after Station Operations Service or Platform Governance and Support Service authorizes and audits the action.
 
 ## 8. Subscription matrix
+*Same-service Booking and Session Service modules (Booking and Charging) coordinate via local domain events or direct interfaces rather than RabbitMQ broker integrations. Broker subscriptions are for inter-service integration events.*
 
 | Consumer | Main subscriptions |
 |---|---|
-| Discovery and Insights Service | Public account, network, booking, charging and device events |
-| Notification | Booking/session/account-security events |
-| Governance | Audit, privacy, incident and delivery-failure events |
-| Booking | Charging outcomes, critical network/device changes |
-| Charging | Device command/transaction events and relevant booking cancellations |
-| Network | Device status/fault events and maintenance-impact outcomes |
-| Device Integration Service | Device command queues |
-| Account | Identity lifecycle events |
+| Discovery and Insights Service | Public account, station-operations, booking-session, and device-integration events (Release applicability: W1) |
+| Notification Service | booking-session and account-security events (Release applicability: W1) |
+| Platform Governance and Support Service | Audit, privacy, incident and delivery-failure events (Release applicability: W2) |
+| Booking module (Booking & Session) | Device Integration Service telemetry/status events, and Station Operations Service configuration events (Release applicability: W1) |
+| Charging module (Booking & Session) | Device Integration Service transaction/meter events (Release applicability: W1) |
+| Station Operations Service | Device Integration Service telemetry/fault events, and Booking capacity restriction outcomes (Release applicability: W1) |
+| Device Integration Service | Device command queues (Release applicability: W1) |
+| Account Service | Identity provider lifecycle events (Release applicability: W1) |
 
 ## 9. Payload rules
 

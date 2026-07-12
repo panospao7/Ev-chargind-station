@@ -34,11 +34,11 @@ It does not define raw simulator WebSocket frames, database tables, final Rabbit
 
 Integration events use CloudEvents 1.0 semantics and the stable CloudEvents 1.0.2 JSON/AMQP specifications. CloudEvents defines a vendor-neutral event envelope and requires core attributes such as `id`, `source`, `specversion` and `type`. ([github.com](https://github.com/cloudevents/spec))
 
-Asynchronous interfaces will be documented using AsyncAPI 3.1.0, subject to final Java and TypeScript tooling validation. ([asyncapi.com](https://www.asyncapi.com/docs/reference))
+Asynchronous interfaces are documented using AsyncAPI 2.6.0. ([asyncapi.com](https://www.asyncapi.com/docs/reference))
 
 Payload schemas use JSON Schema Draft 2020-12. ([json-schema.org](https://json-schema.org/draft/2020-12?utm_source=openai))
 
-RabbitMQ remains provisional. If selected, publishers use publisher confirms and consumers use manual acknowledgements after durable processing. RabbitMQ distinguishes publisher confirms from consumer acknowledgements; together they support reliable at-least-once processing. ([rabbitmq.com](https://www.rabbitmq.com/docs/next/confirms))
+RabbitMQ is the approved messaging broker. Publishers use publisher confirms and consumers use manual acknowledgements after durable processing. RabbitMQ distinguishes publisher confirms from consumer acknowledgements; together they support reliable at-least-once processing. ([rabbitmq.com](https://www.rabbitmq.com/docs/next/confirms))
 
 ---
 
@@ -1105,7 +1105,7 @@ Critical scenarios:
 
 Before implementation, create:
 
-- Root AsyncAPI 3.1 document
+- Root AsyncAPI 2.6.0 document
 - Channel definitions
 - Operation definitions
 - Event and command message definitions
@@ -1144,15 +1144,15 @@ Generated code may assist serialization but must not replace domain validation.
 |---|---|
 | ARC-MSG-01 | Use CloudEvents 1.0 structured JSON for integration events. |
 | ARC-MSG-02 | Use a compatible custom envelope for asynchronous commands. |
-| ARC-MSG-03 | Document asynchronous contracts using AsyncAPI 3.1.0. |
+| ARC-MSG-03 | Document asynchronous contracts using AsyncAPI 2.6.0. |
 | ARC-MSG-04 | Use JSON Schema Draft 2020-12 for payload schemas. |
 | ARC-MSG-05 | Use at-least-once delivery with idempotent business effects. |
 | ARC-MSG-06 | Require transactional outbox publication for authoritative facts and commands. |
 | ARC-MSG-07 | Require transactional inbox processing for state-changing consumers. |
-| ARC-MSG-08 | Use publisher confirms, mandatory routing and manual consumer acknowledgements if RabbitMQ is selected. |
+| ARC-MSG-08 | Use publisher confirms, mandatory routing and manual consumer acknowledgements on RabbitMQ. |
 | ARC-MSG-09 | Use separate logical exchanges for events, commands, retries and quarantine. |
 | ARC-MSG-10 | Give every logical consumer its own queue. |
-| ARC-MSG-11 | Use aggregate versions and device/session sequences rather than global ordering assumptions. |
+| ARC-MSG-11 | Use aggregate versions and device/session sequences rather than global ordering ordering assumptions. |
 | ARC-MSG-12 | Preserve original IDs through retries and replay. |
 | ARC-MSG-13 | Use a new major message type for breaking schema changes. |
 | ARC-MSG-14 | Publish normalized device evidence rather than raw simulator messages. |
@@ -1169,7 +1169,7 @@ Generated code may assist serialization but must not replace domain validation.
 
 | ID | Question | Resolution phase |
 |---|---|---|
-| ARC-MSG-OQ-01 | Confirm RabbitMQ as the broker | Final technology selection |
+| ARC-MSG-OQ-01 | Confirm RabbitMQ as the broker | RESOLVED (RabbitMQ selected) |
 | ARC-MSG-OQ-02 | Select quorum versus classic queue types by workload | Deployment design |
 | ARC-MSG-OQ-03 | Final exchange, queue and routing names | AsyncAPI/infrastructure design |
 | ARC-MSG-OQ-04 | Final retry intervals and maximum attempts | Testing/operations |

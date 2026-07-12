@@ -1322,4 +1322,4 @@ To secure inter-service communications, the platform enforces the following rule
 - **Audience Validation:** Every target service validates that the incoming token's `aud` claim matches its specific service identity.
 - **Broker Permissions:** Access to the RabbitMQ broker is restricted by service-specific virtual hosts and read/write permission scopes.
 - **Propagation of Scope:** The actor context (e.g. driver ID, organization ID, and support case scope) is propagated inside signed JWT claims.
-- **Membership Caching:** Stale organization memberships are mitigated by setting service tokens' validity lifetime to a maximum of 15 minutes.
+- **Membership Caching:** Stale organization memberships are mitigated primarily by versioned membership projections and immediate local cache invalidation events (Release applicability: W1). Short token lifetimes (maximum 15 minutes) serve only as a secondary residual bound.

@@ -512,10 +512,10 @@ flowchart LR
     IDP[Identity Provider]
 
     ACC[Account Service]
-    INF[Station Operations Service]
-    BSS[Booking and Session Service]
+    OPS[Station Operations Service]
+    BKG[Booking and Session Service]
     DEV[Device Integration Service]
-    QRY[Discovery and Insights Service]
+    DSC[Discovery and Insights Service]
     NOT[Notification Service]
     GOV[Platform Governance and Support Service]
 
@@ -525,21 +525,21 @@ flowchart LR
     WEB --> GW
     WEB --> IDP
     GW --> ACC
-    GW --> INF
-    GW --> BSS
-    GW --> QRY
+    GW --> OPS
+    GW --> BKG
+    GW --> DSC
     GW --> GOV
 
     SIM <-->|Secure WebSocket| DEV
 
-    BSS -->|Device commands| DEV
-    BSS -->|Authoritative configuration lookup| INF
+    BKG -->|Device commands| DEV
+    BKG -->|Authoritative configuration lookup| OPS
 
     ACC <--> BUS
-    INF <--> BUS
-    BSS <--> BUS
+    OPS <--> BUS
+    BKG <--> BUS
     DEV <--> BUS
-    QRY <--> BUS
+    DSC <--> BUS
     NOT <--> BUS
     GOV <--> BUS
 ```

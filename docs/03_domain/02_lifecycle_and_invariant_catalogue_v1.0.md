@@ -134,19 +134,19 @@ Permitted Transitions:
 - `SUSPENDED` → `REVOKED`
 
 ### 1.8 Device Commands Lifecycle
-- `CREATED` — Command prepared in database.
-- `CANCELLED_BEFORE_DISPATCH` — Cancelled before dispatching to gateway.
-- `SENT` — Dispatched over connection.
-- `DELIVERED` — Acknowledged by Device Integration Service.
-- `ACCEPTED` — Executed successfully by device.
-- `REJECTED` — Charger rejected command execution.
-- `TIMED_OUT` — No response received within the timeout window.
-- `RECONCILING` — Non-terminal state after timeout, waiting for telemetry validation.
+- `CREATED` — Command prepared in database. (Release applicability: W1)
+- `CANCELLED_BEFORE_DISPATCH` — Cancelled before dispatching to gateway. (Release applicability: W1)
+- `SENT` — Dispatched over connection. (Release applicability: W1)
+- `DELIVERED_TO_DEVICE_INTEGRATION` — Acknowledged by Device Integration Service (represents service/broker receipt, not delivery to physical charger). (Release applicability: W1)
+- `ACCEPTED` — Executed successfully by physical device. (Release applicability: W1)
+- `REJECTED` — Charger rejected command execution. (Release applicability: W1)
+- `TIMED_OUT` — No response received within the timeout window. (Release applicability: W1)
+- `RECONCILING` — Non-terminal state after timeout, waiting for telemetry validation. (Release applicability: W1)
 
 Permitted Transitions:
 - `CREATED` → `SENT` | `CANCELLED_BEFORE_DISPATCH`
-- `SENT` → `DELIVERED` | `TIMED_OUT`
-- `DELIVERED` → `ACCEPTED` | `REJECTED` | `TIMED_OUT`
+- `SENT` → `DELIVERED_TO_DEVICE_INTEGRATION` | `TIMED_OUT`
+- `DELIVERED_TO_DEVICE_INTEGRATION` → `ACCEPTED` | `REJECTED` | `TIMED_OUT`
 - `TIMED_OUT` → `RECONCILING`
 - `RECONCILING` → `ACCEPTED` | `REJECTED`
 
@@ -161,6 +161,7 @@ Side Outcomes:
 - `TEMPORARILY_FAILED` — Transient network/socket error; scheduled for retry.
 - `PERMANENTLY_FAILED` — Bounced or rejected by provider (e.g. bad address).
 - `BOUNCED` — Provider bounced notice.
+- `COMPLAINT` — Recipient marked message as spam.
 - `SUPPRESSED` — Recipient address on suppression list.
 - `OBSOLETE` — Superseded by a newer notification before dispatch.
 - `CANCELLED_BEFORE_SEND` — Cancelled manually or due to transaction rollback.
@@ -169,7 +170,7 @@ Permitted Transitions:
 - `REQUESTED` → `QUEUED` | `CANCELLED_BEFORE_SEND`
 - `QUEUED` → `DISPATCHING` | `OBSOLETE`
 - `DISPATCHING` → `PROVIDER_ACCEPTED` | `TEMPORARILY_FAILED` | `PERMANENTLY_FAILED`
-- `PROVIDER_ACCEPTED` → `DELIVERED` | `BOUNCED` | `SUPPRESSED`
+- `PROVIDER_ACCEPTED` → `DELIVERED` | `BOUNCED` | `SUPPRESSED` | `COMPLAINT`
 - `TEMPORARILY_FAILED` → `DISPATCHING` (retry) | `PERMANENTLY_FAILED`
 
 ### 1.10 Support Cases Lifecycle
@@ -318,7 +319,7 @@ Permitted Transitions:
 - **Rule:** No two mutually exclusive new capacity claims may commit with overlapping effective intervals. An operational-occupation claim may overlap a pre-existing planned claim (`BOOKING_ALLOCATION`) during a physical overrun; the existing booking remains durable and enters operational-risk handling. No new conflicting claim may be accepted.
 - **Allocation Interval Boundary Model:** 
   Capacity allocation is managed through three explicit claim types:
-  - `BOOKING_HOLD`: A temporary, non-exclusive capacity block (5-minute TTL) assigned to a driver during checkout.
+  - `BOOKING_HOLD`: A temporary, exclusive capacity block (5-minute TTL) assigned to a driver during checkout, preventing competing holds or allocations.
   - `BOOKING_ALLOCATION`: A confirmed planned capacity claim for a scheduled booking.
   - `OPERATIONAL_OCCUPATION`: An active operational claim tracking actual connection or charging. An operational-occupation claim may overlap a pre-existing planned allocation in an overrun scenario; the pre-existing allocation becomes `AT_RISK` (risk flag, not a lifecycle state) and undergoes same-station reassignment check.
 - **Enforcement:** Enforced via pessimistic locking or database constraints at transaction boundaries in the Booking authority.

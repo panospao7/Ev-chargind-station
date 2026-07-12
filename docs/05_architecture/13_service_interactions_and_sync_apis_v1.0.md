@@ -47,16 +47,16 @@ Release applicability: W1 | W2 | W3 | Cross-cutting
 
 | Caller | Callee | Purpose | Dependency |
 |---|---|---|---|
-| Booking | Station Operations | Reservation context, tariff/policy (advisory preflight validation only) | Optional |
-| Booking | Device Integration Service | Fresh near-term EVSE status | Hard near-term; optional future |
-| Charging | Booking | Consume start authorization | Hard |
-| Network | Booking | Capacity freeze/block for maintenance or closure | Hard |
-| Network | Device Integration Service | Provision simulator/device | Hard during provisioning |
-| Governance | Domain services | Support views and privacy operations | Workflow dependent |
-| Account/Governance | Keycloak | Identity lifecycle | Hard for identity completion |
-| All domain services | Governance | Audit events | Asynchronous |
-| All relevant services | Query/Notification | Projections and messages | Asynchronous |
-| Charging/Network/Booking | Device Integration Service | Charger actions | Asynchronous commands |
+| Booking module (Booking and Session Service) | Station Operations Service | Advisory preflight reservation context and tariff/policy (preflight only; allocation uses local projections) | Optional (Release applicability: W1) |
+| Booking module (Booking and Session Service) | Device Integration Service | Advisory near-term EVSE status (preflight only; allocation uses local projections) | Optional (Release applicability: W1) |
+| Charging module (Booking and Session Service) | Booking module (Booking and Session Service) | Consume start authorization (direct internal method or local domain event call; no remote broker lock) | Hard (Release applicability: W1) |
+| Station Operations Service | Booking module (Booking and Session Service) | Initiate capacity restriction (FREEZE) for maintenance/closure | Hard (Release applicability: W1) |
+| Station Operations Service | Device Integration Service | Provision simulator/device | Hard during provisioning (Release applicability: W1) |
+| Platform Governance and Support Service | Domain services | Support cases and audit oversight queries | Workflow dependent (Release applicability: W2) |
+| Account Service / Platform Governance | Keycloak | User identity lifecycle | Hard for identity completion (Release applicability: W1) |
+| All services | Platform Governance and Support Service | Publish audit events (asynchronous outbox) | Asynchronous (Release applicability: W1) |
+| All services | Discovery and Insights / Notification | Projections and messages (asynchronous outbox) | Asynchronous (Release applicability: W1) |
+| Booking and Session Service / Station Operations | Device Integration Service | Dispatch charger commands (asynchronous commands via RabbitMQ outbox only) | Asynchronous (Release applicability: W1) |
 
 Device Integration Service does not synchronously mutate bookings or sessions.
 
@@ -70,10 +70,10 @@ Device Integration Service does not synchronously mutate bookings or sessions.
 
 ### Authentication
 
-- User requests use short-lived access tokens.
-- Internal background calls use service-account tokens with service-specific audiences.
-- Preferred BFF model: exchange the user token for a target-service token while preserving the user subject and authorized context.
-- Keycloak supports service accounts and audience-specific token exchange, but exact configuration remains an implementation decision. ([keycloak.org](https://www.keycloak.org/securing-apps/token-exchange?utm_source=openai))
+- Browser-to-BFF: secure opaque session cookies plus CSRF protection. Opaque bearer tokens are not forwarded or returned to the browser.
+- BFF-to-Service: target-audience tokens obtained via Keycloak Token Exchange.
+- Service-to-service human delegation: signed delegated assertion (conforms to RFC 8693) propagated downstream, carrying actor and organization context.
+- Service identity tokens are used for service-owned background calls.
 - Correlation headers, organization IDs, and actor headers are never accepted as authorization proof.
 - Every service independently checks roles, ownership, organization status, and resource state.
 
@@ -161,9 +161,9 @@ Returns compatible candidates for the full interval, but Booking performs the fi
 
 Checks current organization membership, role, organization status, and requested action. Used for sensitive operator writes when cached membership is insufficient.
 
-#### Network snapshot
+#### Station Operations snapshot
 
-`GET /internal/v1/snapshots/network?cursor=...`
+`GET /internal/v1/snapshots/station-operations?cursor=...`
 
 Used only to rebuild search/reporting projections.
 
@@ -197,9 +197,9 @@ Permitted only when conflicting bookings/sessions have been resolved. Converts t
 
 #### Release restriction
 
-`DELETE /internal/v1/capacity-restrictions/{id}`
+`POST /internal/v1/capacity-restrictions/{id}:release`
 
-Idempotently releases an aborted or completed restriction.
+Idempotently releases an aborted or completed restriction, transitioning the auditable record to `RELEASED` rather than executing physical deletion.
 
 #### Consume start authorization
 
@@ -277,7 +277,7 @@ Support clients call Governance, which validates case assignment and obtains mas
 
 ## 6. Failure policy
 
-- If Network validation fails, new booking writes fail safely.
+- If Station Operations validation fails, new booking writes fail safely.
 - If live status is required and Device Integration Service is unavailable, near-term booking/check-in fails as `STATUS_UNKNOWN`.
 - Search projection failure never changes authoritative state.
 - Timeouts return an uncertain or retryable response; they never invent success.

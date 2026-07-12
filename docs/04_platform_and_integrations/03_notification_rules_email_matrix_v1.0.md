@@ -339,16 +339,28 @@ Full email content follows the approved retention policy.
 
 `REQUESTED → QUEUED → DISPATCHING → PROVIDER_ACCEPTED → DELIVERED`
 
-Possible later states:
+**Main States:**
+- `REQUESTED` — Notification request created in the outbox. (Release applicability: W1)
+- `QUEUED` — Notification rendered and queued in the delivery dispatcher. (Release applicability: W1)
+- `DISPATCHING` — Submitted to the mail provider. (Release applicability: W1)
+- `PROVIDER_ACCEPTED` — Downstream gateway accepted command for delivery. (Release applicability: W1)
+- `DELIVERED` — Mailbox delivery confirmed by provider callback. (Release applicability: W1)
 
-- `DELIVERED`
-- `TEMPORARILY_FAILED`
-- `PERMANENTLY_FAILED`
-- `BOUNCED`
-- `COMPLAINT`
-- `SUPPRESSED`
-- `OBSOLETE`
-- `CANCELLED_BEFORE_SEND`
+**Side Outcomes:**
+- `TEMPORARILY_FAILED` — Transient network/socket error; scheduled for retry. (Release applicability: W1)
+- `PERMANENTLY_FAILED` — Rejected by provider. (Release applicability: W1)
+- `BOUNCED` — Provider bounced notice. (Release applicability: W1)
+- `COMPLAINT` — Recipient marked message as spam. (Release applicability: W1)
+- `SUPPRESSED` — Recipient address on suppression list. (Release applicability: W1)
+- `OBSOLETE` — Superseded by a newer notification before dispatch. (Release applicability: W1)
+- `CANCELLED_BEFORE_SEND` — Cancelled before send. (Release applicability: W1)
+
+**Permitted Transitions:**
+- `REQUESTED` → `QUEUED` | `CANCELLED_BEFORE_SEND`
+- `QUEUED` → `DISPATCHING` | `OBSOLETE`
+- `DISPATCHING` → `PROVIDER_ACCEPTED` | `TEMPORARILY_FAILED` | `PERMANENTLY_FAILED`
+- `PROVIDER_ACCEPTED` → `DELIVERED` | `BOUNCED` | `SUPPRESSED` | `COMPLAINT`
+- `TEMPORARILY_FAILED` → `DISPATCHING` (retry) | `PERMANENTLY_FAILED`
 
 `PROVIDER_ACCEPTED` does not prove inbox delivery.
 
