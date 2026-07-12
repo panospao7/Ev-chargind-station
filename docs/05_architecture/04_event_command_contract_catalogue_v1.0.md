@@ -830,20 +830,43 @@ Rules:
 
 The maintenance capacity-block workflow follows the three-command protocol defined in ARC-020. This supersedes any prior one-step installation approach.
 
-1. Station Operations creates a Maintenance workflow record.
-2. Station Operations publishes `CreateCapacityFreeze` (ARC-020 command).
-3. Booking validates the request, locks EVSE guards, inserts `capacity_restriction(state=FREEZE)`, returns affected obligations.
-4. Booking emits `CapacityFreezeCommitted` or `CapacityFreezeRejected`.
-5. Station Operations resolves affected obligations (Phase B — see ARC-006 §20.2).
-6. Once obligations are resolved, Station Operations publishes `FinalizeCapacityBlock`.
-7. Booking locks guards, verifies freeze state, inserts `MAINTENANCE_BLOCK` capacity_claim, transitions restriction to `BLOCKED`.
-8. Booking emits `CapacityBlockCommitted` or `CapacityBlockRejected`.
-9. Station Operations transitions Maintenance to `SCHEDULED`.
-10. `MaintenanceScheduled` is published.
-11. At completion/safe-cancellation, Station Operations publishes `ReleaseCapacityRestriction`.
-12. Booking releases the block and restriction only when safe.
-13. Booking emits `CapacityRestrictionReleased` or `CapacityRestrictionReleaseRejected`.
-14. Device status must become fresh before near-term availability returns.
+## 22.1 Submission
+
+1. Station Operations validates the `DRAFT`.
+2. Maintenance becomes `PROPOSED`.
+3. It records an enforcement workflow and becomes `ENFORCEMENT_PENDING`.
+4. It publishes `CreateCapacityFreeze`.
+5. Booking commits `capacity_restriction(state=FREEZE)`.
+6. Booking emits `CapacityFreezeCommitted` or `CapacityFreezeRejected`.
+7. On success, maintenance enters `IMPACT_RESOLUTION`.
+8. Existing obligations are resolved (Phase B — see ARC-006 §20.2).
+9. Station Operations publishes `FinalizeCapacityBlock`.
+10. Booking inserts `MAINTENANCE_BLOCK`, changes restriction to `BLOCKED`, emits `CapacityBlockCommitted`.
+11. Maintenance becomes `SCHEDULED`.
+
+## 22.2 Cancellation
+
+- `DRAFT` with no restriction: immediately `CANCELLED`.
+- Restriction in `FREEZE` or `BLOCKED`: publish `ReleaseCapacityRestriction`.
+- Maintenance becomes `CANCELLED` only after `CapacityRestrictionReleased`.
+- Active maintenance cannot use ordinary cancellation.
+
+## 22.3 Completion
+
+1. Operator submits completion evidence.
+2. Station Operations validates fresh safe EVSE evidence.
+3. It publishes `ReleaseCapacityRestriction`.
+4. Booking releases the claim and restriction.
+5. On acknowledgement, maintenance becomes `COMPLETED`.
+
+## 22.4 Failure
+
+- Maintenance becomes `FAILED`.
+- A `BLOCKED` restriction remains blocking.
+- Failure must never automatically reopen capacity.
+- Release requires the dedicated safety-evidence operation (`requestFailedMaintenanceRestrictionRelease`).
+
+## 22.5 Orphan detection
 
 If the workflow stops between freeze and block, reconciliation detects the orphaned restriction by workflow ID.
 

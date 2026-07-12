@@ -132,6 +132,10 @@ All microservices standardise on the following RFC 9457 error problem codes:
 | `IDEMPOTENCY_KEY_REUSED` | 409 Conflict | No | `idempotencyKey` | Any mutating write | Mutating request retried with same key but different request body. |
 | `NO_COMPATIBLE_EVSE` | 422 Unprocessable Entity | No | `stationId`, `connectorType`, `minPower` | Availability check, hold creation | No EVSE at the station matches the specified connector/power constraints. |
 | `DEPENDENCY_UNAVAILABLE` | 503 Service Unavailable | Yes | `dependencyName` | Any remote preflight | Remote preflight/lookups failed or timed out during non-locking phases. |
+| `MAINTENANCE_STATE_CONFLICT` | 409 Conflict | No | `maintenanceRef`, `expectedState`, `actualState` | Maintenance lifecycle | Maintenance record in unexpected state for the requested operation. |
+| `CAPACITY_RESTRICTION_STATE_CONFLICT` | 409 Conflict | No | `restrictionRef`, `expectedState`, `actualState` | Capacity restriction lifecycle | Capacity restriction in unexpected state for the requested operation. |
+| `SAFETY_EVIDENCE_REQUIRED` | 422 Unprocessable Entity | No | `maintenanceRef` | Failed maintenance release | Release of a failed maintenance restriction requires verified safety evidence. |
+| `MAINTENANCE_IMPACT_UNRESOLVED` | 409 Conflict | No | `maintenanceRef`, `affectedBookingCount` | Maintenance submission | Maintenance cannot proceed until overlapping bookings/sessions are resolved. |
 
 ## 8. Schema Dialect Policy (Release applicability: W1 | Cross-cutting)
 To avoid tooling incompatibilities during code generation and automated contract testing:

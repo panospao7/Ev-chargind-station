@@ -842,14 +842,17 @@ Base: `/api/v1/operator/organizations/{organizationRef}`
 |---|---|---|---|
 | `GET /operations/evses` | `listOperationalEvseStatus` | `200` | |
 | `GET /stations/{stationRef}/booking-impact` | `previewStationBookingImpact` | `200` | |
-| `POST /maintenance-impact-previews` | `previewMaintenanceImpact` | `200` | |
-| `POST /maintenances` | `createMaintenanceDraft` | `201` | Create maintenance record in DRAFT |
-| `GET /maintenances/{maintenanceRef}` | `getMaintenance` | `200` | |
-| `PATCH /maintenances/{maintenanceRef}` | `updateScheduledMaintenance` | `200` | |
-| `POST /maintenances/{maintenanceRef}/submit` | `submitMaintenanceProposal` | `200` | Transition DRAFT → PROPOSED |
-| `POST /maintenances/{maintenanceRef}/cancel` | `cancelScheduledMaintenance` | `200` | Cancel from any pre-active state |
-| `POST /maintenances/{maintenanceRef}/complete` | `completeMaintenance` | `200` | Transition ACTIVE → COMPLETED |
-| `POST /maintenances/{maintenanceRef}/fail` | `failMaintenance` | `200` | Transition → FAILED |
+| Method and path | Operation ID | Success | Purpose | Rule |
+|---|---|---|---|---:|---|
+| `POST /maintenance-impact-previews` | `previewMaintenanceImpact` | `200` | | |
+| `POST /maintenances` | `createMaintenanceDraft` | `201` | Create maintenance record in DRAFT | Normal operators never directly create, finalize or release Booking capacity restrictions. Submitting a Maintenance record starts the internal `CreateCapacityFreeze → FinalizeCapacityBlock → ReleaseCapacityRestriction` workflow. |
+| `GET /maintenances/{maintenanceRef}` | `getMaintenance` | `200` | Includes planning and enforcement status | |
+| `PATCH /maintenances/{maintenanceRef}` | `updateMaintenanceDraft` | `200` | Update DRAFT fields | Allowed only while `DRAFT` |
+| `POST /maintenances/{maintenanceRef}/submit` | `submitMaintenanceProposal` | `202` | Transition DRAFT → PROPOSED; starts freeze workflow | |
+| `POST /maintenances/{maintenanceRef}/cancel` | `cancelMaintenance` | `200/202` | Cancel maintenance | Immediate if no restriction; otherwise waits for release |
+| `POST /maintenances/{maintenanceRef}/complete` | `completeMaintenance` | `202` | Complete maintenance after safe release | Completes only after safe release acknowledgement |
+| `POST /maintenances/{maintenanceRef}/fail` | `failMaintenance` | `200` | Transition → FAILED | Restriction remains blocking |
+| `POST /maintenances/{maintenanceRef}/restriction-release-requests` | `requestFailedMaintenanceRestrictionRelease` | `202` | Release restriction for FAILED maintenance | Only for `FAILED`; requires verified safety evidence |
 | `GET /fault-incidents` | `listFaultIncidents` | `200` |
 | `POST /fault-incidents` | `createFaultIncident` | `201` |
 | `GET /fault-incidents/{faultRef}` | `getFaultIncident` | `200` |
@@ -1020,14 +1023,18 @@ These calls occur outside allocation transactions.
 
 # 32. Internal Booking and Session APIs
 
+## 32.1 Canonical decision
+
+Normal operators never directly create, finalize or release Booking capacity restrictions. Submitting a Maintenance record starts the internal `CreateCapacityFreeze → FinalizeCapacityBlock → ReleaseCapacityRestriction` workflow. Safe completion or eligible cancellation starts `ReleaseCapacityRestriction`. Capacity-restriction REST endpoints are restricted reconciliation interfaces and must execute the same Booking-owned transition logic; they cannot bypass the asynchronous workflow, guard locking, lifecycle, audit or idempotency rules.
+
 Base: `/internal/v1/booking-operations`
 
 | Method and path | Caller | Purpose |
 |---|---|---|
 | `POST /impact-previews` | Station Operations | Non-binding maintenance/closure preview |
-| `POST /capacity-blocks` | Station Operations workflow | *Repair-only.* Authoritative installation path is the async three-command protocol (ARC-020: `CreateCapacityFreeze`→`FinalizeCapacityBlock`→`ReleaseCapacityRestriction`). This endpoint exists for authorized repair/reconciliation only; it must not bypass the FREEZE→BLOCKED→RELEASED lifecycle. |
-| `GET /capacity-blocks/{blockRef}` | Station Operations | Read installation state (also available via restriction query) |
-| `POST /capacity-blocks/{blockRef}/release` | Station Operations workflow | *Repair-only.* Authoritative release path is `ReleaseCapacityRestriction` command. |
+| `GET /internal/v1/booking-operations/capacity-restrictions/{ref}` | Station Operations | Inspect authoritative restriction state |
+| `POST /internal/v1/booking-operations/capacity-restrictions/{ref}/reconciliation-requests` | Station Operations workflow | Replay/reconcile the canonical command; must not accept an arbitrary requested final state |
+| `GET /internal/v1/booking-operations/capacity-restrictions/{ref}/history` | Station Operations | Audit/transition history |
 | `GET /bookings/{bookingRef}/operator-view` | Station Operations | Owned-station minimized view |
 | `GET /bookings/{bookingRef}/support-view` | Governance | Case-scoped masked view |
 | `POST /bookings/{bookingRef}/operator-cancellations` | Station Operations/Governance | Authoritative cancellation |
