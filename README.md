@@ -57,6 +57,7 @@ Specifies boundaries, communications, contracts, database models, and concurrenc
 - **[ARC-009] Technology Selection & ADRs:** [08_technology_selection_adr_set_v1.0.md](docs/05_architecture/08_technology_selection_adr_set_v1.0.md) — Framework choices and Architectural Decision Records.
 - **[ARC-010] Cloud Provider & Cost Analysis:** [09_cloud_provider_cost_analysis_v1.0.md](docs/05_architecture/09_cloud_provider_cost_analysis_v1.0.md) — Budget allocations and cloud provider comparison.
 - **[ARC-011] Deployment Architecture & IaC:** [10_deployment_architecture_iac_v1.0.md](docs/05_architecture/10_deployment_architecture_iac_v1.0.md) — Kubernetes, GitOps, and OpenTofu infrastructure.
+- **[ARC-017] Modular-Monolith Alternative Design:** [11_modular_monolith_alternative_design_v1.0.md](docs/05_architecture/11_modular_monolith_alternative_design_v1.0.md) — Modular architecture, transactions, and fallback design.
 
 ### 7. [06_security_and_privacy](docs/06_security_and_privacy)
 - **[PRV-001] Privacy & Retention:** [01_privacy_retention_export_deletion_v1.0.md](docs/06_security_and_privacy/01_privacy_retention_export_deletion_v1.0.md) — GDPR data deletion and anonymization workflows.
