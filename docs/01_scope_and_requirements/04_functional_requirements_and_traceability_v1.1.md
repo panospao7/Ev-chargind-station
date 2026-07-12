@@ -1,7 +1,7 @@
 Document ID: REQ-001
 Title: Functional Requirements and Traceability v1.1
 Version: 1.1
-Status: IN_REVIEW
+Status: APPROVED
 Owner: DA/BA
 Last reviewed: 2026-07-12
 Supersedes: None
@@ -35,7 +35,7 @@ Logical capability ownership does not yet represent final microservice boundarie
 
 # 2. Requirement terminology
 
-- **MUST:** Mandatory for the completed target platform. Does not imply W1 delivery; each requirement carries an independent target wave.
+- **MUST:** Mandatory for the completed target platform. Does not imply W1-S1 delivery; each requirement carries an independent target wave.
 - **SHOULD:** Expected unless explicitly waived through a recorded release decision.
 - **MAY:** Optional extension.
 - **Authoritative owner:** The only capability permitted to make the final business decision and update the authoritative record.
@@ -48,7 +48,7 @@ Every MUST requirement must have:
 3. Automated verification.
 4. Security controls.
 5. An implementation epic.
-6. **Target wave:** W1 / W2 / W3.
+6. **Target wave:** W1-S1 / W1-S2 / W2 / W3.
 7. Traceability to API/event/data designs before implementation.
 
 ---
@@ -90,31 +90,31 @@ Where specifications overlap, the most focused specification is authoritative.
 
 ## 4.1 Identity and access management
 
-### FR-IAM-01 — Account lifecycle — MUST [W1]
+### FR-IAM-01 — Account lifecycle — MUST [W1-S1]
 
 The platform must support driver registration, email verification, authentication, recovery, suspension, reactivation, deletion initiation and identity-session revocation.
 
 **Acceptance outcome:** Only verified, active accounts may create bookings or start charging sessions.
 
-**Target wave:** W1
+**Target wave:** W1-S1
 
-### FR-IAM-02 — Privileged MFA — MUST [W1]
+### FR-IAM-02 — Privileged MFA — MUST [W1-S1]
 
 All operator, administrator, platform-support and security-reviewer accounts must use MFA.
 
 **Acceptance outcome:** A privileged role cannot access protected functionality without satisfying MFA policy.
 
-**Target wave:** W1
+**Target wave:** W1-S1
 
-### FR-IAM-03 — Authorization — MUST [W1]
+### FR-IAM-03 — Authorization — MUST [W1-S1]
 
 Every protected operation must apply role, organization, resource-ownership, case-scope and exceptional-access rules as applicable.
 
 **Acceptance outcome:** Gateway authorization alone is insufficient; the authoritative capability denies unauthorized access independently.
 
-**Target wave:** W1
+**Target wave:** W1-S1
 
-### FR-IAM-04 — Vehicle and compatibility profile — MUST [W1]
+### FR-IAM-04 — Vehicle and compatibility profile — MUST [W1-S1]
 
 Drivers must be able to manage saved vehicles, connector compatibility, maximum AC/DC power and a default vehicle.
 
@@ -128,11 +128,11 @@ Drivers should be able to inspect and revoke active identity sessions without ex
 
 ## 4.2 Discovery
 
-### FR-DIS-01 — Public discovery — MUST [W1]
+### FR-DIS-01 — Public discovery — MUST [W1-S1]
 
 Unauthenticated users must be able to browse, search and filter published Greek charging stations through accessible map and list views.
 
-### FR-DIS-02 — Infrastructure details — MUST [W1]
+### FR-DIS-02 — Infrastructure details — MUST [W1-S1]
 
 Users must be able to inspect public station, EVSE, connector, power, tariff, opening-hours, access and operational-freshness information.
 
@@ -144,7 +144,7 @@ Search parameters should be represented in the URL so discovery results can be r
 
 ## 4.3 Availability
 
-### FR-AVL-01 — Interval availability — MUST [W1]
+### FR-AVL-01 — Interval availability — MUST [W1-S1]
 
 The platform must derive availability for a requested interval from:
 
@@ -157,7 +157,7 @@ The platform must derive availability for a requested interval from:
 - Faults and overrides
 - Device connectivity and freshness
 
-### FR-AVL-02 — Availability confidence — MUST [W1]
+### FR-AVL-02 — Availability confidence — MUST [W1-S1]
 
 The platform must distinguish:
 
@@ -169,7 +169,7 @@ The platform must distinguish:
 
 Stale or unknown near-term status must never appear as confidently available.
 
-### FR-AVL-03 — Availability authority — MUST [W1]
+### FR-AVL-03 — Availability authority — MUST [W1-S1]
 
 Search availability must be advisory. The authoritative booking transaction must revalidate all allocation rules before committing.
 
@@ -177,35 +177,35 @@ Search availability must be advisory. The authoritative booking transaction must
 
 ## 4.4 Booking
 
-### FR-BKG-01 — Hold and confirm — MUST [W1]
+### FR-BKG-01 — Hold and confirm — MUST [W1-S1]
 
 A driver must be able to create a temporary EVSE hold and confirm it before expiry.
 
-### FR-BKG-02 — Double-booking prevention — MUST [W1]
+### FR-BKG-02 — Double-booking prevention — MUST [W1-S1]
 
 The platform must prevent overlapping EVSE allocations, including buffers, under concurrent requests.
 
 Exactly one conflicting request may succeed.
 
-### FR-BKG-03 — Atomic rescheduling — MUST [W1]
+### FR-BKG-03 — Atomic rescheduling — MUST [W1-S2]
 
 Rescheduling must atomically claim the replacement interval, update the booking and release the original interval.
 
 If replacement fails, the original booking must remain unchanged.
 
-### FR-BKG-04 — Booking lifecycle outcomes — MUST [W1]
+### FR-BKG-04 — Booking lifecycle outcomes — MUST [W1-S1]
 
 The platform must support confirmation, cancellation, expiration, no-show classification, completion and fulfilment failure according to validated transitions.
 
-### FR-BKG-05 — Check-in and start authorization — MUST [W1]
+### FR-BKG-05 — Check-in and start authorization — MUST [W1-S1]
 
 A booking owner must be able to check in at the assigned EVSE during the valid window and receive one short-lived, single-use start authorization.
 
-### FR-BKG-06 — Immutable snapshots — MUST [W1]
+### FR-BKG-06 — Immutable snapshots — MUST [W1-S1]
 
 Confirmed bookings must preserve immutable tariff and effective booking-policy snapshots.
 
-### FR-BKG-07 — Booking details and actions — MUST [W1]
+### FR-BKG-07 — Booking details and actions — MUST [W1-S1]
 
 Drivers must be able to view authoritative upcoming booking details, state, warnings and server-derived permitted actions.
 
@@ -213,19 +213,19 @@ Drivers must be able to view authoritative upcoming booking details, state, warn
 
 ## 4.5 Charging sessions
 
-### FR-CHG-01 — Session lifecycle — MUST [W1]
+### FR-CHG-01 — Session lifecycle — MUST [W1-S1]
 
 The platform must start, monitor, stop, interrupt and reconcile simulated charging sessions separately from booking state.
 
-### FR-CHG-02 — Event correctness — MUST [W1]
+### FR-CHG-02 — Event correctness — MUST [W1-S1]
 
 Duplicate, delayed and out-of-order transaction and meter events must be processed safely without repeating state transitions or inflating energy.
 
-### FR-CHG-03 — Reproducible summary — MUST [W1]
+### FR-CHG-03 — Reproducible summary — MUST [W1-S1]
 
 The platform must produce a reproducible session summary containing duration, energy, tariff snapshot, estimated cost, stop reason and completion outcome.
 
-### FR-CHG-04 — Uncertain outcomes — MUST [W1]
+### FR-CHG-04 — Uncertain outcomes — MUST [W1-S1]
 
 A timed-out or disconnected start/stop outcome must remain visibly uncertain until reconciliation establishes the physical simulated result.
 
@@ -233,11 +233,11 @@ A timed-out or disconnected start/stop outcome must remain visibly uncertain unt
 
 ## 4.6 Driver records and assistance
 
-### FR-HIS-01 — Booking and session history — MUST [W1]
+### FR-HIS-01 — Booking and session history — MUST [W1-S1]
 
 Drivers must be able to view their authoritative booking and charging-session history with filtering, pagination and clear interrupted/uncertain outcomes.
 
-### FR-FLT-01 — Driver fault reporting — SHOULD [W1]
+### FR-FLT-01 — Driver fault reporting — SHOULD [W1-S2]
 
 Authenticated drivers should be able to submit structured station or EVSE fault reports and link them to a booking or session where applicable.
 
@@ -247,19 +247,19 @@ Reports must not directly alter operational state.
 
 ## 4.7 Operator and infrastructure management
 
-### FR-OPS-01 — Organization and staff management — MUST [W1]
+### FR-OPS-01 — Organization and staff management — MUST [W1-S2]
 
 The platform must support operator applications, approval-dependent organization activation, organization profiles, invitations, roles, ownership transfer and organization audit history.
 
-### FR-OPS-02 — Infrastructure management — MUST [W1]
+### FR-OPS-02 — Infrastructure management — MUST [W1-S2]
 
 Authorized operators must be able to manage stations, EVSEs, connectors, opening hours, access information, tariffs and booking policies.
 
-### FR-OPS-03 — Operational workflows — MUST [W1]
+### FR-OPS-03 — Operational workflows — MUST [W1-S2]
 
 Authorized operators must be able to monitor device state, manage maintenance, faults, expiring overrides, booking impact and fulfilment resolution.
 
-### FR-OPS-04 — Booking intervention — MUST [W1]
+### FR-OPS-04 — Booking intervention — MUST [W1-S2]
 
 Scoped operator staff must be able to inspect owned-station bookings and perform permitted reassignment or cancellation through the Booking authority.
 
@@ -271,11 +271,11 @@ Owners and managers should be able to view organization-level utilization, energ
 
 ## 4.8 Administration and support
 
-### FR-ADM-01 — Platform governance — MUST [W1]
+### FR-ADM-01 — Platform governance — MUST [W1-S2]
 
 Administrators must be able to approve/suspend operators, suspend users, moderate stations and manage versioned platform reference data and policy limits.
 
-### FR-ADM-02 — Incident and emergency intervention — MUST [W1]
+### FR-ADM-02 — Incident and emergency intervention — MUST [W1-S2]
 
 Authorized administrators must be able to investigate incidents and perform justified, MFA-protected, audited emergency interventions without fabricating device outcomes.
 
@@ -295,19 +295,19 @@ Support must be able to request permitted cancellation, reassignment and fulfilm
 
 ## 4.9 Charger simulation
 
-### FR-SIM-01 — Simulator machine identity — MUST [W1]
+### FR-SIM-01 — Simulator machine identity — MUST [W1-S1]
 
 Every simulated charging station must use a unique, revocable machine identity scoped to its assigned station and EVSEs.
 
-### FR-SIM-02 — Commands and events — MUST [W1]
+### FR-SIM-02 — Commands and events — MUST [W1-S1]
 
 The simulator must support versioned boot, heartbeat, status, reservation-mirror, start, stop, transaction, meter, fault and reconciliation communication.
 
-### FR-SIM-03 — Failure behaviour — MUST [W1]
+### FR-SIM-03 — Failure behaviour — MUST [W1-S2]
 
 The simulator must support deterministic duplicate, delayed, dropped and out-of-order events, disconnections, command rejection, timeout and queued offline delivery.
 
-### FR-SIM-04 — Protocol representation — MUST [W1]
+### FR-SIM-04 — Protocol representation — MUST [W1-S1]
 
 The platform must describe the simulator as an OCPP-inspired custom protocol and must not claim OCPP compliance, certification or wire compatibility.
 
@@ -315,27 +315,27 @@ The platform must describe the simulator as an OCPP-inspired custom protocol and
 
 ## 4.10 Distributed platform processes
 
-### FR-PLT-01 — Transactional event publication — MUST [W1]
+### FR-PLT-01 — Transactional event publication — MUST [W1-S1]
 
 Authoritative changes requiring asynchronous propagation must use transactional outbox delivery.
 
-### FR-PLT-02 — Idempotent consumption — MUST [W1]
+### FR-PLT-02 — Idempotent consumption — MUST [W1-S1]
 
 Asynchronous consumers must safely handle at-least-once delivery through inbox/deduplication controls.
 
-### FR-PLT-03 — Retry and dead-letter processing — MUST [W1]
+### FR-PLT-03 — Retry and dead-letter processing — MUST [W1-S2]
 
 Transient failures must use bounded retries with backoff and jitter. Exhausted or invalid messages must enter controlled dead-letter handling.
 
-### FR-PLT-04 — Scheduled lifecycle processing — MUST [W1]
+### FR-PLT-04 — Scheduled lifecycle processing — MUST [W1-S1]
 
 The platform must process hold expiry, no-shows, maintenance transitions, status freshness, reminders, reconciliation and retention safely across multiple workers.
 
-### FR-PLT-05 — Reconciliation — MUST [W1]
+### FR-PLT-05 — Reconciliation — MUST [W1-S1]
 
 The platform must reconcile uncertain device commands, missing event sequences, conflicting state and partial cross-capability workflows.
 
-### FR-PLT-06 — Projection isolation — MUST [W1]
+### FR-PLT-06 — Projection isolation — MUST [W1-S1]
 
 Search, analytics, notification and dashboard projections must remain non-authoritative and must not block committed core operations when unavailable.
 
@@ -343,7 +343,7 @@ Search, analytics, notification and dashboard projections must remain non-author
 
 ## 4.11 Notifications
 
-### FR-NOT-01 — Essential transactional email — MUST [W1]
+### FR-NOT-01 — Essential transactional email — MUST [W1-S1]
 
 The platform must send essential security, account, booking, operational and privacy email asynchronously after authoritative commit.
 
@@ -351,7 +351,7 @@ The platform must send essential security, account, booking, operational and pri
 
 Drivers should be able to configure optional reminders and routine summaries but must not disable essential messages.
 
-### FR-NOT-03 — Secure action links — MUST [W1]
+### FR-NOT-03 — Secure action links — MUST [W1-S1]
 
 Verification, recovery, invitation, email-change and privacy-download links must be expiring, purpose-bound and single-use where applicable.
 
@@ -379,11 +379,11 @@ The platform should support correction metadata and restriction of processing wi
 
 ## 4.13 Audit
 
-### FR-AUD-01 — Immutable business and security audit — MUST [W1]
+### FR-AUD-01 — Immutable business and security audit — MUST [W1-S1]
 
 Security-sensitive and business-critical actions must create immutable audit evidence containing actor, action, target, time, reason, outcome and correlation information.
 
-### FR-AUD-02 — Privileged access audit — MUST [W1]
+### FR-AUD-02 — Privileged access audit — MUST [W1-S2]
 
 Data reveal, emergency intervention, dead-letter replay, privacy review and break-glass actions must be separately auditable and reviewable.
 
@@ -634,7 +634,7 @@ Approval of v1.1 means:
 3. Existing IDs must not be silently reused for different meanings.
 4. Removed requirements must be marked `RETIRED`, not deleted.
 5. Changed requirements require version history and impact analysis.
-6. MUST requirements define the completed target platform scope, not W1 delivery.
+6. MUST requirements define the completed target platform scope, not W1-S1 delivery.
 7. SHOULD requirements may be deferred only through a recorded release decision.
 8. Logical owners remain provisional until microservice boundaries are approved.
 9. Every final architecture and implementation artifact must trace back to these requirements.
@@ -642,4 +642,4 @@ Approval of v1.1 means:
 
 ## Status
 
-**Gap 8 is closed at the requirements-planning level, pending G3 contract closure.**
+**W1 baseline (GOV-007) approved. Requirements wave tags reflect W1-S1/W1-S2 split.**

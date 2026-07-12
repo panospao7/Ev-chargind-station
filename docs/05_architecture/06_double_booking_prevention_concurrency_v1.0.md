@@ -1,7 +1,7 @@
 Document ID: ARC-006  
 Title: Definitive Double-Booking Prevention and Allocation Concurrency Design  
 Version: 1.0  
-Status: IN_REVIEW  
+Status: APPROVED  
 Owner: Backend / Data Architect  
 Last reviewed: 2026-07-12  
 Depends on: ARC-001, ARC-002, ARC-003, ARC-004, ARC-005, DOM-002  

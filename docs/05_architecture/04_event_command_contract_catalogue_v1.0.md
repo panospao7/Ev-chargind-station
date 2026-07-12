@@ -1,7 +1,7 @@
 Document ID: ARC-004  
 Title: Event and Command Contract Catalogue  
 Version: 1.0  
-Status: IN_REVIEW  
+Status: APPROVED  
 Owner: Backend / Event-Driven Architecture Lead  
 Last reviewed: 2026-07-11  
 Depends on: ARC-001, ARC-002, ARC-003, PLT-001, SIM-001, DOM-002  

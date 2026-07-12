@@ -1,7 +1,7 @@
 Document ID: ARC-008  
 Title: Frontend Architecture, Screen Catalogue and UX Flow Specification  
 Version: 1.0  
-Status: IN_REVIEW  
+Status: APPROVED  
 Owner: Frontend / UX Architect  
 Last reviewed: 2026-07-11  
 Depends on: ARC-001–007, REQ-001, REQ-002, DOM-001, DOM-002, NOT-001  

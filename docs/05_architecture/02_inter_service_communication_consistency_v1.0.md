@@ -1,7 +1,7 @@
 Document ID: ARC-002  
 Title: Inter-Service Communication and Consistency Matrix  
 Version: 1.0  
-Status: IN_REVIEW  
+Status: APPROVED  
 Owner: Backend / Distributed Systems Architect  
 Last reviewed: 2026-07-12  
 Depends on: ARC-001, GOV-001, GOV-003, REQ-001, DOM-002, PLT-001  

@@ -18,12 +18,15 @@ This document outlines the current completion status of the planning foundation 
 
 The design phase is structured into separate gates:
 - **Gate G1: Planning Foundation** — **APPROVED** (tagged as `planning-foundation-v1.2`).
-- **Gate G2: Logical Architecture** — **APPROVED IN PRINCIPLE** (capability boundaries and concurrency rules established in ARC-001 through ARC-011 and ARC-017).
-- **Gate G3: Contract Catalogues** — **APPROVED** (REST API contracts, AsyncAPI event schemas, and saga workflows in ARC-018 through ARC-021).
-- **Gate G3-executable: Contract Schemas** — **APPROVED** (OpenAPI, AsyncAPI, and JSON schema machine-readable contracts generated and validated under `contracts/`).
-- **Gate G4/G5/G6: Security, Observability, and Operations** — **IN_REVIEW / PENDING** (dependent on contract and security finalization).
+- **Gate G2: Logical Architecture** — **APPROVED** (capability boundaries, communication, REST/event contracts, database models, concurrency, frontend UX, and technology selection in ARC-001 through ARC-009).
+- **Gate G3: Contract Catalogues & Executable Schemas** — **LOGICAL APPROVED; EXECUTABLE IN_REVIEW** (ARC-018–021 logical contracts approved. OpenAPI, AsyncAPI and JSON Schema executable contracts exist; CI validation must pass green before VERIFIED status.).
+- **Gate G4: Security Architecture** — **APPROVED** (ARC-007 security architecture and SEC-001 implementation proof plan approved).
+- **Gate G5: Cloud and Operations** — **IN_REVIEW** (ARC-010, ARC-011 cloud and deployment architecture in review).
+- **Gate G6: Testing, Quality and Readiness** — **PENDING** (ARC-012, ARC-013 dependent on earlier gates).
 
-The project is **approved for W1 foundation and first vertical slice implementation**. Do not claim full production readiness while G4–G6 remain incomplete.
+**Implementation-enablement plans** — **APPROVED** (GOV-007 W1 baseline, ENG-001 engineering foundation, ARC-022 persistence/contracts, SEC-001 security proofs, ARC-023 UX implementation contract).
+
+**Implementation readiness** — **PENDING** (executable contract validation, security proofs, and engineering foundation must demonstrate green CI before business-feature implementation begins).
 
 1. **Project Constraints and Scope:** Completed and baselined in [SCP-001] and [SCP-002].
 2. **Actors and Capabilities:** Completed and baselined in [SCP-003].
@@ -60,30 +63,56 @@ Now that the foundation specifications are approved and baselined, the project s
 - **Testing & CI/CD Pipelines:** Setup build, test, and validation automation scripts.
 - **Final Readiness Review:** Formal checklist sign-off before implementation.
 
-## 3. Release 1 MVP Scope & Deferrals
+## 3. Release 1 W1 Scope — Two Increments
 
-To ensure a realistic scope for an individual developer, the platform's features are divided into Release 1 (MVP) and Release 2 (Deferred):
+W1 is divided into two controlled increments as defined in GOV-007:
 
-### Release 1 MVP (In-Scope) — Wave applicability: W1
-1. **Station Discovery:** Map/list browsing and filters in Greece (`Europe/Athens`). [W1]
-2. **Connector Details:** Inspect EVSE connector compatibility. [W1]
-3. **Interval Availability:** Projections mapping allocations, maintenance, and faults. [W1]
-4. **Registration & Auth:** OIDC/PKCE verified sign-in/recovery, plus privileged MFA. [W1]
-5. **Holds & Bookings:** Create/confirm booking holds, view bookings, cancel bookings. [W1]
-6. **Station Operations:** Basic operator settings, EVSE configurations, and tariff profiles. [W1]
-7. **Basic Analytics:** Simple metrics for utilization and cancellations. [W1]
-8. **Double-Booking Proof:** Pessimistic lock ordering and constraints in Booking. [W1]
-9. **Basic Simulation:** Simulator protocol showing start, stop, and heartbeats. [W1]
-10. **Essential Emails:** Booking confirmation, cancellation, and security alerts. [W1]
-11. **Cloud Deployment:** Hetzner container deployment baseline. [W1]
+### W1-S1: First Vertical Slice
 
-### Release 2 (Deferred to Later Releases) — Wave applicability: W2
+The first demonstrable end-to-end path:
+
+1. **Repeatable Infrastructure Seed:** Deterministic bootstrap with test operator, stations, EVSEs, tariffs, policies, simulator assignment and identities. [W1-S1]
+2. **Public Station Discovery:** Map/list browsing, geographic search, connector/power filters, station/EVSE details, tariff and opening-hours display, operational freshness. [W1-S1]
+3. **Interval Availability:** Projections using half-open intervals, 15-min increments, 5-min hold, 15-min min, 4-hr max, 14-day advance, 60-min near-term, 300-sec freshness. [W1-S1]
+4. **Driver Authentication:** Registration, email verification, login/logout, recovery, BFF session cookie, CSRF, no browser-held token. [W1-S1]
+5. **Hold and Booking:** Automatic/explicit EVSE assignment, idempotent booking, BOOKING_HOLD, interval conflict prevention, enforcement projections, snapshot tariff/policy. [W1-S1]
+6. **Booking Management:** Upcoming details, permitted actions, cancellation, capacity release, history, uncertain/interrupted display. [W1-S1]
+7. **Check-in and Authorization:** QR/manual EVSE identifier, 15-min check-in window, 15-min late grace, single-use start authorization, no secrets in QR/logs/responses. [W1-S1]
+8. **Simulated Charging:** Full happy path — start intent, simulator acceptance, DeviceTransactionStarted, meter updates, monitoring, stop, DeviceTransactionEnded, session summary with duration/energy/tariff/cost/reason. Duplicate safety, rejection, timeout and equipment-failure handling. [W1-S1]
+9. **Messaging and Projections:** Transactional outbox, idempotent inbox, at-least-once, Booking-to-Discovery capacity projection, version validation, bounded retry, quarantine, projection rebuild. [W1-S1]
+10. **Notifications and Audit:** Booking confirmation/cancellation emails, security emails, local mail catcher, immutable audit. [W1-S1]
+11. **Operational Foundation:** Docker Compose with PostgreSQL, RabbitMQ, Keycloak, mail catcher, simulator, health/readiness, structured logs, correlation IDs, metrics/traces, demonstrator cloud deployment. [W1-S1]
+
+### W1-S2: Remaining W1 Completion
+
+After S1 is stable, complete:
+
+12. **Atomic Rescheduling:** Same/different EVSE interval change within the same booking transaction. [W1-S2]
+13. **Station Operations:** Operator station/EVSE/connector/tariff/policy CRUD. [W1-S2]
+14. **Maintenance, Fault and Override Workflows:** Full lifecycle with capacity restriction integration. [W1-S2]
+15. **Operator Booking Intervention:** Authorized cancellation, reassignment, emergency stop. [W1-S2]
+16. **Basic Analytics:** Utilization and cancellation metrics. [W1-S2]
+17. **Administrator Controls:** Suspension and reference-data management. [W1-S2]
+18. **Notification Templates:** Richer email content. [W1-S2]
+19. **Retry/Quarantine/Replay:** Full dead-letter operations. [W1-S2]
+20. **Simulator Failure Scenarios:** Broader deterministic failure testing. [W1-S2]
+21. **Privileged-action Audit:** Extended audit coverage. [W1-S2]
+22. **Backup/Restore Smoke Testing.** [W1-S2]
+23. **Expanded Concurrency and Resilience Testing.** [W1-S2]
+
+### Wave applicability: W2
+
 1. **Operator Applications:** Full sign-up review workflow including operator application lifecycle events, approval saga and automated organization creation (handled manually with pre-seeded operators in W1). [W2]
 2. **Staff Invitations:** Automated invitation workflow lifecycle, emails, and acceptance handling (provisioned manually in W1). [W2]
 3. **Platform Support Cases:** Central ticket management system. [W2]
+4. **Notification Preferences.** [W2]
+5. **Advanced Operator Workflows.** [W2]
+6. **Device Reservation Mirror.** [W2]
 
-### Release 3 — Wave applicability: W3
-4. **Data Privacy Exports:** GDPR data packaging worker. [W3]
-5. **Data Deletion Coordination:** Automated deletion workers. [W3]
-6. **Advanced Simulation:** OCPP 2.1 sequence replay and queue reconciliation. [W3]
-7. **Marketing Notifications:** Reminders, push alerts, and SMS integrations. [W3]
+### Wave applicability: W3
+
+7. **Data Privacy Exports:** GDPR data packaging worker. [W3]
+8. **Data Deletion Coordination:** Automated deletion workers. [W3]
+9. **Advanced Simulation:** OCPP 2.1 sequence replay and queue reconciliation. [W3]
+10. **SMS, Push and Marketing Notifications.** [W3]
+11. **Advanced Disaster Recovery.** [W3]

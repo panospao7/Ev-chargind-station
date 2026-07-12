@@ -6,6 +6,7 @@ info:
   contact:
     name: Platform Team
     url: https://example.com/platform
+    email: platform@example.com
   x-message-registry:
     url: https://schema-registry.example.com
     description: Central message schema registry
@@ -80,6 +81,7 @@ components:
       description: RabbitMQ plain authentication
   messages:
     BookingConfirmed:
+      messageId: BookingConfirmed
       name: BookingConfirmed
       title: Booking Confirmed
       summary: Event emitted when a booking is confirmed
@@ -94,6 +96,7 @@ components:
       headers:
         $ref: ../schemas/common/cloud-event.json
     ChargingSessionStarted:
+      messageId: ChargingSessionStarted
       name: ChargingSessionStarted
       title: Charging Session Started
       summary: Event emitted when a charging session starts
@@ -108,6 +111,7 @@ components:
       headers:
         $ref: ../schemas/common/cloud-event.json
     CapacityRestrictionCreated:
+      messageId: CapacityRestrictionCreated
       name: CapacityRestrictionCreated
       title: Capacity Restriction Created
       summary: Event emitted when a capacity restriction is created
@@ -140,6 +144,7 @@ components:
       headers:
         $ref: ../schemas/common/cloud-event.json
     DeviceOnline:
+      messageId: DeviceOnline
       name: DeviceOnline
       title: Device Online
       summary: Event emitted when a device comes online

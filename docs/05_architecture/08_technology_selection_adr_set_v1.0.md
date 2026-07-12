@@ -1,7 +1,7 @@
 Document ID: ARC-009  
 Title: Final Technology Selection and Architecture Decision Record Set  
 Version: 1.0  
-Status: IN_REVIEW  
+Status: APPROVED  
 Owner: Architecture Lead  
 Last reviewed: 2026-07-11  
 Depends on: ARC-001–008  

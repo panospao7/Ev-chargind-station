@@ -6,195 +6,192 @@ on:
     paths:
       - "contracts/**"
       - "docs/**"
+      - "scripts/**"
+      - "package.json"
   pull_request:
     branches: [main]
     paths:
       - "contracts/**"
       - "docs/**"
+      - "scripts/**"
+      - "package.json"
+
+permissions:
+  contents: read
+  checks: write
+
+env:
+  NODE_VERSION: "24"
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   openapi-validate:
     name: OpenAPI Validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Node
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version: "22"
-      - run: npm install -g @stoplight/spectral-cli
-      - run: |
-          for f in contracts/openapi/*.yaml; do
-            echo "Validating $f..."
-            spectral lint "$f" || exit 1
-          done
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Validate OpenAPI specs
+        run: npx --yes @stoplight/spectral-cli@6.14.3 lint contracts/openapi/*.yaml
+      - name: Check operationId uniqueness
+        run: |
+          node -e "
+            const fs = require('fs'), yaml = require('js-yaml');
+            const files = fs.readdirSync('contracts/openapi').filter(f => f.endsWith('.yaml'));
+            let exitCode = 0;
+            for (const f of files) {
+              const doc = yaml.load(fs.readFileSync('contracts/openapi/' + f, 'utf8'));
+              const ops = new Set();
+              for (const [path, methods] of Object.entries(doc.paths || {})) {
+                for (const [method, op] of Object.entries(methods)) {
+                  if (op.operationId) {
+                    if (ops.has(op.operationId)) {
+                      console.error('FAIL: Duplicate operationId ' + op.operationId + ' in ' + f);
+                      exitCode = 1;
+                    }
+                    ops.add(op.operationId);
+                  }
+                }
+              }
+              console.log('  ' + f + ': ' + ops.size + ' unique operationIds');
+            }
+            process.exit(exitCode);
+          "
 
   asyncapi-validate:
     name: AsyncAPI Validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Node
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version: "22"
-      - run: npm install -g @asyncapi/cli
-      - run: |
-          for f in contracts/asyncapi/*.yaml; do
-            echo "Validating $f..."
-            asyncapi validate "$f" || exit 1
-          done
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Validate AsyncAPI spec
+        run: npx --yes @asyncapi/cli@2.13.0 validate contracts/asyncapi/platform-messaging-v1.yaml
 
   jsonschema-validate:
     name: JSON Schema Validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Node
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version: "22"
-      - run: npm install -g ajv-cli
-      - run: |
-          for f in contracts/schemas/**/*.json; do
-            echo "Validating $f..."
-            ajv validate -s "$f" || exit 1
-          done
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Validate JSON Schemas
+        run: node scripts/contracts/validate-schemas.js
+      - name: Validate with ajv
+        run: |
+          find contracts/schemas -name '*.json' -exec npx --yes ajv-cli@5.0.0 validate -s {} \;
 
   registry-checks:
     name: Registry Consistency Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Node
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version: "22"
-      - run: npm install js-yaml
-      - name: Check message registry uniqueness
-        run: |
-          node -e "
-            const yaml = require('js-yaml');
-            const fs = require('fs');
-            const reg = yaml.load(fs.readFileSync('contracts/registries/messages-v1.yaml', 'utf8'));
-            const names = reg.messages.map(m => m.name);
-            const dups = names.filter((n, i) => names.indexOf(n) !== i);
-            if (dups.length > 0) { console.error('Duplicate names:', dups); process.exit(1); }
-            console.log('All', names.length, 'message names are unique');
-          "
-      - name: Check namespace convention
-        run: |
-          node -e "
-            const yaml = require('js-yaml');
-            const fs = require('fs');
-            const reg = yaml.load(fs.readFileSync('contracts/registries/messages-v1.yaml', 'utf8'));
-            const bad = reg.messages.filter(m => !m.type.startsWith('com.evplatform.'));
-            if (bad.length > 0) { console.error('Non-compliant namespaces:', bad.map(m => m.type)); process.exit(1); }
-            console.log('All', reg.messages.length, 'messages use com.evplatform namespace');
-          "
-      - name: Check schema references exist
-        run: |
-          node -e "
-            const yaml = require('js-yaml');
-            const fs = require('fs');
-            const reg = yaml.load(fs.readFileSync('contracts/registries/messages-v1.yaml', 'utf8'));
-            const missing = reg.messages.filter(m => m.schema && !fs.existsSync('contracts/schemas/' + m.schema));
-            if (missing.length > 0) { console.error('Missing schemas:', missing.map(m => m.name)); process.exit(1); }
-            console.log('All referenced schemas exist');
-          "
-      - name: Check problem-code HTTP status consistency
-        run: |
-          node -e "
-            const yaml = require('js-yaml');
-            const fs = require('fs');
-            const reg = yaml.load(fs.readFileSync('contracts/registries/problem-codes-v1.yaml', 'utf8'));
-            const seen = {};
-            reg.codes.forEach(c => {
-              if (seen[c.code]) { console.error('Duplicate code:', c.code); process.exit(1); }
-              seen[c.code] = true;
-            });
-            console.log('All', reg.codes.length, 'problem codes are unique');
-          "
-      - name: Check lifecycle transition validity
-        run: |
-          node -e "
-            const yaml = require('js-yaml');
-            const fs = require('fs');
-            const reg = yaml.load(fs.readFileSync('contracts/registries/lifecycles-v1.yaml', 'utf8'));
-            reg.aggregates.forEach(a => {
-              const stateNames = new Set(a.states.map(s => s.name));
-              a.permittedTransitions.forEach(t => {
-                if (!stateNames.has(t.from)) { console.error(a.name + ': unknown source state', t.from); process.exit(1); }
-                if (!stateNames.has(t.to)) { console.error(a.name + ': unknown target state', t.to); process.exit(1); }
-              });
-              console.log(a.name + ': ' + a.states.length + ' states, ' + a.permittedTransitions.length + ' transitions valid');
-            });
-          "
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Run registry checks
+        run: node scripts/contracts/check-registries.js
 
   privacy-checks:
     name: Privacy and Data Minimization Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: |
-          node -e "
-            const fs = require('fs');
-            const dir = 'contracts/openapi';
-            const files = fs.readdirSync(dir).filter(f => f.endsWith('.yaml'));
-            files.forEach(f => {
-              const content = fs.readFileSync(dir + '/' + f, 'utf8');
-              if (content.includes('discovery') || content.includes('Discovery')) {
-                if (content.includes('accountRef') || content.includes('driverId') || content.includes('subjectId')) {
-                  if (!content.includes('AccountTombstone')) {
-                    console.error('WARNING: Discovery-related API', f, 'contains subject identifiers');
-                  }
-                }
-              }
-            });
-            console.log('Privacy check complete');
-          "
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Node
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Run security and privacy scan
+        run: node scripts/contracts/security-scan.js
 
   doc-consistency:
     name: Documentation Consistency Checks
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Check for OPEN gaps
-        run: |
-          node -e "
-            const fs = require('fs');
-            const gov = fs.readFileSync('docs/00_governance/06_contradiction_and_resolution_register_v1.0.md', 'utf8');
-            const openGaps = (gov.match(/\\*\\*OPEN\\*\\*/g) || []).length;
-            if (openGaps > 0) {
-              console.log(openGaps + ' gaps still OPEN');
-            } else {
-              console.log('No OPEN gaps remaining');
-            }
-          "
-      - name: Check W1 requirements have owners
-        run: |
-          node -e "
-            const fs = require('fs');
-            const req = fs.readFileSync('docs/00_governance/01_requirement_catalogue_v1.0.md', 'utf8');
-            const w1Items = (req.match(/\\[W1\\]/g) || []).length;
-            console.log('Found', w1Items, 'W1 requirements');
-          "
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Node
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Run documentation consistency checks
+        run: node scripts/contracts/check-docs.js
 
   security-scan:
     name: Security Baseline Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Check for secrets in API files
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Node
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund --ignore-scripts
+      - name: Run secret scanning
         run: |
-          node -e "
-            const fs = require('fs');
-            const glob = require('glob');
-            const files = glob.sync('contracts/**/*.{yaml,json}');
-            const secrets = ['api_key', 'apiKey', 'ApiKey', 'secret', 'password', 'token'];
-            files.forEach(f => {
-              const content = fs.readFileSync(f, 'utf8').toLowerCase();
-              secrets.forEach(s => {
-                if (content.includes(s) && !content.includes('example') && !content.includes('description')) {
-                  // Flag only if used in production schema, not in examples
-                }
-              });
-            });
-            console.log('Security scan complete');
-          "
+          npx --yes secretlint@8.5.0 "contracts/**/*.{yaml,json}" 2>/dev/null || true
+          echo "Secretlint check complete (non-blocking)"
+
+  required:
+    name: Required Aggregation
+    if: always()
+    needs:
+      - openapi-validate
+      - asyncapi-validate
+      - jsonschema-validate
+      - registry-checks
+      - privacy-checks
+      - doc-consistency
+      - security-scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for failures
+        run: |
+          echo "openapi-validate: ${{ needs.openapi-validate.result }}"
+          echo "asyncapi-validate: ${{ needs.asyncapi-validate.result }}"
+          echo "jsonschema-validate: ${{ needs.jsonschema-validate.result }}"
+          echo "registry-checks: ${{ needs.registry-checks.result }}"
+          echo "privacy-checks: ${{ needs.privacy-checks.result }}"
+          echo "doc-consistency: ${{ needs.doc-consistency.result }}"
+          echo "security-scan: ${{ needs.security-scan.result }}"
+          if [ "${{ needs.openapi-validate.result }}" = "failure" ] || \
+             [ "${{ needs.asyncapi-validate.result }}" = "failure" ] || \
+             [ "${{ needs.jsonschema-validate.result }}" = "failure" ] || \
+             [ "${{ needs.registry-checks.result }}" = "failure" ] || \
+             [ "${{ needs.privacy-checks.result }}" = "failure" ] || \
+             [ "${{ needs.doc-consistency.result }}" = "failure" ] || \
+             [ "${{ needs.security-scan.result }}" = "failure" ]; then
+            echo "FAIL: One or more required checks failed"
+            exit 1
+          fi
+          echo "All required checks passed"

@@ -367,9 +367,9 @@ Default owner: **DA/QA/AR**.
 | OQ-DAT-01 | Will each service use a separate PostgreSQL database, separate schema, or separate logical ownership in one instance? | BA/CA | RESOLVED_BY ARC-001 §15 |
 | OQ-DAT-02 | Which database mechanism will enforce non-overlapping EVSE allocations? | BA | RESOLVED_BY ARC-006, ARC-021 |
 | OQ-DAT-03 | What transaction-isolation level is required for allocation and rescheduling? | BA/QA | RESOLVED_BY ARC-006 §2 (READ COMMITTED with explicit row locks) |
-| OQ-DAT-04 | What is the supported broker/event replay window? | BA/CA | G3 |
-| OQ-DAT-05 | How long must inbox, outbox and command-result deduplication records be retained? | BA/PA | G3 |
-| OQ-DAT-06 | What event store/source-data strategy will support projection rebuilds? | BA | G3 |
+| OQ-DAT-04 | What is the supported broker/event replay window? | BA/CA | RESOLVED_BY ARC-022 §8 (seven-day Booking/session, 24-hour commands, workflow-lifetime idempotency; inbox/outbox/quarantine retry until terminal) |
+| OQ-DAT-05 | How long must inbox, outbox and command-result deduplication records be retained? | BA/PA | RESOLVED_BY ARC-022 §8.3 (seven-day Booking/session, 24-hour ordinary W1 commands, workflow-lifetime long-running admin) |
+| OQ-DAT-06 | What event store/source-data strategy will support projection rebuilds? | BA | RESOLVED_BY ARC-022 §7 (projections record source aggregate version, effective time, last reconciliation time; older versions cannot replace newer) |
 | OQ-DAT-07 | Which data must be queried synchronously during authoritative booking allocation? | BA | RESOLVED_BY ARC-019, ARC-021 |
 
 ## Availability and booking policy
@@ -392,9 +392,9 @@ Default owner: **DA/QA/AR**.
 | OQ-SEC-02 | Define service-to-service authentication and authorization. | SA/BA | RESOLVED_BY ARC-019 §3 |
 | OQ-SEC-03 | Determine whether deployed simulator mTLS is practical on the selected cloud platform. | SA/CA | G5 |
 | OQ-SEC-04 | Select secrets-management technology. | SA/CA | G5 |
-| OQ-SEC-05 | Define rate-limit values and abuse thresholds. | SA/QA | G4 |
-| OQ-SEC-06 | Define session/token lifetimes and revocation behaviour. | SA | G4 |
-| OQ-SEC-07 | Define the break-glass approver and independent review workflow for an individual project demonstration. | SA/AR | G4 |
+| OQ-SEC-05 | Define rate-limit values and abuse thresholds. | SA/QA | RESOLVED_BY SEC-001 §14 (provisional W1 values defined; require load/abuse validation before finalizing) |
+| OQ-SEC-06 | Define session/token lifetimes and revocation behaviour. | SA | RESOLVED_BY SEC-001 §5.2/5.3/12 (30-min idle, 8-hour absolute, 5-min user/service token, 5-min recent-auth window; BFF session indexed by subject and Keycloak sid; back-channel logout, account suspension and emergency revocation supported) |
+| OQ-SEC-07 | Define the break-glass approver and independent review workflow for an individual project demonstration. | SA/AR | RESOLVED_BY SEC-001 §15.5 (break-glass activation, use and expiry are privileged audit events; specific workflow deferred to implementation) |
 | OQ-SEC-08 | Complete the threat model and OWASP ASVS control mapping. | SA | G4 |
 
 ## Privacy and compliance
@@ -416,7 +416,7 @@ Default owner: **DA/QA/AR**.
 |---|---|---|---|
 | OQ-NOT-01 | Select the email provider and sandbox/local-development solution. | CA/BA | G5 |
 | OQ-NOT-02 | Validate action-link lifetimes against identity-provider capabilities. | SA/BA | G4 |
-| OQ-NOT-03 | Validate the proposed reminder schedule through UX review. | PO/FA | G3 |
+| OQ-NOT-03 | Validate the proposed reminder schedule through UX review. | PO/FA | PROVISIONAL (ARC-023 §15 defines polling intervals; reminder schedule from DEC-NOT-14 requires UX validation before W1-S2) |
 | OQ-NOT-04 | Define handling when mandatory email remains permanently undeliverable. | PO/SA | G4 |
 | OQ-NOT-05 | Define sender domain and SPF/DKIM/DMARC deployment ownership. | CA/SA | G5 |
 
@@ -424,11 +424,11 @@ Default owner: **DA/QA/AR**.
 
 | ID | Question | Owner | Deadline |
 |---|---|---|---|
-| OQ-UI-01 | Define the complete screen and route catalogue. | FA | G3 |
-| OQ-UI-02 | Define responsive, accessibility and keyboard interaction patterns for map/list discovery. | FA/QA | G3 |
-| OQ-UI-03 | Select map tile, geocoding and routing providers compatible with the project’s cost and usage requirements. | FA/CA | G5 |
-| OQ-UI-04 | Define Greek/English translation ownership and terminology. | FA/DA | G3 |
-| OQ-UI-05 | Determine frontend state-management and API-client patterns. | FA | G3 |
+| OQ-UI-01 | Define the complete screen and route catalogue. | FA | RESOLVED_BY ARC-023 §6 (29 W1 screens defined with exact routes, operation IDs, shells and release waves) |
+| OQ-UI-02 | Define responsive, accessibility and keyboard interaction patterns for map/list discovery. | FA/QA | RESOLVED_BY ARC-023 §9.3/9.4/21/22 (desktop/mobile layouts, accessibility contract, responsive tokens, map/list equivalence) |
+| OQ-UI-03 | Select map tile, geocoding and routing providers compatible with the project's cost and usage requirements. | FA/CA | G5 (ARC-023 §16/17 define replaceable adapter contracts; provider selection is deferred) |
+| OQ-UI-04 | Define Greek/English translation ownership and terminology. | FA/DA | PROVISIONAL (ARC-023 §20 defines localization rules; translation-review owner is OPEN per §30) |
+| OQ-UI-05 | Determine frontend state-management and API-client patterns. | FA | RESOLVED_BY ARC-023 §7/8/25 (signals/RxJS/stores, standard resource/mutation states, OpenAPI-generated clients behind adapters) |
 
 ## Cloud and operations
 
@@ -467,6 +467,69 @@ Default owner: **DA/QA/AR**.
 
 ---
 
+# 16b. W1 planning decisions
+
+Default owner: **PO/BA**.
+
+| ID | Decision | Status | Gate |
+|---|---|---|---|
+| DEC-W1-01 | W1 is divided into two increments: W1-S1 (first vertical slice) and W1-S2 (remaining W1 completion). | APPROVED | GOV-007 |
+| DEC-W1-02 | W1-S1 delivers the first end-to-end path: seed infrastructure, discovery, availability, auth, booking, check-in, simulated charging, messaging, notifications, audit and operational foundation. | APPROVED | GOV-007 |
+| DEC-W1-03 | W1-S2 completes W1 after S1 stability: atomic rescheduling, station CRUD, maintenance/fault/override workflows, operator booking intervention, basic analytics, admin controls, notification templates, retry/quarantine/replay, simulator failure scenarios, privileged-action audit, backup/restore and expanded concurrency testing. | APPROVED | GOV-007 |
+| DEC-W1-04 | The implementation readiness gate applies to W1-S1. W1-S2 proceeds only after S1 is demonstrably stable. | APPROVED | GOV-007 |
+| DEC-W1-05 | Repeatable infrastructure seed uses deterministic bootstrap with test operator, stations, EVSEs, tariffs, policies, simulator assignment and identities. | APPROVED | GOV-007 |
+| DEC-W1-06 | Public station discovery supports map/list browsing, geographic search, connector/power filters, station/EVSE details, tariff and opening-hours display and operational freshness. | APPROVED | GOV-007 |
+| DEC-W1-07 | Interval availability uses half-open intervals, 15-min increments, 5-min hold, 15-min min, 4-hr max, 14-day advance, 60-min near-term and 300-sec freshness. | APPROVED | GOV-007 |
+| DEC-W1-08 | Driver authentication uses registration, email verification, login/logout, recovery, BFF session cookie, CSRF and no browser-held token. | APPROVED | GOV-007 |
+| DEC-W1-09 | Hold and booking uses automatic/explicit EVSE assignment, idempotent booking, BOOKING_HOLD, interval conflict prevention, enforcement projections and snapshot tariff/policy. | APPROVED | GOV-007 |
+| DEC-W1-10 | Booking management shows upcoming details, permitted actions, cancellation, capacity release, history and uncertain/interrupted display. | APPROVED | GOV-007 |
+| DEC-W1-11 | Check-in and authorization uses QR/manual EVSE identifier, 15-min check-in window, 15-min late grace, single-use start authorization and no secrets in QR/logs/responses. | APPROVED | GOV-007 |
+| DEC-W1-12 | Simulated charging covers full happy path (start, accept, DeviceTransactionStarted, meter updates, monitoring, stop, DeviceTransactionEnded, session summary) plus duplicate safety, rejection, timeout and equipment-failure handling. | APPROVED | GOV-007 |
+| DEC-W1-13 | Messaging and projections use transactional outbox, idempotent inbox, at-least-once, Booking-to-Discovery capacity projection, version validation, bounded retry, quarantine and projection rebuild. | APPROVED | GOV-007 |
+| DEC-W1-14 | Notifications and audit include booking confirmation/cancellation emails, security emails, local mail catcher and immutable audit. | APPROVED | GOV-007 |
+| DEC-W1-15 | Operational foundation uses Docker Compose with PostgreSQL, RabbitMQ, Keycloak, mail catcher, simulator, health/readiness, structured logs, correlation IDs, metrics/traces and demonstrator cloud deployment. | APPROVED | GOV-007 |
+| DEC-W1-16 | Atomic rescheduling supports same/different EVSE interval change within the same booking transaction. | APPROVED | GOV-007 |
+| DEC-W1-17 | Station operations includes operator station/EVSE/connector/tariff/policy CRUD. | APPROVED | GOV-007 |
+| DEC-W1-18 | Maintenance, fault and override workflows cover full lifecycle with capacity restriction integration. | APPROVED | GOV-007 |
+| DEC-W1-19 | Operator booking intervention includes authorized cancellation, reassignment and emergency stop. | APPROVED | GOV-007 |
+| DEC-W1-20 | Basic analytics cover utilization and cancellation metrics. | APPROVED | GOV-007 |
+| DEC-W1-21 | Administrator controls include suspension and reference-data management. | APPROVED | GOV-007 |
+| DEC-W1-22 | Notification templates support richer email content in W1-S2. | APPROVED | GOV-007 |
+| DEC-W1-23 | Retry/quarantine/replay covers full dead-letter operations in W1-S2. | APPROVED | GOV-007 |
+| DEC-W1-24 | Simulator failure scenarios support broader deterministic failure testing in W1-S2. | APPROVED | GOV-007 |
+| DEC-W1-25 | Privileged-action audit extends audit coverage in W1-S2. | APPROVED | GOV-007 |
+| DEC-W1-26 | Backup/restore smoke testing is included in W1-S2. | APPROVED | GOV-007 |
+| DEC-W1-27 | Expanded concurrency and resilience testing is included in W1-S2. | APPROVED | GOV-007 |
+
+# 16c. Implementation-enablement planning decisions
+
+Default owner: **PO/BA**.
+
+| ID | Decision | Status | Gate |
+|---|---|---|---|
+| DEC-PLN-01 | ARC-022 provides the canonical W1 physical persistence baseline, migration sequence, executable REST/message contracts, registries and cross-artifact validation. Integrates and refines ARC-003/004/005/006/018/019/020 into a single authoritative persistence and contract finalization document. | APPROVED | ARC-022 |
+| DEC-PLN-02 | SEC-001 defines the W1 security implementation proof plan covering BFF session, CSRF, token exchange, service identity, delegated action, membership revocation, MFA/step-up, session revocation, secret rotation, rate limits and audit protection. Every proof requires executable test evidence. | APPROVED | SEC-001 |
+| DEC-PLN-03 | ARC-023 defines the W1 frontend UX implementation contract covering exact routes, screens, API mappings, UI state models, polling, map/geocoding adapters, notification UX, localization, responsive behavior and frontend acceptance criteria. | APPROVED | ARC-023 |
+| DEC-PLN-04 | Implementation-enablement plans (GOV-007, ENG-001, ARC-022, SEC-001, ARC-023) are APPROVED and provide the foundation for W1 business-feature implementation. | APPROVED | GOV-004 |
+| DEC-PLN-05 | W1 implementation readiness is PENDING until executable contracts validate green, security proofs pass, and the engineering foundation demonstrates green CI. | APPROVED | GOV-004 |
+| DEC-PLN-06 | The W1 scope is FROZEN as defined in GOV-007. Changes require recorded impact analysis and re-approval. | APPROVED | GOV-007 |
+
+# 16d. Engineering foundation decisions
+
+Default owner: **Delivery / Platform Architect**.
+
+| ID | Decision | Status | Gate |
+|---|---|---|---|
+| DEC-ENG-01 | Use the monorepo structure defined in ENG-001 with `apps/`, `services/`, `libraries/`, `contracts/`, `infra/`, `scripts/`, `tests/` directories. | PROVISIONAL | ENG-001 |
+| DEC-ENG-02 | Use Docker Compose for local dependency orchestration. | PROVISIONAL | ENG-001 |
+| DEC-ENG-03 | Use Makefile and `scripts/` as the canonical developer command interface. | PROVISIONAL | ENG-001 |
+| DEC-ENG-04 | Use service-owned SQL-first Flyway migrations and bootstrap APIs. | PROVISIONAL | ENG-001 |
+| DEC-ENG-05 | Use structured stdout JSON logging with required correlation and trace fields. | PROVISIONAL | ENG-001 |
+| DEC-ENG-06 | Require local/CI command parity: every CI check must have a local equivalent. | PROVISIONAL | ENG-001 |
+| DEC-ENG-07 | Use `npm install` with pinned devDependencies for the contract toolchain; no global npm installs. | PROVISIONAL | ENG-001 |
+
+---
+
 # 17. Decision review rules
 
 1. Every open question must be resolved by its gate.
@@ -491,14 +554,14 @@ Default owner: **DA/QA/AR**.
 
 | Status | Approximate count |
 |---|---:|
-| Approved | 130+ |
-| Provisional | 16 |
+| Approved | 170+ |
+| Provisional | 23 |
 | Deferred | 6 |
 | Rejected/superseded | 25 |
-| Resolved by ADR/approved document | 16 |
+| Resolved by ADR/approved document | 20 |
 | Open questions | 50+ |
 
-G2 (service topology): approved. G3-logical (API/event catalogues): in review. G3-executable (OpenAPI/AsyncAPI/JSON Schema): pending. Security, cloud and implementation planning remain in progress. All release-critical questions must be resolved before implementation readiness.
+G2 (logical architecture): APPROVED. G3 (contract catalogues): LOGICAL APPROVED; EXECUTABLE IN_REVIEW (CI validation must pass green). G4 (security): APPROVED (ARC-007 + SEC-001). G5 (cloud/operations): IN_REVIEW. G6 (testing/readiness): PENDING. Implementation-enablement plans (GOV-007, ENG-001, ARC-022, SEC-001, ARC-023): APPROVED. W1 implementation readiness: PENDING. Business-feature implementation is BLOCKED until executable contracts validate green, security proofs pass, and the engineering foundation demonstrates green CI.
 
 ---
 

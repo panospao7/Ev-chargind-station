@@ -62,11 +62,15 @@ Specifies boundaries, communications, contracts, database models, and concurrenc
 - **[ARC-019] Sync APIs & Interactions:** [13_service_interactions_and_sync_apis_v1.0.md](docs/05_architecture/13_service_interactions_and_sync_apis_v1.0.md) — HTTP REST endpoint definitions and sources of truth.
 - **[ARC-020] Domain Events & Async Contracts:** [14_domain_events_and_async_contracts_v1.0.md](docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md) — RabbitMQ message channel contracts and schemas.
 - **[ARC-021] Major Saga Workflows:** [15_major_saga_workflows_v1.0.md](docs/05_architecture/15_major_saga_workflows_v1.0.md) — Orchestrated and choreographed transactions.
+- **[ARC-022] W1 Persistence & Contract Finalization:** [16_w1_persistence_and_contract_finalization_v1.0.md](docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md) — Physical persistence baseline, migration sequence, executable contracts, and cross-artifact validation.
+- **[ARC-023] W1 Frontend UX Implementation Contract:** [17_w1_frontend_ux_implementation_contract_v1.0.md](docs/05_architecture/17_w1_frontend_ux_implementation_contract_v1.0.md) — Routes, screens, API mappings, UI state models, polling, adapters, localization, and acceptance criteria.
 - **[GOV-006] Contradiction Register:** [06_contradiction_and_resolution_register_v1.0.md](docs/00_governance/06_contradiction_and_resolution_register_v1.0.md) — Resolution record for system contradictions.
+- **[GOV-007] W1 Baseline & First Vertical Slice:** [07_w1_baseline_and_first_vertical_slice_v1.0.md](docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md) — Frozen W1 scope, S1/S2 increments, and release applicability.
 
 ### 7. [06_security_and_privacy](docs/06_security_and_privacy)
 - **[PRV-001] Privacy & Retention:** [01_privacy_retention_export_deletion_v1.0.md](docs/06_security_and_privacy/01_privacy_retention_export_deletion_v1.0.md) — GDPR data deletion and anonymization workflows.
 - **[ARC-007] Security Architecture:** [02_security_architecture_threat_model_v1.0.md](docs/06_security_and_privacy/02_security_architecture_threat_model_v1.0.md) — OAuth2/OIDC, BFF, security policies, and threat model.
+- **[SEC-001] Security Implementation Proof Plan:** [03_security_implementation_proof_plan_v1.0.md](docs/06_security_and_privacy/03_security_implementation_proof_plan_v1.0.md) — W1 security proofs, Keycloak profile, BFF session, service identity, MFA, secret handling, abuse controls, and audit protection.
 
 ### 8. [07_quality_and_operations](docs/07_quality_and_operations)
 - **[ARC-012] Observability & Backup Runbooks:** [01_observability_backup_runbooks_v1.0.md](docs/07_quality_and_operations/01_observability_backup_runbooks_v1.0.md) — SLOs, logging rules, and disaster recovery.
@@ -76,3 +80,4 @@ Specifies boundaries, communications, contracts, database models, and concurrenc
 - **[ARC-014] CI/CD Strategy:** [01_cicd_repository_organization_v1.0.md](docs/08_delivery_and_ai_agents/01_cicd_repository_organization_v1.0.md) — Monorepo rules and GitHub Actions.
 - **[ARC-015] Implementation Dependency Roadmap:** [02_implementation_epics_dependency_roadmap_v1.0.md](docs/08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md) — Release epics and Gantt timeline.
 - **[ARC-016] AI-Agent Review Gates & Rules:** [03_ai_agent_rules_review_gates_v1.0.md](docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md) — Governance rules and mandatory check gates.
+- **[ENG-001] Local Engineering Foundation:** [04_local_engineering_foundation_v1.0.md](docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md) — Developer runway, monorepo structure, coding standards, and foundation acceptance criteria.

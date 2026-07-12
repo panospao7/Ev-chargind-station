@@ -1,7 +1,7 @@
 Document ID: ARC-005  
 Title: Database Models, Ownership and Migration Strategy  
 Version: 1.0  
-Status: IN_REVIEW  
+Status: APPROVED  
 Owner: Backend / Data Architect  
 Last reviewed: 2026-07-12  
 Depends on: ARC-001, ARC-002, ARC-003, ARC-004, DOM-002, PRV-001  
@@ -36,6 +36,8 @@ It does not finalize:
 - Final retention periods
 
 Those decisions are completed in later architecture phases.
+
+> Note: ARC-022 now provides the authoritative W1 physical persistence baseline, including canonical table definitions, migration sequences, index and constraint specifications, and seed/reset manifests. ARC-005 remains authoritative for logical database ownership, cross-service reference rules, and migration governance principles. Where ARC-005 and ARC-022 differ, ARC-022's physical specification takes precedence for W1.
 
 ---
 
