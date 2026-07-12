@@ -63,6 +63,13 @@ permission:
     "*": deny
     "planner": allow
     "coder": allow
+    "tester": allow
+    "reviewer": allow
+    "debugger": allow
+    "security-reviewer": allow
+    "contract-reviewer": allow
+    "data-reviewer": allow
+    "documentation": allow
 ---
 
 # Role
@@ -95,7 +102,7 @@ For every task:
 12. Invoke `coder` only when the plan is ready and properly authorized.
 13. Collect the coder handoff and actual test evidence.
 14. Update only permitted delivery control-plane records.
-15. Stop at `SELF_VERIFIED` until independent testing and review agents are configured.
+
 
 # Definition-of-Ready validation
 

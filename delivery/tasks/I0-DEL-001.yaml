@@ -1,0 +1,256 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I0-DEL-001"
+  title: "Make OpenCode delivery control plane executable"
+  initialState: "READY"
+  iteration: "I0"
+  epic: "EPIC-01"
+  releaseWave: "W1"
+  sliceApplicability: "W1-CROSS-CUTTING"
+  impactLevel: "L2"
+  owner: "Delivery / AI Agent Architect"
+  createdAt: "2026-07-12"
+  baselineCommit: null
+
+objective: >
+  Repair the OpenCode delivery configuration so that:
+  - custom commands are discoverable from .opencode/commands/;
+  - specialist skills exist under .opencode/skills/;
+  - opencode.json contains no duplicate agent definitions;
+  - the orchestrator agent can invoke the full review/verification workflow;
+  - delivery YAML files are syntactically valid (no duplicate keys);
+  - timestamps use true UTC;
+  - SHA references use 40-character hex;
+  - handoff naming follows the convention;
+  - the I0 iteration record is complete;
+  - delivery validation checks reject future integrity violations.
+
+nonGoals:
+  - "Change any product, domain, architecture, or governance document."
+  - "Edit any contract, schema, or registry file."
+  - "Implement business code or database migrations."
+  - "Create or modify task packets for I0-ENG-001 or other tasks."
+  - "Deploy any artifact."
+
+authority:
+  governance:
+    - path: "delivery/README.md"
+      section: "Handoff naming convention"
+      decisionIds: []
+
+  architecture:
+    - path: "docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md"
+      section: "17–20 and 24 — agent workflow, skills, commands"
+      decisionIds: []
+
+  contracts:
+    - path: "opencode.json"
+      identifiers:
+        - "agent definitions"
+        - "permissions"
+
+    - path: ".opencode/**"
+      identifiers:
+        - "agent files"
+        - "command files"
+        - "skill definitions"
+
+ownership:
+  owningService: "Delivery / AI Agent Architecture"
+  dataOwner: "Not applicable"
+  supportingServices: []
+  prohibitedOwners:
+    - "Application business services"
+
+affectedArtifacts:
+  services: []
+  modules:
+    - ".opencode/commands/"
+    - ".opencode/skills/"
+    - ".opencode/agents/orchestrator.md"
+
+  files:
+    - "opencode.json"
+    - "delivery/status.yaml"
+    - "delivery/iterations/I0-foundation.yaml"
+    - "delivery/handoffs/I0-ENG-001/001-initialization.md"
+    - "start-task.md"
+    - "plan-task.md"
+    - "implement-task.md"
+    - "review-task.md"
+    - "verify-task.md"
+    - "close-task.md"
+
+dependencies:
+  tasks: []
+  infrastructure: []
+  humanDecisions: []
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - ".opencode/**"
+    - "opencode.json"
+    - "delivery/status.yaml"
+    - "delivery/iterations/I0-foundation.yaml"
+    - "delivery/handoffs/I0-ENG-001/**"
+    - "start-task.md"
+    - "plan-task.md"
+    - "implement-task.md"
+    - "review-task.md"
+    - "verify-task.md"
+    - "close-task.md"
+
+  prohibitedFiles:
+    - "docs/**"
+    - "contracts/**"
+    - "services/**"
+    - "apps/**"
+    - "scripts/**"
+    - "infra/**"
+    - "AGENTS.md"
+    - "README.md"
+    - "delivery/tasks/I0-ENG-001.yaml"
+    - "delivery/backlog.yaml"
+    - "delivery/tasks/I0-DEL-001.yaml"
+
+  maximumExpectedDiff: >
+    500 changed lines across delivery, .opencode, and opencode.json.
+
+  generatedFilesPolicy: "Not applicable."
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      All six custom commands are discoverable under .opencode/commands/*.md
+      and root-level command files are removed.
+    evidenceRequired:
+      - "ls .opencode/commands/"
+      - "absence of start-task.md etc. at root"
+    testTypes:
+      - "static"
+
+  - id: "AC-02"
+    statement: >
+      All four specialist skills exist at .opencode/skills/*/SKILL.md
+      with correct YAML frontmatter (name, description, compatibility).
+    evidenceRequired:
+      - "ls .opencode/skills/*/SKILL.md"
+    testTypes:
+      - "static"
+
+  - id: "AC-03"
+    statement: >
+      opencode.json contains no "agent" object. Only schema, default_agent,
+      sharing, instructions, and permission remain.
+    evidenceRequired:
+      - "grep 'agent' opencode.json"
+    testTypes:
+      - "static"
+
+  - id: "AC-04"
+    statement: >
+      .opencode/agents/orchestrator.md has task permissions for all nine
+      subagents and does not contain a stale stop-at-SELF_VERIFIED instruction.
+    evidenceRequired:
+      - "file inspection"
+    testTypes:
+      - "static"
+
+  - id: "AC-05"
+    statement: >
+      delivery/status.yaml contains no duplicate mapping keys, all timestamps
+      use true UTC, all SHAs use 40-character hex.
+    evidenceRequired:
+      - "yaml syntax check"
+      - "sha length check"
+    testTypes:
+      - "static"
+
+  - id: "AC-06"
+    statement: >
+      delivery/handoffs/I0-ENG-001/ follows the <SEQUENCE>-<ROLE>.md convention.
+    evidenceRequired:
+      - "file listing"
+    testTypes:
+      - "static"
+
+  - id: "AC-07"
+    statement: >
+      delivery/iterations/I0-foundation.yaml contains authority references,
+      entry criteria, exit criteria, non-goals, risks, required evidence, owner,
+      and release applicability.
+    evidenceRequired:
+      - "file inspection"
+    testTypes:
+      - "static"
+
+  - id: "AC-08"
+    statement: >
+      A delivery-validation script (scripts/delivery/validate.sh or equivalent)
+      rejects duplicate YAML keys, invalid states, status-count inconsistency,
+      missing references, and non-40-char SHAs.
+    evidenceRequired:
+      - "script output against controlled failures"
+    testTypes:
+      - "negative"
+
+tests:
+  focusedCommands:
+    - "node -e 'JSON.parse(require(\"fs\").readFileSync(\"opencode.json\",\"utf8\"))'"
+    - "Get-ChildItem .opencode/commands/*.md"
+    - "Get-ChildItem .opencode/skills/*/SKILL.md"
+
+  requiredSuites: []
+
+  positiveCases:
+    - "All commands discovered"
+    - "All skills discovered"
+    - "No duplicate YAML keys"
+
+  negativeCases:
+    - "Duplicate YAML key is rejected by validator"
+    - "Broken handoff path is rejected"
+
+  boundaryCases: []
+  concurrencyCases: []
+  securityCases: []
+  contractCases: []
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: false
+
+securityPrivacy:
+  affected: false
+
+reviews:
+  planner: false
+  tester: false
+  generalReviewer: true
+  contractReviewer: false
+  dataReviewer: false
+  securityReviewer: false
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I0-DEL-001/control-plane-integrity.md"
+  requiredCiChecks: []
+  requiredCommitSha: true
+  requiredRunReference: false
+
+assumptions:
+  - "The review findings in the review of ba4b6e5/cac0723 are the complete scope."
+  - "No product or domain semantics are affected."
+  - "After this task, I0-ENG-001 can be re-claimed against a clean full-SHA baseline."
+
+openQuestions: []

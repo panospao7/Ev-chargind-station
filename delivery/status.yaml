@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-07-12T00:00:00Z"
+updatedAt: "2026-07-12T23:58:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -9,11 +9,54 @@ project:
 
 tasks:
   I0-ENG-001:
-    state: "CLAIMED"
-    assignedAgent: "orchestrator"
-    claimedAt: "2026-07-12T23:10:00Z"
+    state: "BLOCKED"
+    assignedAgent: null
+    claimedAt: null
 
-    baselineCommit: "ba4b6e5"
+    baselineCommit: "ba4b6e54f396e4dbc2ba55ff12e654f5229670ee"
+    candidateCommit: null
+    mergeCommit: null
+    branch: "main"
+    pullRequest: null
+
+    blockers:
+      - "I0-DEL-001: delivery control plane must be repaired before engineering tasks can proceed"
+    deviations: []
+    unresolvedFindings: []
+
+    handoffSequence: 2
+    latestHandoff: "delivery/handoffs/I0-ENG-001/01-orchestrator.md"
+
+    reviews:
+      planner: "NOT_STARTED"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_STARTED"
+      dataReviewer: "NOT_APPLICABLE"
+      securityReviewer: "NOT_STARTED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_STARTED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: null
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
+
+  I0-DEL-001:
+    state: "READY"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: "ba4b6e54f396e4dbc2ba55ff12e654f5229670ee"
     candidateCommit: null
     mergeCommit: null
     branch: "main"
@@ -23,8 +66,8 @@ tasks:
     deviations: []
     unresolvedFindings: []
 
-    handoffSequence: 1
-    latestHandoff: "delivery/handoffs/I0-ENG-001/001-initialization.md"
+    handoffSequence: 0
+    latestHandoff: null
 
     reviews:
       planner: "NOT_STARTED"
@@ -53,9 +96,9 @@ tasks:
 summary:
   counts:
     BACKLOG: 0
-    READY: 0
-    CLAIMED: 1
+    READY: 1
     CLAIMED: 0
+    BLOCKED: 1
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
     INDEPENDENT_REVIEW: 0
@@ -64,11 +107,10 @@ summary:
     MERGED: 0
     VERIFIED: 0
     FIX_REQUIRED: 0
-    BLOCKED: 0
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
     SUPERSEDED: 0
     CANCELLED: 0
 
   activeTask: null
-  nextRecommendedTask: "I0-ENG-001"
+  nextRecommendedTask: "I0-DEL-001"

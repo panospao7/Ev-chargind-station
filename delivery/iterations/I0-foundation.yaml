@@ -2,9 +2,35 @@ schemaVersion: "1.0"
 iterationId: "I0"
 title: "Foundation and toolchain"
 goal: "Establish reproducible contract validation, developer toolchain, and delivery control plane before business-feature implementation."
+owner: "Delivery / Contract Owner"
+releaseWave: "W1"
+sliceApplicability: "W1-CROSS-CUTTING"
+nonGoals:
+  - "Change approved product or domain semantics."
+  - "Implement application business code."
+  - "Create database migrations."
+  - "Deploy any artifact."
+entryCriteria:
+  - "Repository has approved governance decisions and architecture documents."
+  - "Node.js 24 LTS is available."
+  - "GitHub Actions CI runner is available."
+exitCriteria:
+  - "G3 contract validation is reproducible and green from clean checkout."
+  - "Delivery control plane is executable (commands, skills, agent definitions)."
+  - "All W1-critical contradictions are resolved."
+risks:
+  - "Contract defects may require non-trivial corrections but must not change approved semantics."
+  - "Toolchain version drift between local and CI environments."
+authorityReferences:
+  - "docs/05_architecture/08_technology_selection_adr_set_v1.0.md §4.2 (Node.js)"
+  - "docs/05_architecture/08_technology_selection_adr_set_v1.0.md §11 (API tooling)"
+  - "docs/05_architecture/12_contract_governance_and_decisions_v1.0.md §1–3, §8"
+  - "docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md §17–20, §24"
 gates:
   - "I0-ENG-001: G3 contract validation is reproducible and green from clean checkout"
+  - "I0-DEL-001: Delivery control plane is executable"
 status: "ACTIVE"
 startedAt: "2026-07-12"
 tasks:
   - "I0-ENG-001"
+  - "I0-DEL-001"
