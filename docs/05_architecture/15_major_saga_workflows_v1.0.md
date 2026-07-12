@@ -123,9 +123,9 @@ Check-in itself does not start charging.
 
 **Owner:** Charging module (Booking and Session Service)
 
-Add internal technical state `AUTHORIZING`; public states remain unchanged.
+`AUTHORIZING` is a transient SessionAttempt-level substate; the ChargingSession uses `STARTING`.
 
-1. Charging creates an idempotent session shell in `AUTHORIZING`.
+1. Charging creates an idempotent SessionAttempt in `AUTHORIZING` and a ChargingSession in `STARTING`.
 2. Charging asks Booking to consume the start authorization, bound to that session ID.
 3. Booking marks a `startPending` flag and returns the immutable start context.
 4. Charging changes the session to `STARTING` and publishes `StartChargingAtEVSE`.
@@ -139,9 +139,9 @@ Add internal technical state `AUTHORIZING`; public states remain unchanged.
 **Release applicability:** W1
 
 - Crash before authorization consumption: persisted session worker retries.
-- Crash after consumption: the persisted `AUTHORIZING` session resumes.
-- Uncertain result: no retry while unresolved. Remains in `AUTHORIZING` / `startPending` and requests a device snapshot to reconcile. (Release applicability: W1)
-- Definitive rejection: the SessionAttempt transitions to `START_REJECTED` (terminal for this attempt). Booking stays `CHECKED_IN`; `startPending` remains set. ChargingSession remains `STARTING` while another attempt is allowed. (Release applicability: W1)
+- Crash after consumption: on resume, the SessionAttempt transitions from `AUTHORIZING` to `STARTING` and the command is sent.
+- Uncertain result: no retry while unresolved. SessionAttempt remains in `STARTING`; `startPending` remains set and requests a device snapshot to reconcile. (Release applicability: W1)
+- Definitive rejection: the SessionAttempt transitions to `ATTEMPT_REJECTED` (terminal for this attempt). Booking stays `CHECKED_IN`; `startPending` remains set. ChargingSession remains `STARTING` while another attempt is allowed. (Release applicability: W1)
 - Retry: permitted only within the booking deadline after a definitive rejection or retryable failure is resolved. A retry requires a new attempt number, a newly issued start authorization bound to the same booking, and a new SessionAttempt record. The ChargingSession is reused across attempts. Every attempt remains fully auditable. (Release applicability: W1)
 - Exhaustion: when the retry limit is reached, the ChargingSession transitions to `START_REJECTED` and Booking transitions to `FULFILMENT_FAILED`. (Release applicability: W1)
 

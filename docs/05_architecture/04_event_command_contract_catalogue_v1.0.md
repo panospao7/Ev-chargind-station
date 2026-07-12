@@ -558,15 +558,15 @@ A Maintenance record is not considered transactionally enforceable merely becaus
 | `BookingReassigned` | Booking | Notification, Station Operations, Device Integration |
 | `BookingCancelled` | Booking | Notification, Station Operations, Device Integration |
 | `BookingExpired` | Booking | — |
-| `DriverCheckedIn` | Booking | Notification where configured, Governance |
+| `BookingCheckedIn` | Booking | Notification where configured, Governance |
 | `CheckInAbandoned` | Booking | Device Integration where mirror exists |
 | `BookingNoShowRecorded` | Booking | Notification, Station Operations, Insights |
 | `BookingFulfilmentFailed` | Booking | Notification, Station Operations, Governance, Insights |
 | `BookingActivated` | Booking | Station Operations |
 | `BookingCompleted` | Booking | Station Operations, Insights |
-| `AllocationClaimed` | Booking | Discovery |
-| `AllocationChanged` | Booking | Discovery |
-| `AllocationReleased` | Booking | Discovery |
+| `EVSECapacityChanged` | Booking | Discovery |
+| `StationBookableCountChanged` | Booking | Discovery |
+| `AvailabilityProjectionInvalidated` | Booking | Discovery |
 | `CapacityRestrictionInstalled` | Booking | Station Operations coordinator |
 | `CapacityRestrictionReleased` | Booking | Station Operations coordinator |
 | `DriverRestrictionInstalled` | Booking | Account/Governance coordinator |
@@ -634,11 +634,11 @@ Telemetry projection events are disposable and cannot finalize a Session.
 | `SimulatorEnrolled` | Device Integration | Station Operations, Governance |
 | `SimulatorIdentitySuspended` | Device Integration | Station Operations |
 | `SimulatorIdentityRevoked` | Device Integration | Station Operations |
-| `StationDeviceConnected` | Device Integration | Booking, Discovery, Station Operations |
-| `StationDeviceDisconnected` | Device Integration | Booking, Discovery, Station Operations |
-| `DeviceStatusBecameStale` | Device Integration | Booking, Discovery, Station Operations |
-| `DeviceStatusRecovered` | Device Integration | Booking, Discovery, Station Operations |
-| `EvseDeviceStateChanged` | Device Integration | Booking, Discovery, Station Operations |
+| `DeviceOnline` | Device Integration | Booking, Discovery, Station Operations |
+| `DeviceOffline` | Device Integration | Booking, Discovery, Station Operations |
+| `DeviceHeartbeatStale` | Device Integration | Booking, Discovery, Station Operations |
+| `DeviceRecovered` | Device Integration | Booking, Discovery, Station Operations |
+| `EVSEStatusChanged` | Device Integration | Booking, Discovery, Station Operations |
 | `DeviceFaultReported` | Device Integration | Station Operations |
 | `DeviceFaultCleared` | Device Integration | Station Operations |
 | `DeviceInventoryMismatchDetected` | Device Integration | Station Operations, Governance |

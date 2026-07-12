@@ -123,7 +123,9 @@ All microservices standardise on the following RFC 9457 error problem codes:
 | `VERSION_CONFLICT` | 412 Precondition Failed | Yes | `entityType`, `entityId`, `expectedVersion`, `actualVersion` | Any mutating write with `If-Match` | Entity version mismatch during optimistic concurrency checks. |
 | `EVSE_ALLOCATION_CONFLICT` | 409 Conflict | No | `evseId`, `requestedInterval` (no `conflictingBookingId` in public edge responses) | Create booking/hold, reschedule | The target EVSE is already allocated for the requested interval. |
 | `BOOKING_HOLD_EXPIRED` | 410 Gone | No | `bookingId`, `holdExpiredAt` | Confirm booking | The temporary hold period ended before the confirmation was received. |
-| `EVSE_STALE_TELEMETRY` | 424 Failed Dependency | Yes | `evseId`, `lastHeartbeatAgeSeconds` | Near-term booking/hold, check-in | Near-term booking/hold blocked because EVSE is offline/stale. |
+| `EVSE_STALE_TELEMETRY` | 503 Service Unavailable | Yes | `evseId`, `lastHeartbeatAgeSeconds` | Near-term booking/hold, check-in | Near-term booking/hold blocked because EVSE telemetry is stale. Distinguish from `EVSE_OFFLINE` (no heartbeat at all). |
+| `EVSE_OFFLINE` | 503 Service Unavailable | No | `evseId`, `lastHeartbeatAgeSeconds` | Near-term booking/hold, check-in | EVSE has no recent heartbeat; treated as unreachable. |
+| `MAINTENANCE_CONFLICT` | 409 Conflict | No | `evseId`, `effectiveInterval` | Allocation, hold, reschedule, check-in | Requested EVSE or interval is covered by an unreleased capacity restriction (FREEZE/BLOCKED). |
 | `INVALID_CREDENTIALS` | 401 Unauthorized | No | None | Auth, S2S delegation, device provisioning | Authentication or token signature verification failed. |
 | `ALLOCATION_BUSY` | 409 Conflict | Yes | `evseId`, `retryAfterSeconds` | Start charging, reserve EVSE | Transient contention only; the EVSE is locked by another concurrent process. Actual physical occupation returns `EVSE_ALLOCATION_CONFLICT`. |
 | `STATUS_UNKNOWN` | 503 Service Unavailable | Yes | `evseId` | Check-in, start charging | Current device status is unknown due to active communication loss. |

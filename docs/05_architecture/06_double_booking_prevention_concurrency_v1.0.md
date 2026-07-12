@@ -608,8 +608,9 @@ A requested EVSE interval conflicts when any of these is true:
 1. An active non-Hold `capacity_claim` overlaps.
 2. An active unexpired Hold overlaps.
 3. An active or uncertain `operational_occupation` overlaps.
-4. The EVSE guard is disabled.
-5. Required enforcement projections fail validation.
+4. An unreleased `capacity_restriction` in `FREEZE` or `BLOCKED` state overlaps.
+5. The EVSE guard is disabled.
+6. Required enforcement projections fail validation.
 
 Conceptually:
 
@@ -631,6 +632,13 @@ OR EXISTS (
     WHERE evse_ref = :evseRef
       AND state IN ('ACTIVE', 'UNCERTAIN')
       AND blocking_interval && :requestedInterval
+)
+OR EXISTS (
+    SELECT 1
+    FROM capacity_restriction
+    WHERE evse_ref = :evseRef
+      AND state IN ('FREEZE', 'BLOCKED')
+      AND effective_interval && :requestedInterval
 );
 ```
 
@@ -672,7 +680,7 @@ This prevents delayed cleanup from extending Hold validity.
 7. Re-read bookable infrastructure and device enforcement projections.
 8. Lazily release expired EVSE and driver Hold claims.
 9. Validate compatibility, policy, opening hours and freshness.
-10. Check capacity claims and operational occupation.
+10. Check capacity claims, operational occupation, and unreleased capacity restrictions (FREEZE/BLOCKED).
 11. Insert Booking in `HELD`.
 12. Insert `BOOKING_HOLD` capacity claim.
 13. Insert driver Hold claim.
@@ -781,12 +789,13 @@ Recommended initial maximum: five candidate attempts.
 10. Require `state = HELD`.
 11. Require `db_now < hold_expires_at`.
 12. Require active Hold capacity and driver claims.
-13. Persist immutable Tariff and Policy Snapshots.
-14. Change capacity claim kind from `BOOKING_HOLD` to `BOOKING_ALLOCATION`.
-15. Change driver claim kind from `BOOKING_HOLD` to `BOOKING`.
-16. Transition Booking to `CONFIRMED`.
-17. Write audit, outbox and idempotency outcome.
-18. Commit.
+13. Require no overlapping unreleased capacity restriction (FREEZE/BLOCKED).
+14. Persist immutable Tariff and Policy Snapshots.
+15. Change capacity claim kind from `BOOKING_HOLD` to `BOOKING_ALLOCATION`.
+16. Change driver claim kind from `BOOKING_HOLD` to `BOOKING`.
+17. Transition Booking to `CONFIRMED`.
+18. Write audit, outbox and idempotency outcome.
+19. Commit.
 
 Converting the Hold activates the exclusion constraints.
 
@@ -914,7 +923,7 @@ If the Booking’s current EVSE/version differs from the pre-read value, the tra
 1. Validate current Booking state and version.
 2. Validate replacement interval and EVSE.
 3. Lazily release relevant expired Holds.
-4. Check replacement EVSE claims and occupation.
+4. Check replacement EVSE claims, occupation, and unreleased capacity restrictions (FREEZE/BLOCKED).
 5. Check driver schedule conflicts, excluding the current Booking.
 6. Mark old capacity and driver claims `RELEASED`.
 7. Insert new active `BOOKING_ALLOCATION` claims.
@@ -1076,7 +1085,7 @@ When start is requested:
 
 The record is `UNCERTAIN` because the physical command may execute before acknowledgement is received.
 
-A definitive rejection releases the occupation and terminates this SessionAttempt (`START_REJECTED`). Booking stays `CHECKED_IN`; a new authorization and new SessionAttempt may be created for retry.
+A definitive rejection releases the occupation and terminates this SessionAttempt (`ATTEMPT_REJECTED`). Booking stays `CHECKED_IN`; a new authorization and new SessionAttempt may be created for retry.
 
 A timeout or disconnection may make its upper bound unbounded until reconciliation.
 
