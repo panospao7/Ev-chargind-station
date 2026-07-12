@@ -1,0 +1,37 @@
+schemaVersion: "1.0"
+updatedAt: "2026-07-12"
+
+authority:
+  taskDefinition: "delivery/tasks/<TASK-ID>.yaml"
+  currentState: "delivery/status.yaml"
+  iterationGates: "delivery/iterations/<ITERATION-ID>.yaml"
+
+ordering:
+  strategy: "priority-then-order"
+  priorityOrder:
+    - P0
+    - P1
+    - P2
+    - P3
+  rules:
+    - "Only tasks whose dependencies are VERIFIED may be claimed."
+    - "A blocked P0 task takes precedence over starting unrelated lower-priority work."
+    - "Priority changes require a repository-visible reason."
+    - "Backlog order does not authorize implementation."
+
+items:
+  - id: "I0-ENG-001"
+    order: 10
+    priority: "P0"
+    iteration: "I0"
+    epic: "EPIC-01"
+    title: "Restore reproducible and enforceable G3 contract validation"
+    packet: "delivery/tasks/I0-ENG-001.yaml"
+    dependsOn: []
+    tags:
+      - foundation
+      - contracts
+      - ci
+      - reproducibility
+
+nextRecommendedTask: "I0-ENG-001"

@@ -1,0 +1,73 @@
+schemaVersion: "1.0"
+updatedAt: "2026-07-12T00:00:00Z"
+
+project:
+  name: "EV Charging Booking Platform"
+  currentIteration: "I0"
+  observedRemoteBaseline: "27091c7915d5b787aabe077f85de4eac2506325e"
+  controlPlaneVersion: "1.0"
+
+tasks:
+  I0-ENG-001:
+    state: "READY"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    candidateCommit: null
+    mergeCommit: null
+    branch: null
+    pullRequest: null
+
+    blockers: []
+    deviations: []
+    unresolvedFindings: []
+
+    handoffSequence: 0
+    latestHandoff: null
+
+    reviews:
+      planner: "NOT_STARTED"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_STARTED"
+      dataReviewer: "NOT_APPLICABLE"
+      securityReviewer: "NOT_STARTED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_STARTED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: null
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
+
+summary:
+  counts:
+    BACKLOG: 0
+    READY: 1
+    CLAIMED: 0
+    IMPLEMENTING: 0
+    SELF_VERIFIED: 0
+    INDEPENDENT_REVIEW: 0
+    CI_PENDING: 0
+    HUMAN_REVIEW: 0
+    MERGED: 0
+    VERIFIED: 0
+    FIX_REQUIRED: 0
+    BLOCKED: 0
+    CLARIFICATION_REQUIRED: 0
+    SPEC_CONFLICT: 0
+    SUPERSEDED: 0
+    CANCELLED: 0
+
+  activeTask: null
+  nextRecommendedTask: "I0-ENG-001"

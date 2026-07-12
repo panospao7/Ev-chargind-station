@@ -1,0 +1,465 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I0-ENG-001"
+  title: "Restore reproducible and enforceable G3 contract validation"
+  initialState: "READY"
+  iteration: "I0"
+  epic: "EPIC-01"
+  releaseWave: "W1"
+  sliceApplicability: "W1-CROSS-CUTTING"
+  impactLevel: "L2"
+  owner: "Delivery / Contract Owner"
+  createdAt: "2026-07-12"
+  baselineCommit: null
+
+objective: >
+  Replace mutable and globally installed contract-validation tooling with a
+  Node 24 lockfile-backed toolchain, make local and CI validation use the same
+  commands, and correct executable-contract defects until the complete G3
+  contract gate passes without suppressing approved validation rules.
+
+nonGoals:
+  - "Change approved product or domain semantics."
+  - "Introduce new service boundaries, lifecycle states or data owners."
+  - "Implement application business code."
+  - "Create database migrations."
+  - "Approve governance status changes."
+  - "Generate frontend or Java business implementations."
+  - "Deploy any artifact."
+
+authority:
+  governance: []
+
+  requirements: []
+
+  useCases: []
+
+  domain:
+    - path: "docs/03_domain/02_lifecycle_and_invariant_catalogue_v1.0.md"
+      section: "Applicable lifecycle definitions referenced by executable registries"
+      invariantIds: []
+
+  architecture:
+    - path: "docs/05_architecture/08_technology_selection_adr_set_v1.0.md"
+      section: "4.2 Node.js"
+      decisionIds:
+        - "ADR-001"
+
+    - path: "docs/05_architecture/08_technology_selection_adr_set_v1.0.md"
+      section: "11. API and event tooling"
+      decisionIds:
+        - "ADR-013"
+        - "ADR-014"
+        - "ADR-015"
+
+    - path: "docs/05_architecture/12_contract_governance_and_decisions_v1.0.md"
+      section: "1–3 and 8 — contract artifacts, compatibility and schema dialect"
+      decisionIds: []
+
+    - path: "docs/08_delivery_and_ai_agents/01_cicd_repository_organization_v1.0.md"
+      section: "7, 10, 13 and 23"
+      decisionIds:
+        - "ARC-CICD-08"
+        - "ARC-CICD-09"
+
+    - path: "docs/08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md"
+      section: "M1, EPIC-01 and EPIC-06"
+      decisionIds: []
+
+    - path: "docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md"
+      section: "17–20 and 24"
+      decisionIds:
+        - "ARC-AI-02"
+        - "ARC-AI-04"
+        - "ARC-AI-05"
+
+  securityPrivacy:
+    - path: "docs/06_security_and_privacy/02_security_architecture_threat_model_v1.0.md"
+      section: "Applicable contract data-minimization and secret-handling controls"
+      controlIds: []
+
+  contracts:
+    - path: "contracts/openapi/"
+      identifiers:
+        - "all W1 OpenAPI documents"
+
+    - path: "contracts/asyncapi/"
+      identifiers:
+        - "all W1 AsyncAPI documents"
+
+    - path: "contracts/schemas/"
+      identifiers:
+        - "all JSON Schema documents"
+
+    - path: "contracts/registries/"
+      identifiers:
+        - "messages-v1"
+        - "problem-codes-v1"
+        - "lifecycles-v1"
+        - "policies-v1"
+        - "traceability-v1"
+
+ownership:
+  owningService: "Delivery / Contract Tooling"
+  dataOwner: "Not applicable"
+  supportingServices: []
+  prohibitedOwners:
+    - "Application business services"
+    - "Browser runtime"
+    - "Generated clients"
+
+affectedArtifacts:
+  services: []
+  modules:
+    - "root Node tooling"
+    - "contract validation scripts"
+
+  tables: []
+  projections: []
+  migrations: []
+
+  apiOperations:
+    - "All operations for structural validation only"
+
+  commands:
+    - "All registered commands for structural validation only"
+
+  events:
+    - "All registered events for structural validation only"
+
+  schemas:
+    - "OpenAPI Schema Objects"
+    - "JSON Schema 2020-12"
+
+  registries:
+    - "messages-v1.yaml"
+    - "problem-codes-v1.yaml"
+    - "lifecycles-v1.yaml"
+    - "policies-v1.yaml"
+    - "traceability-v1.yaml"
+
+  screens: []
+
+  infrastructure:
+    - ".github/workflows/g3-contract-validation.yml"
+
+dependencies:
+  tasks: []
+  contracts: []
+  infrastructure:
+    - "GitHub-hosted CI runner"
+    - "Node.js 24 LTS"
+    - "npm"
+
+  humanDecisions: []
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "package.json"
+    - "package-lock.json"
+    - ".nvmrc"
+    - ".spectral.yaml"
+    - "scripts/contracts/**"
+    - ".github/workflows/g3-contract-validation.yml"
+    - "contracts/**"
+    - "README.md"
+    - "delivery/handoffs/I0-ENG-001/**"
+    - "delivery/evidence/I0-ENG-001/**"
+    - "delivery/deviations/I0-ENG-001/**"
+
+  prohibitedFiles:
+    - "docs/00_governance/**"
+    - "docs/01_scope_and_requirements/**"
+    - "docs/02_use_cases/**"
+    - "docs/03_domain/**"
+    - "docs/05_architecture/**"
+    - "docs/06_security_and_privacy/**"
+    - "services/**"
+    - "apps/**"
+    - "infra/**"
+    - "**/db/migration/**"
+    - "**/migrations/**"
+    - "AGENTS.md"
+    - "opencode.json"
+    - ".opencode/**"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+
+  maximumExpectedDiff: >
+    800 changed lines. If semantic corrections affect more than 20 contract
+    files or require new business decisions, stop and request task splitting.
+
+  generatedFilesPolicy: >
+    Generated output is not manually edited or committed unless repository
+    policy explicitly identifies it as an authoritative artifact.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      Node 24 is declared through .nvmrc and package engines, and all contract
+      tooling is installed through npm ci using a committed package-lock.json.
+    authorityReferences:
+      - "ARC-009 §4.2"
+      - "ARC-014 §7"
+    evidenceRequired:
+      - "node --version"
+      - "npm ci output"
+      - "lockfile diff"
+    testTypes:
+      - "toolchain"
+      - "reproducibility"
+
+  - id: "AC-02"
+    statement: >
+      No contract-validation dependency is installed globally, and every tool
+      version is lockfile-resolved.
+    authorityReferences:
+      - "ARC-009 §4.2"
+      - "ARC-014 §7"
+    evidenceRequired:
+      - "package.json"
+      - "package-lock.json"
+      - "workflow inspection"
+    testTypes:
+      - "static"
+      - "security"
+
+  - id: "AC-03"
+    statement: >
+      Local execution and GitHub Actions invoke the same version-controlled npm
+      scripts for OpenAPI, AsyncAPI, JSON Schema, registry, documentation,
+      privacy and security validation.
+    authorityReferences:
+      - "ARC-014 §13"
+      - "ARC-016 §17"
+    evidenceRequired:
+      - "script inventory"
+      - "workflow diff"
+      - "local command output"
+    testTypes:
+      - "ci-parity"
+      - "integration"
+
+  - id: "AC-04"
+    statement: >
+      All external GitHub Actions in the affected workflow are pinned to full
+      immutable commit SHAs and workflow permissions are least-privilege.
+    authorityReferences:
+      - "ARC-014 §10"
+      - "ARC-CICD-08"
+      - "ARC-CICD-09"
+    evidenceRequired:
+      - "workflow inspection"
+      - "workflow lint result"
+    testTypes:
+      - "security"
+      - "static"
+
+  - id: "AC-05"
+    statement: >
+      OpenAPI 3.0.3, AsyncAPI 2.6.0 and JSON Schema 2020-12 artifacts validate
+      with deterministic recursive file discovery and resolved references.
+    authorityReferences:
+      - "ARC-009 §11"
+      - "ARC-018 §8"
+    evidenceRequired:
+      - "validator output"
+      - "resolved-reference checks"
+    testTypes:
+      - "contract"
+      - "schema"
+
+  - id: "AC-06"
+    statement: >
+      Registries are structurally validated before semantic checks, and checks
+      enforce uniqueness, canonical namespaces, existing schema references,
+      valid lifecycle transitions and one HTTP status per problem code.
+    authorityReferences:
+      - "ARC-018"
+    evidenceRequired:
+      - "registry validator output"
+    testTypes:
+      - "contract"
+      - "negative"
+
+  - id: "AC-07"
+    statement: >
+      Privacy and security checks return a nonzero result for prohibited
+      Discovery subject identifiers, suspected secrets and invalid security
+      surfaces rather than printing warnings only.
+    authorityReferences:
+      - "ARC-007"
+      - "ARC-016 §17"
+    evidenceRequired:
+      - "negative fixture results"
+      - "security-review handoff"
+    testTypes:
+      - "security"
+      - "privacy"
+      - "negative"
+
+  - id: "AC-08"
+    statement: >
+      Documentation consistency checks read existing authoritative paths and
+      fail for an OPEN W1-critical gap or invalid traceability reference.
+    authorityReferences:
+      - "ARC-016 §23"
+    evidenceRequired:
+      - "documentation validator output"
+      - "negative fixture result"
+    testTypes:
+      - "documentation"
+      - "negative"
+
+  - id: "AC-09"
+    statement: >
+      At least one controlled invalid fixture for each validator category
+      demonstrates that the gate fails without weakening or disabling rules.
+    authorityReferences:
+      - "ARC-016 §17–18"
+    evidenceRequired:
+      - "self-test report"
+    testTypes:
+      - "negative"
+      - "failure-injection"
+
+  - id: "AC-10"
+    statement: >
+      The complete contract verification command passes from a clean checkout,
+      and the exact candidate commit receives a successful GitHub Actions run.
+    authorityReferences:
+      - "ARC-014 §13"
+      - "ARC-015 EPIC-06"
+    evidenceRequired:
+      - "npm run contracts:verify output"
+      - "candidate commit SHA"
+      - "GitHub Actions run reference"
+    testTypes:
+      - "integration"
+      - "ci"
+
+tests:
+  focusedCommands:
+    - "node --version"
+    - "npm ci"
+    - "npm run contracts:openapi"
+    - "npm run contracts:asyncapi"
+    - "npm run contracts:schemas"
+    - "npm run contracts:registries"
+
+  requiredSuites:
+    - "npm run contracts:self-test"
+    - "npm run contracts:verify"
+    - "git diff --check"
+
+  positiveCases:
+    - "Every checked-in contract artifact validates."
+    - "Every referenced schema and registry target exists."
+
+  negativeCases:
+    - "Duplicate message name fails."
+    - "Unknown lifecycle state fails."
+    - "Conflicting problem-code status fails."
+    - "Missing schema reference fails."
+    - "Prohibited Discovery subject identifier fails."
+    - "OPEN W1-critical gap fails."
+    - "Suspected committed secret fails."
+
+  boundaryCases:
+    - "Nested schema discovery works at every existing directory depth."
+    - "Empty optional contract category is reported explicitly rather than silently skipped."
+
+  concurrencyCases: []
+  securityCases:
+    - "Workflow permissions and Action pins are validated."
+    - "Privacy and secret checks fail closed."
+
+  contractCases:
+    - "OpenAPI structural validation."
+    - "AsyncAPI structural validation."
+    - "JSON Schema syntax and reference validation."
+    - "Registry semantic validation."
+    - "Example validation where fixtures exist."
+
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+  owningDatabase: ""
+  migrationRequired: false
+  migrationStrategy: ""
+  forwardFixStrategy: ""
+  rollbackStrategy: ""
+  seedResetImpact: ""
+
+contracts:
+  affected: true
+  compatibilityClassification: "NON_BREAKING_CORRECTION_ONLY"
+  requiredUpdates:
+    - "Correct structural defects without changing approved business semantics."
+    - "Stop with SPEC_CONFLICT when a passing correction requires semantic redesign."
+  requiredExamples:
+    - "Valid and controlled invalid validator fixtures."
+  requiredConsumerTests:
+    - "Generated consumer compilation is outside this task unless already available."
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "No new runtime trust boundary."
+    - "CI enforcement becomes fail-closed."
+  dataClassifications:
+    - "Public contract metadata"
+    - "No production secrets"
+    - "No personal test data"
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements:
+    - "Record exact candidate commit and CI run."
+  prohibitedData:
+    - "Access tokens"
+    - "Client secrets"
+    - "Passwords"
+    - "Private keys"
+    - "Personal identifiers in Discovery contracts"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: true
+  dataReviewer: false
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner / Contract Owner"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I0-ENG-001/toolchain-validation.md"
+    - "delivery/evidence/I0-ENG-001/contract-validation.md"
+    - "delivery/evidence/I0-ENG-001/security-privacy-validation.md"
+    - "delivery/evidence/I0-ENG-001/ci-verification.md"
+
+  requiredCiChecks:
+    - "OpenAPI validation"
+    - "AsyncAPI validation"
+    - "JSON Schema validation"
+    - "Registry consistency"
+    - "Privacy and security"
+    - "Documentation consistency"
+    - "Required aggregate gate"
+
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "The actual baseline commit will be inserted when /start-task claims the task."
+  - "Approved semantic authority remains in repository documents, not validators."
+  - "Current contract defects may be corrected only when the intended behavior is unambiguous."
+
+openQuestions: []
