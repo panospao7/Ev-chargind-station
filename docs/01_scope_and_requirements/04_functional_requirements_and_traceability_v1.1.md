@@ -1,9 +1,9 @@
 Document ID: REQ-001
 Title: Functional Requirements and Traceability v1.1
 Version: 1.1
-Status: APPROVED
+Status: IN_REVIEW
 Owner: DA/BA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: All functional specifications
 Authoritative for: Functional Requirements and Traceability Mapping
@@ -635,4 +635,4 @@ Approval of v1.1 means:
 
 ## Status
 
-**Gap 8 is closed at the requirements-planning level, pending approval of this v1.1 catalogue.**
+**Gap 8 is closed at the requirements-planning level, pending G3 contract closure.**

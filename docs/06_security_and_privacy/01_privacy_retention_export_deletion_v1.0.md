@@ -3,7 +3,7 @@ Title: Privacy, Retention, Export, Deletion and Anonymization v1.0
 Version: 1.0
 Status: APPROVED
 Owner: PA/SA/BA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: DOM-001
 Authoritative for: GDPR Compliance, Deletion purge bounds, and location masking

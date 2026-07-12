@@ -3,7 +3,7 @@ Title: Deployment Architecture and Infrastructure as Code Strategy
 Version: 1.0  
 Status: IN_REVIEW  
 Owner: Cloud / Platform Architect  
-Last reviewed: 2026-07-11  
+Last reviewed: 2026-07-12  
 Depends on: ARC-001–010  
 Authoritative for: Container orchestration, cluster topology, ingress, stateful platform deployment, GitOps, infrastructure provisioning, secrets delivery, scaling, upgrades and disaster-recovery topology  
 

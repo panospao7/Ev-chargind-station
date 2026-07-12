@@ -3,7 +3,7 @@ Title: Definitive Double-Booking Prevention and Allocation Concurrency Design
 Version: 1.0  
 Status: IN_REVIEW  
 Owner: Backend / Data Architect  
-Last reviewed: 2026-07-11  
+Last reviewed: 2026-07-12  
 Depends on: ARC-001, ARC-002, ARC-003, ARC-004, ARC-005, DOM-002  
 Authoritative for: EVSE allocation concurrency, datastore constraints, locking, transaction isolation, hold races, rescheduling, reassignment, maintenance blocks and operational occupation  
 
@@ -557,7 +557,7 @@ When multiple transactions request the same EVSE and interval:
 - One locks the EVSE guard first.
 - It inserts the Hold and commits.
 - The next transaction revalidates and sees the unexpired Hold.
-- The next transaction receives `ALLOCATION_CONFLICT`.
+- The next transaction receives `EVSE_ALLOCATION_CONFLICT`.
 
 Exactly one succeeds.
 
@@ -659,7 +659,7 @@ Recommended initial maximum: five candidate attempts.
 
 Converting the Hold activates the exclusion constraints.
 
-Any unexpected exclusion violation aborts the whole transaction and maps to `ALLOCATION_CONFLICT`.
+Any unexpected exclusion violation aborts the whole transaction and maps to `EVSE_ALLOCATION_CONFLICT`.
 
 ## 14.2 Confirmation versus expiry
 
@@ -993,7 +993,7 @@ LIMIT 1;
 
 If found:
 
-- Near-term result: `ALLOCATION_CONFLICT`
+- Near-term result: `EVSE_ALLOCATION_CONFLICT`
 - Advisory public result: `UNAVAILABLE` or `UNKNOWN`, according to confidence
 - Exact reason remains privacy-safe
 
@@ -1036,7 +1036,7 @@ No transaction waits indefinitely.
 
 | SQLSTATE | Meaning | Handling |
 |---|---|---|
-| `23P01` | Exclusion violation | `ALLOCATION_CONFLICT`; automatic assignment may try another candidate |
+| `23P01` | Exclusion violation | `EVSE_ALLOCATION_CONFLICT`; automatic assignment may try another candidate |
 | `23505` | Unique violation | Idempotency/duplicate/invariant-specific mapping |
 | `40P01` | Deadlock detected | Retry whole transaction |
 | `40001` | Serialization failure | Retry whole transaction |

@@ -87,7 +87,7 @@ No service contract is considered complete until it maps back to a functional re
 7. Internal charging substates `AUTHORIZING` and `FINALIZING`.
 8. Device reservation is a synchronized mirror; Booking remains authoritative.
 9. Restricted identity/contact event stream for Notification.
-10. Query & Reporting is excluded from all authoritative write paths.
+10. Discovery and Insights Service is excluded from all authoritative write paths.
 11. Charger command acceptance is distinct from physical/simulated execution.
 12. Uncertain command outcomes remain visible until reconciled.
 

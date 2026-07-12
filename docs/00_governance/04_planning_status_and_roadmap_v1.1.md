@@ -38,7 +38,7 @@ Logical planning is complete; technical contract specifications are complete and
 
 ## 2. Completed Architecture Milestones (Phase 2 & 3)
 
-Now that the foundation specifications are approved and baselined, the project shifts to the System Architecture phase. The work will proceed in the following sequential order:
+Now that the foundation specifications are approved and baselined, the project shifts to the System Architecture phase. The design phase has completed milestones as follows:
 
 ### Milestone 1: Logical Boundaries & Communication (G2)
 - **Domain Capability Map:** Group functional requirements into logical boundaries and determine data ownership.

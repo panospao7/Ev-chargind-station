@@ -76,7 +76,7 @@ To satisfy reliability requirements, platform operations must behave as follows 
 | View/Cancel Booking | Discovery & Analytics | **Succeeds**: Operates directly against the Booking database. |
 | Check-In / Start Charging | Station Operations | **Succeeds**: Uses Booking-local cached configuration projections. |
 | Cancel Booking | Station Operations | **Succeeds**: Capacity released immediately; notification queued in outbox. |
-| Create Booking Hold | Station Operations | **Fails Closed**: Blocked if local config projections are stale or unavailable. |
+| Create Booking Hold | Booking and Session | **Fails Closed**: Blocked if local config/enforcement projections are stale or unavailable. |
 | Event Publishing | RabbitMQ Broker | **Transaction Succeeds**: Business commit completes; outbox event remains pending/retryable. |
 | Send Notification | Email Provider | **Transaction Succeeds**: Business commit completes; notification delivery remains pending/retryable. |
 | Simulator Status Update | Device Integration | **Transaction Succeeds**: Live status and heartbeats buffered; state reconciled on reconnect. |

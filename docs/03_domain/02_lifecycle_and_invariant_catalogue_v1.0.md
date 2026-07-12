@@ -82,7 +82,7 @@ Permitted Transitions:
 Permitted Transitions:
 - `ISSUED` → `CONSUMED` | `EXPIRED` | `REVOKED`
 
-*Note:* An authorization becomes `CONSUMED` as soon as the start command is accepted for processing, and remains consumed during any command uncertainty to prevent duplicate activation attempts.
+*Note:* An authorization becomes `CONSUMED` as soon as the start command is accepted. Uncertain start outcomes prevent any second attempt. A retry requires a newly issued authorization bound to the same booking and a new attempt number.
 
 ### 1.4 Station Lifecycle
 - `DRAFT` — Configuration in progress.
@@ -147,18 +147,26 @@ Permitted Transitions:
 - `RECONCILING` → `ACCEPTED` | `REJECTED`
 
 ### 1.9 Notification Delivery Lifecycle
-- `QUEUED` — Email/in-app notification record written to outbox.
-- `DISPATCHED` — Submitted to mail server/SMS gateway.
-- `DELIVERED` — Delivery confirmed by downstream callback.
-- `PROVIDER_REJECTED` — Rejected by mail provider (e.g. bounce, bad domain) - transient retry or permanent fail depending on error class.
-- `NETWORK_ERROR` — Socket or server timeout - transient retry.
-- `RETRIES_EXHAUSTED` — Failed permanently after reaching max retry backoff limit.
+- `REQUESTED` — Notification request created in the outbox.
+- `QUEUED` — Notification rendered and queued in the delivery dispatcher.
+- `DISPATCHING` — Submitted to the mail server/SMS gateway.
+- `PROVIDER_ACCEPTED` — Downstream gateway accepted command for delivery.
+- `DELIVERED` — Mailbox delivery confirmed by provider callback.
+
+Side Outcomes:
+- `TEMPORARILY_FAILED` — Transient network/socket error; scheduled for retry.
+- `PERMANENTLY_FAILED` — Bounced or rejected by provider (e.g. bad address).
+- `BOUNCED` — Provider bounced notice.
+- `SUPPRESSED` — Recipient address on suppression list.
+- `OBSOLETE` — Superseded by a newer notification before dispatch.
+- `CANCELLED_BEFORE_SEND` — Cancelled manually or due to transaction rollback.
 
 Permitted Transitions:
-- `QUEUED` → `DISPATCHED`
-- `DISPATCHED` → `DELIVERED` | `PROVIDER_REJECTED` | `NETWORK_ERROR`
-- `NETWORK_ERROR` → `DISPATCHED` (retry) | `RETRIES_EXHAUSTED`
-- `PROVIDER_REJECTED` → `RETRIES_EXHAUSTED`
+- `REQUESTED` → `QUEUED` | `CANCELLED_BEFORE_SEND`
+- `QUEUED` → `DISPATCHING` | `OBSOLETE`
+- `DISPATCHING` → `PROVIDER_ACCEPTED` | `TEMPORARILY_FAILED` | `PERMANENTLY_FAILED`
+- `PROVIDER_ACCEPTED` → `DELIVERED` | `BOUNCED` | `SUPPRESSED`
+- `TEMPORARILY_FAILED` → `DISPATCHING` (retry) | `PERMANENTLY_FAILED`
 
 ### 1.10 Support Cases Lifecycle
 - `OPEN` — Ticket created.

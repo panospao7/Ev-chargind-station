@@ -1162,7 +1162,7 @@ Purpose: Prove cross-service privacy and governance workflows.
 Before full implementation:
 
 1. **POC-01:** Keycloak + BFF login, session and token exchange.
-2. **POC-02:** OpenAPI 3.1.2 generation for Angular and Spring.
+2. **POC-02:** OpenAPI 3.0.3 generation for Angular and Spring.
 3. **POC-03:** PostgreSQL 18 allocation constraint and lock protocol.
 4. **POC-04:** RabbitMQ outbox/inbox and quorum queue behaviour.
 5. **POC-05:** ARM64 multi-architecture image build.

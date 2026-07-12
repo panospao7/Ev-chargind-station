@@ -52,7 +52,7 @@ Excluded:
 
 ## 3. API contract standard
 
-OpenAPI is the machine-readable contract format. OpenAPI 3.2.0 is the current published specification and supports language-independent API descriptions. Adoption is provisional until Java and TypeScript tooling compatibility is validated; an ADR may pin OpenAPI 3.1.2 without changing the domain contracts. ([spec.openapis.org](https://spec.openapis.org/oas/v3.2.0.html?utm_source=openai))
+OpenAPI is the machine-readable contract format. OpenAPI 3.0.3 is the current published specification and supports language-independent API descriptions. Adoption is provisional until Java and TypeScript tooling compatibility is validated; an ADR may pin OpenAPI 3.0.3 without changing the domain contracts. ([spec.openapis.org](https://spec.openapis.org/oas/v3.2.0.html?utm_source=openai))
 
 Every API operation must define:
 
@@ -314,7 +314,7 @@ The exact service-identity and actor-context format remains pending the security
 
 ## 12. Problem response model
 
-All REST errors use RFC 9457 Problem Details. RFC 9457 defines `application/problem+json` for machine-readable HTTP API errors and supersedes RFC 7807. ([rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9457.html?utm_source=openai))
+All REST errors use RFC 9457 Problem Details. RFC 9457 defines `application/problem+json` for machine-readable HTTP API errors and supersedes older API error detail conventions. ([rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9457.html?utm_source=openai))
 
 Required fields:
 
@@ -419,12 +419,12 @@ Initial shared codes:
 - `OUTSIDE_ADVANCE_WINDOW`
 - `OUTSIDE_OPENING_HOURS`
 - `NO_COMPATIBLE_EVSE`
-- `ALLOCATION_CONFLICT`
+- `EVSE_ALLOCATION_CONFLICT`
 - `STATUS_STALE`
 - `STATUS_UNKNOWN`
 - `MAINTENANCE_CONFLICT`
 - `BOOKING_STATE_CONFLICT`
-- `HOLD_EXPIRED`
+- `BOOKING_HOLD_EXPIRED`
 - `CHECK_IN_WINDOW_CLOSED`
 - `WRONG_EVSE`
 - `START_AUTHORIZATION_INVALID`
@@ -741,7 +741,7 @@ Success includes:
 
 Common failures:
 
-- `409 ALLOCATION_CONFLICT`
+- `409 EVSE_ALLOCATION_CONFLICT`
 - `409 NO_COMPATIBLE_EVSE`
 - `409 ACCOUNT_NOT_ACTIVE`
 - `422 INVALID_INTERVAL`
@@ -1261,7 +1261,7 @@ Critical REST scenarios:
 
 | ID | Question | Resolution phase |
 |---|---|---|
-| ARC-REST-OQ-01 | Confirm OpenAPI 3.2.0 tooling compatibility | Final technology selection |
+| ARC-REST-OQ-01 | Confirm OpenAPI 3.0.3 tooling compatibility | Final technology selection |
 | ARC-REST-OQ-02 | Exact service authentication and actor-context headers/tokens | Security architecture |
 | ARC-REST-OQ-03 | Final support access-grant mechanism | Security architecture |
 | ARC-REST-OQ-04 | Final idempotency retention periods | Database/privacy design |

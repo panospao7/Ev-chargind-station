@@ -85,12 +85,13 @@ We should begin with the **Driver actor**, following the complete journey:
 For every step, we’ll identify business rules, errors, edge cases and acceptance criteria.
 
 ## Canonical Transactional Email Catalogue
-All emails dispatched by the platform belong to one of the following canonical templates:
-- **`DriverEmailVerification` (Wave 1):** Sent upon registration containing single-use account verification link.
-- **`DriverPasswordRecovery` (Wave 1):** Sent upon request containing recovery link.
-- **`BookingConfirmation` (Wave 1):** Sent immediately upon successful EVSE allocation.
-- **`BookingCancellation` (Wave 1):** Sent upon driver or operator cancellation.
-- **`SecurityAlertNotification` (Wave 1):** Sent upon password changes, MFA changes, or login locks.
-- **`SupportCaseOpened` (Wave 2):** Sent upon case submission.
-- **`DataExportCompleted` (Wave 3):** Sent containing secure download link.
-- **`AccountDeletionConfirmed` (Wave 3):** Sent upon coordinated deletion completion.
+This catalogue defines the email categories. Actual template keys are maintained in a separate template registry.
+### Template Categories
+- **`DriverEmailVerification` (Wave 1):** Sent upon registration containing single-use account verification link. (Template Key: `driver-email-verification`)
+- **`DriverPasswordRecovery` (Wave 1):** Sent upon request containing recovery link. (Template Key: `driver-password-recovery`)
+- **`BookingConfirmed` (Wave 1):** Sent immediately upon successful `BookingConfirmed` event (not `BookingHeld`). (Template Key: `booking-confirmation`)
+- **`BookingCancelled` (Wave 1):** Sent upon booking cancellation. (Template Key: `booking-cancellation`)
+- **`SecurityAlertNotification` (Wave 1):** Sent upon password changes, MFA changes, or login locks. (Template Key: `security-alert`)
+- **`SupportCaseOpened` (Wave 2):** Sent upon case submission. (Template Key: `support-case-opened`)
+- **`DataExportCompleted` (Wave 3):** Sent containing secure download link. (Template Key: `data-export-completed`)
+- **`AccountDeletionConfirmed` (Wave 3):** Sent upon coordinated deletion completion. (Template Key: `account-deletion-confirmed`)

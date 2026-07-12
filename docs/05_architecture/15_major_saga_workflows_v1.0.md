@@ -153,7 +153,7 @@ Add internal technical state `AUTHORIZING`; public states remain unchanged.
 9. Emit the final session event.
 10. Booking becomes `COMPLETED` and releases capacity after the turnaround buffer.
 
-If the charger continues past the reserved end, the allocation remains blocked, an overrun alert is raised, and the next affected booking enters reassignment handling.
+If the charger continues past the reserved end, the operational-occupation claim tracks physical overrun, an overrun alert is raised, and the next affected booking enters reassignment handling.
 
 ## 8. Device fault workflow
 

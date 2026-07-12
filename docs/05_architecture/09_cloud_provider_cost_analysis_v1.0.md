@@ -3,7 +3,7 @@ Title: Cloud Provider and Cost Analysis
 Version: 1.0  
 Status: IN_REVIEW  
 Owner: Cloud / Operations Architect  
-Last reviewed: 2026-07-11  
+Last reviewed: 2026-07-12  
 Depends on: ARC-001–009, REQ-002, PRV-001  
 Authoritative for: Cloud-provider selection, hosting region, external providers, deployment cost baseline and cost controls  
 

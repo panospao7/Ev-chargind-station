@@ -3,7 +3,7 @@ Title: Availability Calculation Model v1.0
 Version: 1.0
 Status: APPROVED
 Owner: DA/BA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: DOM-001, DOM-003
 Authoritative for: Authoritative Check Algorithm and Interval Availability
@@ -167,7 +167,7 @@ Proposed freshness rule:
 - `LIVE`: age is within the configured freshness threshold.
 - `STALE`: age exceeds the threshold.
 - `UNKNOWN`: no reliable status has been received.
-- Default threshold: the greater of three expected heartbeat intervals or 180 seconds.
+- Default threshold: the greater of three expected heartbeat intervals or 300 seconds.
 
 ### Step 8 — Final result
 
@@ -236,7 +236,7 @@ Internal results use structured reason codes, including:
 - `MAINTENANCE_CONFLICT`
 - `BLOCKING_FAULT`
 - `STATUS_OVERRIDE`
-- `ALLOCATION_CONFLICT`
+- `EVSE_ALLOCATION_CONFLICT`
 - `ACTIVE_SESSION`
 - `SESSION_OUTCOME_UNCERTAIN`
 - `EVSE_OFFLINE`
@@ -333,7 +333,7 @@ Failure caused by equipment routes to reassignment or fulfilment handling and ca
 1. Use half-open intervals `[start, end)`.
 2. Apply one post-booking turnaround buffer in v1.
 3. Set the near-term operational-status horizon to 60 minutes.
-4. Set freshness to the greater of three heartbeat intervals or 180 seconds.
+4. Set freshness to the greater of three heartbeat intervals or 300 seconds.
 5. Permit future booking despite temporary offline/stale/unknown status, labelled `PLANNED_AVAILABLE`.
 6. Never permit booking over blocking maintenance, administrative closure or unresolved critical/emergency faults.
 7. Treat no-time searches as operational summaries, not reservation availability.

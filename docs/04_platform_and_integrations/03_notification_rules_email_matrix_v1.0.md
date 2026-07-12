@@ -3,7 +3,7 @@ Title: Notification Rules and Essential Email Matrix v1.0
 Version: 1.0
 Status: APPROVED
 Owner: PO/BA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: DOM-001
 Authoritative for: Transactional Email Triggers and Retrying Constraints
@@ -337,7 +337,7 @@ Full email content follows the approved retention policy.
 
 ## 13. Delivery lifecycle
 
-`REQUESTED → QUEUED → DISPATCHING → PROVIDER_ACCEPTED`
+`REQUESTED → QUEUED → DISPATCHING → PROVIDER_ACCEPTED → DELIVERED`
 
 Possible later states:
 

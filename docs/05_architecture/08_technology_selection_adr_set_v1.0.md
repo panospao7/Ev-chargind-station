@@ -480,9 +480,9 @@ The design remains broker-abstracted at the contract level.
 
 ## 11.1 OpenAPI
 
-Use OpenAPI 3.1.2 as the checked-in REST contract standard.
+Use OpenAPI 3.0.3 as the checked-in REST contract standard.
 
-OpenAPI 3.2 is current, but OpenAPI Generator documents only beta OpenAPI 3.1 support and no equivalent 3.2 compatibility assurance. OpenAPI 3.1.2 therefore provides the safer contract/tooling boundary. ([spec.openapis.org](https://spec.openapis.org/oas/?utm_source=openai))
+OpenAPI 3.0.3 is current, but OpenAPI Generator documents only beta OpenAPI 3.1 support and no equivalent 3.2 compatibility assurance. OpenAPI 3.0.3 therefore provides the safer contract/tooling boundary. ([spec.openapis.org](https://spec.openapis.org/oas/?utm_source=openai))
 
 Contract approach:
 
@@ -877,7 +877,7 @@ No dependency update merges only because it is newer.
 ## ADR-013 — REST contract standard
 
 **Status:** Accepted  
-**Decision:** OpenAPI 3.1.2, API-first.
+**Decision:** OpenAPI 3.0.3, API-first.
 
 ## ADR-014 — REST code generation
 
@@ -963,7 +963,7 @@ Verify:
 
 Verify:
 
-- OpenAPI 3.1.2 validation
+- OpenAPI 3.0.3 validation
 - Angular 21 client generation
 - Spring Boot 4 interface generation
 - Problem Details

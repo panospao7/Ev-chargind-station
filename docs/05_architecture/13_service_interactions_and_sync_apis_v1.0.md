@@ -97,8 +97,8 @@ HTTP methods retain their standard semantics; automatic retries of non-idempoten
 
 - Mutable resources expose a numeric `version` and ETag.
 - Updates require `If-Match` or `expectedVersion`.
-- Version mismatch returns `412 VERSION_MISMATCH`.
-- Booking interval conflicts return `409 EVSE_INTERVAL_CONFLICT`.
+- Version mismatch returns `412 VERSION_CONFLICT`.
+- Booking interval conflicts return `409 EVSE_ALLOCATION_CONFLICT`.
 - The server clock is authoritative.
 
 ### Errors

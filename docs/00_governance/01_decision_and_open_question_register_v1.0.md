@@ -125,7 +125,7 @@ Default owner: **DA/BA**.
 | DEC-AVL-05 | Use `AVAILABLE`, `PLANNED_AVAILABLE`, `UNAVAILABLE`, `UNKNOWN` and `INCOMPATIBLE`. | APPROVED | G1 |
 | DEC-AVL-06 | Keep administrative state, device-reported state and derived availability separate. | APPROVED | G1 |
 | DEC-AVL-07 | Use a 60-minute near-term status horizon initially. | PROVISIONAL | G3 |
-| DEC-AVL-08 | Define freshness initially as the greater of three heartbeat intervals or 180 seconds. | PROVISIONAL | G3 |
+| DEC-AVL-08 | Define freshness initially as the greater of three heartbeat intervals or 5 minutes. | PROVISIONAL | G3 |
 | DEC-AVL-09 | Permit future reservations despite temporary offline, stale or unknown status, labelled `PLANNED_AVAILABLE`. | APPROVED | G1 |
 | DEC-AVL-10 | Never allow reservations over blocking maintenance, administrative closure or unresolved critical/emergency faults. | APPROVED | G1 |
 | DEC-AVL-11 | A search without a requested interval is an operational summary, not reservation availability. | APPROVED | G1 |

@@ -285,7 +285,7 @@ Each service emits a success or failure event for the request and service step.
 
 | Consumer | Main subscriptions |
 |---|---|
-| Query & Reporting | Public account, network, booking, charging and device events |
+| Discovery and Insights Service | Public account, network, booking, charging and device events |
 | Notification | Booking/session/account-security events |
 | Governance | Audit, privacy, incident and delivery-failure events |
 | Booking | Charging outcomes, critical network/device changes |

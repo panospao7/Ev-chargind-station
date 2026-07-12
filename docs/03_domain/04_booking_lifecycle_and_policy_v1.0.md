@@ -3,7 +3,7 @@ Title: Booking Lifecycle and Policy Specification v1.0
 Version: 1.0
 Status: APPROVED
 Owner: DA/BA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: DOM-001, DOM-003
 Authoritative for: Booking State Machine Transitions and Policies

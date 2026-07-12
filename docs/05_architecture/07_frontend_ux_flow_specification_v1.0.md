@@ -876,8 +876,8 @@ Do not display raw backend `detail` without controlled presentation review.
 
 | Problem | UX |
 |---|---|
-| `ALLOCATION_CONFLICT` | Return to EVSE/time selection |
-| `HOLD_EXPIRED` | Explain expiry and offer a new search |
+| `EVSE_ALLOCATION_CONFLICT` | Return to EVSE/time selection |
+| `BOOKING_HOLD_EXPIRED` | Explain expiry and offer a new search |
 | `VERSION_CONFLICT` | Reload current data and compare changes |
 | `STATUS_UNKNOWN` | Explain why a positive decision is unsafe |
 | `COMMAND_OUTCOME_UNCERTAIN` | Show reconciliation, not failure |

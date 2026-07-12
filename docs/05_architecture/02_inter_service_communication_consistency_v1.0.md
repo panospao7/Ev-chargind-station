@@ -57,7 +57,7 @@ It does not define final URL paths, message payloads, queues, exchanges, or sche
 1. Every business entity has one authoritative owner.
 2. Services cannot read or write another service’s database.
 3. No cross-service database transaction is permitted.
-4. Core state changes commit locally before integration events are published.
+4. Core state changes commit locally before integration events are published. Projections are authoritative for final allocation; no remote calls occur inside the transaction.
 5. Every required integration event uses a Transactional Outbox.
 6. Broker delivery is at least once.
 7. Consumers must be idempotent.
