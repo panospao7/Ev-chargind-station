@@ -1,0 +1,10 @@
+extends: [[spectral:oas, recommended]]
+rules:
+  operation-operationId-unique: error
+  no-$ref-siblings: error
+  oas3-valid-schema-example: error
+  oas3-valid-media-example: warn
+  operation-tags: warn
+  openapi-tags: off
+  info-contact: warn
+  info-description: warn
