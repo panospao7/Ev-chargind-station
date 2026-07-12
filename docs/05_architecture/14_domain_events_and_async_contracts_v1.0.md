@@ -210,7 +210,7 @@ Configuration events contain the public projection data required by Query. They 
 
 `ChargingSessionProgressed` is throttled for UI/analytics. Raw meter readings remain in Charging storage and the telemetry stream.
 
-### Device Gateway
+### Device Integration Service
 
 - `DeviceProvisioned`
 - `DeviceOnline`
@@ -291,7 +291,7 @@ Each service emits a success or failure event for the request and service step.
 | Booking | Charging outcomes, critical network/device changes |
 | Charging | Device command/transaction events and relevant booking cancellations |
 | Network | Device status/fault events and maintenance-impact outcomes |
-| Device Gateway | Device command queues |
+| Device Integration Service | Device command queues |
 | Account | Identity lifecycle events |
 
 ## 9. Payload rules

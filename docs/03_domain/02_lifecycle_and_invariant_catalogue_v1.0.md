@@ -133,7 +133,7 @@ Permitted Transitions:
 - `CREATED` — Command prepared in database.
 - `CANCELLED_BEFORE_DISPATCH` — Cancelled before dispatching to gateway.
 - `SENT` — Dispatched over connection.
-- `DELIVERED` — Acknowledged by device gateway.
+- `DELIVERED` — Acknowledged by Device Integration Service.
 - `ACCEPTED` — Executed successfully by device.
 - `REJECTED` — Charger rejected command execution.
 - `TIMED_OUT` — No response received within the timeout window.

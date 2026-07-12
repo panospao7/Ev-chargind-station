@@ -474,7 +474,7 @@ Potential services:
 - Booking
 - Charging Session
 - Metering
-- Device Gateway
+- Device Integration Service
 - Simulator Control
 - Discovery
 - Analytics

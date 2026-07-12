@@ -66,7 +66,7 @@ Platform Modular Monolith
         |
         +------ PostgreSQL
         |
-        +------ RabbitMQ ------ Device Gateway
+        +------ RabbitMQ ------ Device Integration Service
                                    |
                                    v
                             Charger Simulators
@@ -84,7 +84,7 @@ External platform components remain:
 - Observability infrastructure
 - Charger Simulator
 
-The Device Gateway remains a separate deployable because it owns an external machine trust boundary, WebSocket connections, device credentials, protocol validation and connection-oriented scaling.
+The Device Integration Service remains a separate deployable because it owns an external machine trust boundary, WebSocket connections, device credentials, protocol validation and connection-oriented scaling.
 
 ---
 
@@ -237,7 +237,7 @@ governance_support.*
 platform_kernel.*
 ```
 
-The Device Gateway owns a separate logical database:
+The Device Integration Service owns a separate logical database:
 
 ```text
 device_integration_db
@@ -323,7 +323,7 @@ Events must remain versioned and serializable so they can later become broker in
 
 ### 11.3 External messages
 
-RabbitMQ remains mandatory for communication with the separate Device Gateway and may be used for:
+RabbitMQ remains mandatory for communication with the separate Device Integration Service and may be used for:
 
 - Device commands
 - Device-normalized evidence
@@ -495,7 +495,7 @@ It consumes durable events from:
 - Account, where necessary
 - Station Operations
 - Booking and Session
-- Device Gateway
+- Device Integration Service
 
 Discovery data must not be queried by Booking to make authoritative decisions.
 
@@ -537,9 +537,9 @@ It cannot directly update foreign module tables despite sharing the same process
 
 ---
 
-## 20. Device Gateway
+## 20. Device Integration Service
 
-The Device Gateway remains separate because it has:
+The Device Integration Service remains separate because it has:
 
 - Machine identities
 - mTLS
@@ -554,7 +554,7 @@ The Device Gateway remains separate because it has:
 
 Communication with the monolith uses RabbitMQ contracts from ARC-004.
 
-The Device Gateway cannot access the monolith database.
+The Device Integration Service cannot access the monolith database.
 
 ---
 
@@ -616,7 +616,7 @@ Mitigations:
 
 - Two or three platform-monolith replicas
 - Two BFF replicas
-- Two Device Gateway replicas
+- Two Device Integration Service replicas
 - PostgreSQL
 - RabbitMQ
 - Keycloak
@@ -665,7 +665,7 @@ Compared with seven business services, the alternative reduces:
 It does not eliminate:
 
 - BFF
-- Device Gateway
+- Device Integration Service
 - Identity Provider
 - PostgreSQL
 - RabbitMQ
@@ -684,7 +684,7 @@ It does not eliminate:
 | Discovery query overload | May affect Booking without resource controls |
 | Notification defect | May affect process unless isolated |
 | Monolith rollout failure | All business modules affected |
-| Device Gateway failure | Device workflows affected; monolith remains available |
+| Device Integration Service failure | Device workflows affected; monolith remains available |
 | RabbitMQ failure | Device and async workflows delayed |
 | PostgreSQL failure | All authoritative modules affected |
 | Keycloak failure | New authentication affected |
@@ -735,7 +735,7 @@ CI must fail on:
 - Direct notification/provider calls inside foreign module transactions
 - Discovery data used as Booking authority
 - Governance direct table modification
-- Device Gateway database access
+- Device Integration Service database access
 
 Architecture tests should produce a module dependency diagram as evidence.
 
@@ -822,7 +822,7 @@ Requires:
 
 ### Already separate
 
-6. Device Gateway
+6. Device Integration Service
 
 ### Highest risk
 
@@ -843,7 +843,7 @@ If the microservice implementation proves operationally excessive:
 5. Preserve outbox/inbox behaviour.
 6. Consolidate deployments incrementally.
 7. Consolidate physical database infrastructure only after ownership tests pass.
-8. Retain Device Gateway separately.
+8. Retain Device Integration Service separately.
 9. Compare SLO and cost changes.
 10. Record the architecture decision.
 
@@ -941,7 +941,7 @@ Microservices are preferred when:
 | ARC-MONO-01 | Maintain a modular-monolith design as an approved alternative, not a second implementation commitment. |
 | ARC-MONO-02 | Map business modules directly to the approved microservice boundaries. |
 | ARC-MONO-03 | Use one platform-monolith deployable for six business modules. |
-| ARC-MONO-04 | Keep Device Integration as a separate Device Gateway deployable. |
+| ARC-MONO-04 | Keep Device Integration as a separate Device Integration Service deployable. |
 | ARC-MONO-05 | Keep the BFF and Identity Provider outside the monolith. |
 | ARC-MONO-06 | Use module-owned PostgreSQL schemas. |
 | ARC-MONO-07 | Prohibit cross-schema SQL and cross-module persistence access. |
