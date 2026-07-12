@@ -58,7 +58,7 @@ Permitted Transitions:
 
 *Note:* Terminal states (`EXPIRED`, `CANCELLED`, `NO_SHOW`, `COMPLETED`, `FULFILMENT_FAILED`, `DRIVER_ABANDONED`) cannot be reopened.
 
-*Start Rejection vs Retry:* Booking remains `CHECKED_IN` while retry/reassignment is available. A rejected attempt creates a terminal `START_REJECTED` session-attempt record, not a Booking-state change. Each retry receives a new attempt number, a newly issued authorization, and a new session-attempt record. Booking transitions to `ACTIVE` only after confirmed transaction-start evidence, and to `FULFILMENT_FAILED` only when retry/reassignment is exhausted.
+*Start Rejection vs Retry:* Booking remains `CHECKED_IN` while retry/reassignment is available. A rejected attempt creates a terminal `ATTEMPT_REJECTED` session-attempt record, not a Booking-state change. Each retry receives a new attempt number, a newly issued authorization, and a new session-attempt record. Booking transitions to `ACTIVE` only after confirmed transaction-start evidence, and to `FULFILMENT_FAILED` only when retry/reassignment is exhausted.
 
 ### 1.2 Session Attempt Lifecycle
 *Each start attempt creates a new SessionAttempt record. The Booking remains in `CHECKED_IN` across attempts.*
@@ -70,7 +70,7 @@ Permitted Transitions:
 - `TIMED_OUT` — No response received from device within timeout period.
 - `RECONCILING` — Awaiting device outcome reconciliation after timeout.
 - `TRANSACTION_STARTED` — Terminal; charging physically began (DeviceTransactionStarted received).
-- `UNRESOLVED_REQUIRES_ACTION` — Terminal; reconciliation produced ambiguous or missing evidence. Requires authorized manual resolution. During this state the corresponding operational_occupation remains blocking.
+- `UNRESOLVED_REQUIRES_ACTION` — Quasi-terminal; reconciliation produced ambiguous or missing evidence. Requires authorized manual resolution. Authorized manual override to `TRANSACTION_STARTED` or `ATTEMPT_REJECTED` is permitted. During this state the corresponding operational_occupation remains blocking.
 
 Permitted Transitions:
 - `AUTHORIZING` → `STARTING` | `ATTEMPT_REJECTED`
@@ -83,7 +83,7 @@ Permitted Transitions:
 
 *Unresolved state behavior:* An `UNRESOLVED_REQUIRES_ACTION` attempt blocks capacity until manually resolved. Escalation deadline: 24 hours. Resolution must be authorized (requires `resolved_by` and `resolution_evidence`). Notification is sent to the operator escalation path on entry. If later device evidence arrives, an authorized operator may still resolve the state manually.
 
-Terminal states: `ATTEMPT_REJECTED`, `TRANSACTION_STARTED`, `UNRESOLVED_REQUIRES_ACTION`.
+Terminal states: `ATTEMPT_REJECTED`, `TRANSACTION_STARTED`. `UNRESOLVED_REQUIRES_ACTION` is quasi-terminal with authorized manual override transitions.
 
 ### 1.2a Authorization Consumption Rule
 
@@ -119,13 +119,13 @@ Permitted Transitions:
 ### 1.3a Start Authorization Lifecycle
 - `ISSUED` — Token generated upon successful check-in.
 - `EXPIRED` — Check-in grace period ends without session starting.
-- `CONSUMED` — Start attempt accepted for processing.
+- `CONSUMED` — Start-intent transaction committed (DOM-002 §1.2a).
 - `REVOKED` — Booking cancelled or check-in abandoned before start.
 
 Permitted Transitions:
 - `ISSUED` → `CONSUMED` | `EXPIRED` | `REVOKED`
 
-*Note:* An authorization becomes `CONSUMED` as soon as the start command is accepted. Uncertain start outcomes prevent any second attempt. A retry requires a newly issued authorization bound to the same booking and a new attempt number.
+*Note:* An authorization becomes `CONSUMED` when the local start-intent transaction commits (DOM-002 §1.2a). Device acceptance is unrelated to authorization consumption. A definitive rejected attempt (`ATTEMPT_REJECTED`) requires a newly issued authorization bound to the same booking and a new attempt number. If the local transaction rolls back, consumption rolls back.
 
 ### 1.4 Station Lifecycle
 - `DRAFT` — Configuration in progress.

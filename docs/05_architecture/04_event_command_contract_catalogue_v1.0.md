@@ -87,7 +87,7 @@ A completed fact reporting a command’s business or operational outcome.
 
 Examples:
 
-- `CapacityBlockInstalled`
+- `RestrictionInstalled`
 - `PrivacyExportContributionPrepared`
 - `DeviceCommandTimedOut`
 
@@ -170,7 +170,7 @@ CloudEvents requires uniqueness from the combination of `source` and `id`; platf
   "classification": "PERSONAL_OPERATIONAL",
   "data": {
     "bookingRef": "BKG-7K4M2P",
-    "accountRef": "ACC-48K1",
+    "driverId": "dri_abc123",
     "stationRef": "STN-ATH-21",
     "evseRef": "EVSE-04",
     "scheduledStart": "2026-07-14T08:00:00Z",
@@ -244,7 +244,7 @@ Pattern:
 Examples:
 
 - `gr.evbooking.device.command.start-charging.v1`
-- `gr.evbooking.booking.command.install-capacity-block.v1`
+- `gr.evbooking.booking.command.restrict-capacity.v1`
 
 ### 6.3 Routing keys
 
@@ -552,23 +552,23 @@ A Maintenance record is not considered transactionally enforceable merely becaus
 
 | Event | Producer | Consumers |
 |---|---|---|
-| `BookingHeld` | Booking | Discovery |
-| `BookingConfirmed` | Booking | Discovery, Notification, Station Operations, Governance |
-| `BookingRescheduled` | Booking | Discovery, Notification, Station Operations |
-| `BookingReassigned` | Booking | Discovery, Notification, Station Operations, Device Integration |
-| `BookingCancelled` | Booking | Discovery, Notification, Station Operations, Device Integration |
-| `BookingExpired` | Booking | Discovery |
+| `BookingHeld` | Booking | — |
+| `BookingConfirmed` | Booking | Notification, Station Operations, Governance |
+| `BookingRescheduled` | Booking | Notification, Station Operations |
+| `BookingReassigned` | Booking | Notification, Station Operations, Device Integration |
+| `BookingCancelled` | Booking | Notification, Station Operations, Device Integration |
+| `BookingExpired` | Booking | — |
 | `DriverCheckedIn` | Booking | Notification where configured, Governance |
 | `CheckInAbandoned` | Booking | Device Integration where mirror exists |
-| `BookingNoShowRecorded` | Booking | Discovery, Notification, Station Operations, Insights |
+| `BookingNoShowRecorded` | Booking | Notification, Station Operations, Insights |
 | `BookingFulfilmentFailed` | Booking | Notification, Station Operations, Governance, Insights |
-| `BookingActivated` | Booking | Station Operations, Discovery |
-| `BookingCompleted` | Booking | Discovery, Station Operations, Insights |
+| `BookingActivated` | Booking | Station Operations |
+| `BookingCompleted` | Booking | Station Operations, Insights |
 | `AllocationClaimed` | Booking | Discovery |
 | `AllocationChanged` | Booking | Discovery |
 | `AllocationReleased` | Booking | Discovery |
-| `CapacityBlockInstalled` | Booking | Station Operations coordinator |
-| `CapacityBlockReleased` | Booking | Station Operations coordinator |
+| `CapacityRestrictionInstalled` | Booking | Station Operations coordinator |
+| `CapacityRestrictionReleased` | Booking | Station Operations coordinator |
 | `DriverRestrictionInstalled` | Booking | Account/Governance coordinator |
 | `DriverRestrictionReleased` | Booking | Account coordinator |
 
@@ -860,14 +860,15 @@ If the workflow stops between freeze and block, reconciliation detects the orpha
    - SessionAttempt to `TRANSACTION_STARTED`
    - ChargingSession to `CHARGING`
    - Booking to `ACTIVE`
-10. Definitive rejection causes:
-    - SessionAttempt `START_REJECTED` (terminal for this attempt)
+ 10. Definitive rejection causes:
+    - SessionAttempt `ATTEMPT_REJECTED` (terminal for this attempt)
     - ChargingSession remains `STARTING` (another attempt may be made)
     - Booking stays `CHECKED_IN` (retry available)
 11. Only exhaustion of all retries causes:
     - ChargingSession `START_REJECTED`
     - Booking `FULFILMENT_FAILED`
 12. Timeout transitions SessionAttempt to `RECONCILING` and starts reconciliation.
+13. Reconciliation resolves to `TRANSACTION_STARTED`, `ATTEMPT_REJECTED`, or `UNRESOLVED_REQUIRES_ACTION` (quasi-terminal with authorized manual override).
 
 A consumed Start Authorization is never restored. If the local transaction rolls back, consumption rolls back. A definitive rejected attempt requires a newly issued authorization.
 

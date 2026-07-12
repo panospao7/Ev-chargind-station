@@ -246,7 +246,7 @@ This prevents duplicate active claims for the same source workflow.
 
 Capacity restrictions track the maintenance freeze/block/release lifecycle independently from the interval-based `capacity_claim`. A restriction begins as a `FREEZE` (planned/imminent), transitions to `BLOCKED` (active), and ends as `RELEASED`.
 
-During `FREEZE`, the enforcing interval `capacity_claim` is inserted immediately (under the EVSE guard). This provides a clear database-backed enforcement model — every allocation transaction naturally conflicts with the overlapping claim via the exclusion constraint.
+During `FREEZE`, no `capacity_claim` is inserted. Enforcement uses a query-based model: every allocation transaction queries overlapping `FREEZE`/`BLOCKED` `capacity_restriction` rows while holding the EVSE guard lock. The `capacity_claim` is inserted only at `BLOCKED` time, after overlapping obligations are resolved.
 
 ```sql
 CREATE TABLE capacity_restriction (
@@ -314,11 +314,11 @@ CREATE TABLE capacity_restriction (
 | Emergency | `EMERGENCY` | Emergency block (requires authorized audit record) |
 | Operator restriction | `OPERATOR_RESTRICTION` | General operator-initiated restriction |
 
-**Freeze enforcement model:** At `FREEZE` commit time, a corresponding `capacity_claim` row is inserted for the `effective_interval`. This claim conflicts with any overlapping allocation via the existing exclusion constraint (`ex_capacity_claim_evse_interval`). No additional query path is needed — the exclusion constraint is the enforcement mechanism.
+**Freeze enforcement model:** During `FREEZE`, no `capacity_claim` is inserted. Enforcement uses a query-based model: every allocation transaction MUST query overlapping `FREEZE`/`BLOCKED` `capacity_restriction` rows while holding the EVSE guard lock. If an overlapping unreleased restriction exists, the allocation is rejected with `MAINTENANCE_CONFLICT`. The `capacity_claim` is inserted only at `BLOCKED` time (Phase C).
 
 Permitted states:
 
-- `FREEZE` — Restriction is planned or imminent; the enforcing capacity_claim is active.
+- `FREEZE` — Restriction is planned or imminent; allocation queries reject overlapping intervals. No capacity_claim is inserted at this phase.
 - `BLOCKED` — Restriction is active; maintenance/emergency may proceed.
 - `RELEASED` — Restriction lifted; capacity_claim released; EVSE available for allocation.
 
