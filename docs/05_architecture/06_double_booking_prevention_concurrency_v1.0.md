@@ -1052,7 +1052,7 @@ Inside one guarded transaction:
 6. Insert `EMERGENCY_BLOCK` capacity_claim rows for the effective interval (minus any active-session overlap that cannot be released).
 7. Transition each `capacity_restriction` to `BLOCKED` (set `blocked_at = now()`).
 8. Commit.
-9. Publish `EmergencyBlockInstalled` domain event with affected Booking/session summary.
+9. Publish `CapacityRestrictionCreated` domain event (restriction_kind=EMERGENCY) with affected Booking/session summary.
 
 Emergency intervention cannot silently delete existing claims. An ACTIVE session's Booking is never silently cancelled — the session must terminate naturally or through an emergency stop command.
 

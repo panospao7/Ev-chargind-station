@@ -481,7 +481,8 @@ A schema cannot be retired while supported consumers still depend on it.
 | `AccountSuspended` | Account | Booking, Notification, Governance | Account reference, effective time |
 | `AccountReactivated` | Account | Booking, Notification | Account reference |
 | `AccountDeletionPending` | Account | Booking, Notification, Governance | Account reference, workflow |
-| `AccountDeleted` | Account | Discovery, Notification, Governance | Tombstone reference, completion time |
+| `AccountDeleted` | Account | Notification, Governance | Tombstone reference, completion time |
+| `AccountTombstone` | Account | Discovery | Account ID only; no PII. Produced alongside `AccountDeleted` for Discovery projection cleanup. |
 | `NotificationPreferencesChanged` | Account | Notification | Account reference, preference version |
 | `ProfileLocaleChanged` | Account | Notification | Account reference, locale |
 | `VehicleProfileChanged` | Account | No mandatory consumer | Account and vehicle references |
@@ -550,6 +551,8 @@ A Maintenance record is not considered transactionally enforceable merely becaus
 
 # 16. Booking and allocation events
 
+*ARC-020 is the authoritative event inventory. This catalogue is retained for command-contract completeness and consumer routing. Event names below are aligned with ARC-020.*
+
 | Event | Producer | Consumers |
 |---|---|---|
 | `BookingHeld` | Booking | — |
@@ -560,14 +563,14 @@ A Maintenance record is not considered transactionally enforceable merely becaus
 | `BookingExpired` | Booking | — |
 | `BookingCheckedIn` | Booking | Notification where configured, Governance |
 | `CheckInAbandoned` | Booking | Device Integration where mirror exists |
-| `BookingNoShowRecorded` | Booking | Notification, Station Operations, Insights |
+| `BookingNoShow` | Booking | Notification, Station Operations, Insights |
 | `BookingFulfilmentFailed` | Booking | Notification, Station Operations, Governance, Insights |
 | `BookingActivated` | Booking | Station Operations |
 | `BookingCompleted` | Booking | Station Operations, Insights |
 | `EVSECapacityChanged` | Booking | Discovery |
 | `StationBookableCountChanged` | Booking | Discovery |
 | `AvailabilityProjectionInvalidated` | Booking | Discovery |
-| `CapacityRestrictionInstalled` | Booking | Station Operations coordinator |
+| `CapacityRestrictionCreated` | Booking | Station Operations coordinator |
 | `CapacityRestrictionReleased` | Booking | Station Operations coordinator |
 | `DriverRestrictionInstalled` | Booking | Account/Governance coordinator |
 | `DriverRestrictionReleased` | Booking | Account coordinator |
@@ -598,7 +601,7 @@ Events must not include:
 
 | Event | Producer | Consumers |
 |---|---|---|
-| `ChargingSessionStarting` | Booking | Notification only for failure monitoring; Governance |
+| `ChargingStartRequested` | Booking | Notification only for failure monitoring; Governance |
 | `ChargingSessionStarted` | Booking | Station Operations, Discovery, Insights |
 | `ChargingSessionSuspended` | Booking | Station Operations, Notification where material |
 | `ChargingSessionResumed` | Booking | Station Operations |
@@ -607,7 +610,7 @@ Events must not include:
 | `ChargingSessionInterrupted` | Booking | Notification, Station Operations, Governance, Insights |
 | `ChargingStartAttemptRejected` | Booking | Notification (attempt-level; Booking remains CHECKED_IN; retry available) |
 | `ChargingSessionStartRejected` | Booking | Notification, Station Operations, Governance (final exhaustion; Booking transitions to FULFILMENT_FAILED) |
-| `ChargingSessionOutcomeUncertain` | Booking | Station Operations, Governance |
+| `ChargingReconciliationRequired` | Booking | Station Operations, Governance |
 | `ChargingSessionSummaryFinalized` | Booking | Notification, Insights |
 
 High-frequency accepted meter values are not broadcast as general integration events.
@@ -855,7 +858,7 @@ If the workflow stops between freeze and block, reconciliation detects the orpha
 5. Device Integration records the command idempotently.
 6. Device Integration dispatches the simulator command.
 7. It emits dispatch rejection, timeout or acceptance evidence.
-8. Command acceptance leaves SessionAttempt in `STARTING`.
+8. Command acceptance transitions SessionAttempt to `DEVICE_ACCEPTED` (charger acknowledged the command — per DOM-002 §1.2).
 9. `DeviceTransactionStarted` causes:
    - SessionAttempt to `TRANSACTION_STARTED`
    - ChargingSession to `CHARGING`
@@ -1273,6 +1276,6 @@ It must define:
 
 ### Event Contract Implementation Roadmap
 To convert this catalogue into machine-readable AsyncAPI schemas:
-- **AsyncAPI Schemas:** Event and command channels will be documented using AsyncAPI 2.6/3.0.
+- **AsyncAPI Schemas:** Event and command channels will be documented using AsyncAPI 2.6.0 (per ARC-018 §8).
 - **Event Versioning:** Schema changes use backwards-compatible addition of fields; breaking upgrades require versioned channels.
 - **Broker Quality Gates:** Event schema validation checks are integrated into CI/CD pipelines to prevent schema drift.
