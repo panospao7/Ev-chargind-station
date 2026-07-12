@@ -303,10 +303,10 @@ Default owner: **DA/QA/AR**.
 
 | ID | Decision | Status | Owner | Deadline |
 |---|---|---|---|---|
-| DEC-TECH-01 | Use Keycloak as the identity provider. | PROVISIONAL | SA/BA | G2 |
-| DEC-TECH-02 | Use PostgreSQL as the primary transactional database technology. | PROVISIONAL | BA | G2 |
-| DEC-TECH-03 | Use RabbitMQ as the initial message broker. | PROVISIONAL | BA/CA | G2 |
-| DEC-TECH-04 | Use MapLibre with OpenStreetMap-based map data. | PROVISIONAL | FA/CA | G3 |
+| DEC-TECH-01 | Use Keycloak as the identity provider. | APPROVED | SA/BA | |
+| DEC-TECH-02 | Use PostgreSQL as the primary transactional database technology. | APPROVED | BA | |
+| DEC-TECH-03 | Use RabbitMQ as the initial message broker. | APPROVED | BA/CA | |
+| DEC-TECH-04 | Use MapLibre with OpenStreetMap-based map data. | APPROVED | FA/CA | |
 | DEC-TECH-05 | Use Redis only where a measured requirement justifies it. | APPROVED | BA |
 | DEC-TECH-06 | Display gross EUR estimates with versioned tariff/tax snapshots. | APPROVED | DA |
 | DEC-TECH-07 | Select the cloud platform after architecture and cost analysis. | OPEN | CA | G5 |

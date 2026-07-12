@@ -294,7 +294,7 @@ Use:
 - Required status checks
 - Signed/verified commits
 
-GitHub rulesets can require pull requests, status checks, signed commits, linear history and blocked force pushes. ([docs.github.com](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets?utm_source=openai))
+GitHub rulesets can require pull requests, status checks, signed commits, linear history and blocked force pushes. ([docs.github.com](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets))
 
 ## 8.3 Individual-project review policy
 
@@ -356,7 +356,7 @@ Examples:
 - Attestation: `id-token: write`, `attestations: write`
 - Promotion bot: `contents: write`, `pull-requests: write`
 
-GitHub recommends explicitly granting the `GITHUB_TOKEN` least privilege. ([docs.github.com](https://docs.github.com/en/actions/tutorials/authenticate-with-github_token?utm_source=openai))
+GitHub recommends explicitly granting the `GITHUB_TOKEN` least privilege. ([docs.github.com](https://docs.github.com/en/actions/tutorials/authenticate-with-github_token))
 
 ## 10.2 Action pinning
 
@@ -368,7 +368,7 @@ uses: actions/checkout@<full-sha> # v6
 
 Version comments remain for readability.
 
-GitHub supports enforcing full-length SHA pinning for actions. ([docs.github.com](https://docs.github.com/en/enterprise-cloud%40latest/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-github-actions-in-your-enterprise?utm_source=openai))
+GitHub supports enforcing full-length SHA pinning for actions. ([docs.github.com](https://docs.github.com/en/enterprise-cloud%40latest/admin/enforcing-policies/enforcing-policies-for-your-enterprise/enforcing-policies-for-github-actions-in-your-enterprise))
 
 ## 10.3 Action allowlist
 
@@ -400,7 +400,7 @@ Pull-request workflows:
 - Cannot modify GitOps state.
 - Cannot access infrastructure credentials.
 
-GitHub withholds ordinary secrets from fork pull-request workflows and restricts their `GITHUB_TOKEN`. ([docs.github.com](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows?ref=content-for-engineers-by-engineers-atomist-blog&utm_source=openai))
+GitHub withholds ordinary secrets from fork pull-request workflows and restricts their `GITHUB_TOKEN`. ([docs.github.com](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows?ref=content-for-engineers-by-engineers-atomist-blog))
 
 `pull_request_target` must not check out or execute untrusted pull-request code.
 
@@ -413,7 +413,7 @@ Use GitHub-hosted ephemeral runners for:
 - Packaging
 - Security scans
 
-Do not attach a persistent self-hosted runner to the public repository. GitHub warns that public-repository fork pull requests can expose self-hosted runners to untrusted code. ([docs.github.com](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners?learn=hosting_your_own_runners&utm_source=openai))
+Do not attach a persistent self-hosted runner to the public repository. GitHub warns that public-repository fork pull requests can expose self-hosted runners to untrusted code. ([docs.github.com](https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/add-runners?learn=hosting_your_own_runners))
 
 Cluster bootstrap remains a controlled administrative-workstation operation unless an isolated ephemeral runner design is approved later.
 
@@ -450,7 +450,7 @@ Reusable workflows:
 └── test-report.yml
 ```
 
-Reusable workflows cannot increase the permissions provided by their caller. ([docs.github.com](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations?utm_source=openai))
+Reusable workflows cannot increase the permissions provided by their caller. ([docs.github.com](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations))
 
 ---
 
@@ -518,7 +518,7 @@ Path classification is an optimization, not a correctness boundary.
 - Client/interface generation
 - Generated-source compilation
 
-AsyncAPI provides an official CLI validation path, while `oasdiff` can detect potentially breaking OpenAPI changes. ([asyncapi.com](https://www.asyncapi.com/docs/guides/validate?utm_source=openai))
+AsyncAPI provides an official CLI validation path, while `oasdiff` can detect potentially breaking OpenAPI changes. ([asyncapi.com](https://www.asyncapi.com/docs/guides/validate))
 
 ## Stage 3 — Application checks
 
@@ -577,7 +577,7 @@ Untrusted CI performs:
 - License policy
 - Secret scan
 
-GitHub dependency review can prevent vulnerable dependencies from being introduced by a pull request, and CodeQL provides code scanning for Java, JavaScript/TypeScript and Actions workflows. ([docs.github.com](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review?ref=thestack.technology&utm_source=openai))
+GitHub dependency review can prevent vulnerable dependencies from being introduced by a pull request, and CodeQL provides code scanning for Java, JavaScript/TypeScript and Actions workflows. ([docs.github.com](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review?ref=thestack.technology))
 
 ## Stage 8 — Required gate
 
@@ -617,7 +617,7 @@ Produce:
 - `linux/arm64`
 - `linux/amd64`
 
-GitHub provides ARM64 and x64 Linux-hosted runners, including `ubuntu-24.04-arm`. ([docs.github.com](https://docs.github.com/en/actions/reference/runners/github-hosted-runners?utm_source=openai))
+GitHub provides ARM64 and x64 Linux-hosted runners, including `ubuntu-24.04-arm`. ([docs.github.com](https://docs.github.com/en/actions/reference/runners/github-hosted-runners))
 
 Process:
 
@@ -660,7 +660,7 @@ repository/image:tag@sha256:<digest>
 
 Tags improve readability; the digest determines deployed content.
 
-GHCR publication uses the repository-scoped `GITHUB_TOKEN`, not a personal access token. ([docs.github.com](https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions?learn=continuous_deployment&learnProduct=actions&utm_source=openai))
+GHCR publication uses the repository-scoped `GITHUB_TOKEN`, not a personal access token. ([docs.github.com](https://docs.github.com/en/packages/managing-github-packages-using-github-actions-workflows/publishing-and-installing-a-package-with-github-actions?learn=continuous_deployment&learnProduct=actions))
 
 ---
 
@@ -680,9 +680,9 @@ Every release image receives:
 - Build timestamp
 - Architecture list
 
-GitHub artifact attestations associate provenance with the repository, workflow, commit and triggering event and can also carry SBOM attestations. ([docs.github.com](https://docs.github.com/en/enterprise-cloud%40latest/actions/concepts/security/artifact-attestations?utm_source=openai))
+GitHub artifact attestations associate provenance with the repository, workflow, commit and triggering event and can also carry SBOM attestations. ([docs.github.com](https://docs.github.com/en/enterprise-cloud%40latest/actions/concepts/security/artifact-attestations))
 
-Sigstore keyless signing binds an ephemeral signing key to an OIDC identity and records signing evidence through its trust infrastructure. ([docs.sigstore.dev](https://docs.sigstore.dev/cosign/signing/overview/?utm_source=openai))
+Sigstore keyless signing binds an ephemeral signing key to an OIDC identity and records signing evidence through its trust infrastructure. ([docs.sigstore.dev](https://docs.sigstore.dev/cosign/signing/overview/))
 
 Images are signed by digest, not by mutable tag.
 
@@ -709,7 +709,7 @@ After the proof of concept:
 - Reject images not referenced by digest.
 - Exempt only explicitly approved infrastructure images.
 
-GitHub documents enforcement of artifact attestations through the Sigstore Policy Controller. ([docs.github.com](https://docs.github.com/en/actions/concepts/security/kubernetes-admissions-controller?utm_source=openai))
+GitHub documents enforcement of artifact attestations through the Sigstore Policy Controller. ([docs.github.com](https://docs.github.com/en/actions/concepts/security/kubernetes-admissions-controller))
 
 ---
 
@@ -736,7 +736,7 @@ Use a dedicated GitHub App with only:
 - Pull requests write
 - Metadata read
 
-A GitHub App token is preferred because automation-created pull requests can trigger CI normally; ordinary `GITHUB_TOKEN` events have recursion restrictions. ([docs.github.com](https://docs.github.com/en/actions/concepts/security/github_token?utm_source=openai))
+A GitHub App token is preferred because automation-created pull requests can trigger CI normally; ordinary `GITHUB_TOKEN` events have recursion restrictions. ([docs.github.com](https://docs.github.com/en/actions/concepts/security/github_token))
 
 Promotion pull requests cannot modify application source.
 
@@ -775,7 +775,7 @@ After promotion merge:
 6. Release verification Job runs.
 7. Flux reports reconciliation status to GitHub.
 
-Flux can associate reconciliation results with Git commits and update GitHub commit status without granting GitHub Actions access to the cluster. ([fluxcd.io](https://fluxcd.io/flux/monitoring/alerts/?utm_source=openai))
+Flux can associate reconciliation results with Git commits and update GitHub commit status without granting GitHub Actions access to the cluster. ([fluxcd.io](https://fluxcd.io/flux/monitoring/alerts/))
 
 The Flux GitHub App requires only:
 
@@ -912,7 +912,7 @@ Apply requires:
 - Concurrency lock
 - No unreviewed source change
 
-GitHub environments can protect secrets, require approval and restrict deployment branches; concurrency groups prevent overlapping deployments. ([docs.github.com](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments?utm_source=openai))
+GitHub environments can protect secrets, require approval and restrict deployment branches; concurrency groups prevent overlapping deployments. ([docs.github.com](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/control-deployments))
 
 ## 24.4 Cluster bootstrap
 
@@ -1062,7 +1062,7 @@ Configuration:
 - No automatic framework-minor merge without tests
 - GitHub Actions references kept pinned to commit SHA
 
-GitHub recommends dependency review and Dependabot for maintaining workflow dependencies securely. ([docs.github.com](https://docs.github.com/en/actions/reference/security/secure-use?learn=getting_started&learnProduct=actions&utm_source=openai))
+GitHub recommends dependency review and Dependabot for maintaining workflow dependencies securely. ([docs.github.com](https://docs.github.com/en/actions/reference/security/secure-use?learn=getting_started&learnProduct=actions))
 
 ---
 
@@ -1191,7 +1191,7 @@ Every trusted build records:
 - SBOM digest
 - Signature and attestation references
 
-GitHub artifact attestations allow consumers to verify container-image provenance against the source repository. ([docs.github.com](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations?utm_source=openai))
+GitHub artifact attestations allow consumers to verify container-image provenance against the source repository. ([docs.github.com](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/use-artifact-attestations))
 
 ---
 
@@ -1218,7 +1218,7 @@ GitHub artifact attestations allow consumers to verify container-image provenanc
 19. Configure GHCR package permissions.
 20. Configure protected environments.
 
-Push protection can block detected secrets before they are committed and supports controlled bypass review. ([docs.github.com](https://docs.github.com/en/code-security/concepts/secret-security/bypass-requests?utm_source=openai))
+Push protection can block detected secrets before they are committed and supports controlled bypass review. ([docs.github.com](https://docs.github.com/en/code-security/concepts/secret-security/bypass-requests))
 
 ---
 

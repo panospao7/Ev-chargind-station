@@ -93,7 +93,7 @@ Version numbers below are baseline release lines. Patch releases may advance aut
 
 ## 4.1 Angular 21 instead of Angular 22
 
-Angular 22 is the current Angular generation as of July 2026, but the stable OpenAPI Generator `typescript-angular` generator currently documents support through Angular 21. Angular 21 supports Node 24 and TypeScript 5.9. Therefore, v1 selects Angular 21.2.x, Node 24 LTS and TypeScript 5.9.x as the lower-risk compatible toolchain. ([angular.dev](https://angular.dev/reference/versions?utm_source=openai))
+Angular 22 is the current Angular generation as of July 2026, but the stable OpenAPI Generator `typescript-angular` generator currently documents support through Angular 21. Angular 21 supports Node 24 and TypeScript 5.9. Therefore, v1 selects Angular 21.2.x, Node 24 LTS and TypeScript 5.9.x as the lower-risk compatible toolchain. ([angular.dev](https://angular.dev/reference/versions))
 
 Upgrade to Angular 22 requires:
 
@@ -115,7 +115,7 @@ Use Node.js 24 LTS for:
 - AsyncAPI tooling
 - Documentation tooling
 
-Node 26 is still in Current status and does not enter LTS until October 2026; production-oriented development should use an LTS release. ([nodejs.org](https://nodejs.org/en/about/previous-releases?utm_source=openai))
+Node 26 is still in Current status and does not enter LTS until October 2026; production-oriented development should use an LTS release. ([nodejs.org](https://nodejs.org/en/about/previous-releases))
 
 Use:
 
@@ -149,7 +149,7 @@ Use CDK for:
 - Layout utilities
 - Custom application components
 
-Angular Material/CDK follow Angular’s release policy and are maintained by the Angular team with accessibility and internationalization as explicit project goals. ([github.com](https://github.com/angular/components?utm_source=openai))
+Angular Material/CDK follow Angular’s release policy and are maintained by the Angular team with accessibility and internationalization as explicit project goals. ([github.com](https://github.com/angular/components))
 
 The application will use a custom visual theme rather than an unmodified Material appearance.
 
@@ -183,7 +183,7 @@ Use:
 - Playwright 1.61.x for E2E
 - `@axe-core/playwright` for automated accessibility checks
 
-Angular CLI uses Vitest as its default current testing setup, and Vitest 4.1 is the supported stable line selected here. Playwright 1.61 provides current cross-browser testing and WebAuthn test support. ([angular.dev](https://angular.dev/guide/testing?utm_source=openai))
+Angular CLI uses Vitest as its default current testing setup, and Vitest 4.1 is the supported stable line selected here. Playwright 1.61 provides current cross-browser testing and WebAuthn test support. ([angular.dev](https://angular.dev/guide/testing))
 
 Do not use Karma/Jasmine for new tests.
 
@@ -195,7 +195,7 @@ Do not use Karma/Jasmine for new tests.
 
 Use MapLibre GL JS 5.24.x.
 
-Version 5.24 is the final stable v5 release line; version 6 was still in pre-release work during spring 2026. The application therefore avoids v6 until it reaches stable status and the CSP, browser and Angular integration are validated. ([maplibre.org](https://maplibre.org/maplibre-gl-js/docs/?utm_source=openai))
+Version 5.24 is the final stable v5 release line; version 6 was still in pre-release work during spring 2026. The application therefore avoids v6 until it reaches stable status and the CSP, browser and Angular integration are validated. ([maplibre.org](https://maplibre.org/maplibre-gl-js/docs/))
 
 Use the CSP-compatible worker bundle if required by the final Content Security Policy.
 
@@ -219,7 +219,7 @@ Requirements:
 - Reduced-motion support
 - Lazy loading of chart code
 
-ECharts 6 is the current major release and includes a revised theme and layout system. ([echarts.apache.org](https://echarts.apache.org/handbook/en/basics/release-note/v6-feature/?utm_source=openai))
+ECharts 6 is the current major release and includes a revised theme and layout system. ([echarts.apache.org](https://echarts.apache.org/handbook/en/basics/release-note/v6-feature/))
 
 ---
 
@@ -229,7 +229,7 @@ ECharts 6 is the current major release and includes a revised theme and layout s
 
 Use Java 25 LTS.
 
-Java 25 is an LTS release; Java 21 remains supported, but using Java 25 avoids beginning the implementation on the previous LTS generation. ([oracle.com](https://www.oracle.com/ca-fr/java/technologies/java-se-support-roadmap.html?utm_source=openai))
+Java 25 is an LTS release; Java 21 remains supported, but using Java 25 avoids beginning the implementation on the previous LTS generation. ([oracle.com](https://www.oracle.com/ca-fr/java/technologies/java-se-support-roadmap.html))
 
 Use an OpenJDK distribution such as Eclipse Temurin rather than depending on Oracle-specific runtime licensing.
 
@@ -246,7 +246,7 @@ Language policy:
 
 Use Spring Boot 4.1.x.
 
-Spring Boot 4.1.0 is the current stable feature line and uses the Spring Framework 7 generation. ([spring.io](https://spring.io/projects/spring-boot/?utm_source=openai))
+Spring Boot 4.1.0 is the current stable feature line and uses the Spring Framework 7 generation. ([spring.io](https://spring.io/projects/spring-boot/))
 
 Primary starters:
 
@@ -273,7 +273,7 @@ Reasons:
 
 Use Spring Cloud 2025.1.x, initially 2025.1.2 or its latest compatible service release.
 
-The Oakwood release train supports Spring Boot 4.0 and 4.1 starting with 2025.1.2. ([spring.io](https://spring.io/projects/spring-cloud/?utm_source=openai))
+The Oakwood release train supports Spring Boot 4.0 and 4.1 starting with 2025.1.2. ([spring.io](https://spring.io/projects/spring-cloud/))
 
 Selected modules:
 
@@ -305,7 +305,7 @@ Use a dedicated Spring Boot BFF based on:
 - Spring Session JDBC
 - Spring Web MVC
 
-Gateway Server Web MVC is a supported servlet-based gateway built on Spring Boot and WebMvc functional routing. ([docs.spring.io](https://docs.spring.io/spring-cloud-gateway/reference/?utm_source=openai))
+Gateway Server Web MVC is a supported servlet-based gateway built on Spring Boot and WebMvc functional routing. ([docs.spring.io](https://docs.spring.io/spring-cloud-gateway/reference/))
 
 The BFF owns:
 
@@ -325,7 +325,7 @@ It owns no business data.
 
 Use Spring Session JDBC backed by a dedicated PostgreSQL logical database.
 
-Spring Session provides a JDBC-backed session repository with PostgreSQL-specific customization and expiry cleanup. ([docs.spring.io](https://docs.spring.io/spring-session/reference/configuration/jdbc.html?utm_source=openai))
+Spring Session provides a JDBC-backed session repository with PostgreSQL-specific customization and expiry cleanup. ([docs.spring.io](https://docs.spring.io/spring-session/reference/configuration/jdbc.html))
 
 This avoids introducing Redis before a measured requirement exists.
 
@@ -345,7 +345,7 @@ Session attributes must use a controlled serialization format; arbitrary Java ob
 
 Use PostgreSQL 18 and remain on the latest available 18.x patch.
 
-PostgreSQL 18 is the current production major release; PostgreSQL 19 is still beta as of July 2026. PostgreSQL 18.4 is the current documented patch line. ([postgresql.org](https://www.postgresql.org/docs/?utm_source=openai))
+PostgreSQL 18 is the current production major release; PostgreSQL 19 is still beta as of July 2026. PostgreSQL 18.4 is the current documented patch line. ([postgresql.org](https://www.postgresql.org/docs/))
 
 Required features include:
 
@@ -371,7 +371,7 @@ Use Spring JDBC:
 - Explicit SQL
 - Spring transaction management
 
-`JdbcClient` provides a unified fluent API over JDBC query and update operations while retaining access to lower-level JDBC facilities for advanced operations. ([docs.spring.io](https://docs.spring.io/spring-framework/reference/data-access/jdbc/core.html?utm_source=openai))
+`JdbcClient` provides a unified fluent API over JDBC query and update operations while retaining access to lower-level JDBC facilities for advanced operations. ([docs.spring.io](https://docs.spring.io/spring-framework/reference/data-access/jdbc/core.html))
 
 Do not use Hibernate/JPA as the principal persistence model.
 
@@ -388,7 +388,7 @@ Small services may not independently adopt JPA without an architecture amendment
 
 Use Flyway 12.6.x Community features through Maven.
 
-Flyway 12.6.1 is the selected baseline patch. ([documentation.red-gate.com](https://documentation.red-gate.com/flyway/release-notes-and-older-versions/release-notes-for-flyway-engine?utm_source=openai))
+Flyway 12.6.1 is the selected baseline patch. ([documentation.red-gate.com](https://documentation.red-gate.com/flyway/release-notes-and-older-versions/release-notes-for-flyway-engine))
 
 Rules:
 
@@ -418,7 +418,7 @@ No correctness rule may depend solely on Redis.
 
 Use Keycloak 26.6.x, initially 26.6.3 or a later security patch within that line.
 
-Keycloak 26.6.3 includes security fixes released on June 4, 2026, and 26.6 introduced supported token exchange, workflows and federated client-authentication capabilities relevant to the architecture. ([keycloak.org](https://www.keycloak.org/2026/06/keycloak-2663-released?utm_source=openai))
+Keycloak 26.6.3 includes security fixes released on June 4, 2026, and 26.6 introduced supported token exchange, workflows and federated client-authentication capabilities relevant to the architecture. ([keycloak.org](https://www.keycloak.org/2026/06/keycloak-2663-released))
 
 Selected capabilities:
 
@@ -445,7 +445,7 @@ The exact container image must be pinned by version and digest.
 
 Use RabbitMQ 4.3.x, initially 4.3.2 or its latest security patch.
 
-RabbitMQ 4.3 is the current fully community-supported line as of July 2026. RabbitMQ 4.2 community support ends on July 31, 2026, making 4.3 the appropriate new-system baseline. ([rabbitmq.com](https://www.rabbitmq.com/release-information?utm_source=openai))
+RabbitMQ 4.3 is the current fully community-supported line as of July 2026. RabbitMQ 4.2 community support ends on July 31, 2026, making 4.3 the appropriate new-system baseline. ([rabbitmq.com](https://www.rabbitmq.com/release-information))
 
 Use:
 
@@ -482,7 +482,7 @@ The design remains broker-abstracted at the contract level.
 
 Use OpenAPI 3.0.3 as the checked-in REST contract standard.
 
-OpenAPI 3.0.3 is current, but OpenAPI Generator documents only beta OpenAPI 3.1 support and no equivalent 3.2 compatibility assurance. OpenAPI 3.0.3 therefore provides the safer contract/tooling boundary. ([spec.openapis.org](https://spec.openapis.org/oas/?utm_source=openai))
+OpenAPI 3.0.3 is current, but OpenAPI Generator documents only beta OpenAPI 3.1 support and no equivalent 3.2 compatibility assurance. OpenAPI 3.0.3 therefore provides the safer contract/tooling boundary. ([spec.openapis.org](https://spec.openapis.org/oas/))
 
 Contract approach:
 
@@ -502,7 +502,7 @@ The selected version supports:
 - Stable TypeScript Angular generation
 - Angular through version 21
 - Spring Boot 4 generation through `useSpringBoot4`
-- Spring HTTP interfaces and server interfaces ([openapi-generator.tech](https://openapi-generator.tech/docs/generators/typescript-angular/?utm_source=openai))
+- Spring HTTP interfaces and server interfaces ([openapi-generator.tech](https://openapi-generator.tech/docs/generators/typescript-angular/))
 
 Generate:
 
@@ -520,7 +520,7 @@ Do not make runtime code-first generation authoritative.
 
 - Non-production Swagger UI
 - Runtime exposure of the approved static contract
-- Additional documentation checks ([springdoc.org](https://springdoc.org/v4/index.html?utm_source=openai))
+- Additional documentation checks ([springdoc.org](https://springdoc.org/v4/index.html))
 
 The checked-in OpenAPI file remains authoritative.
 
@@ -528,7 +528,7 @@ The checked-in OpenAPI file remains authoritative.
 
 Use AsyncAPI 2.6.0 and JSON Schema 2020-12.
 
-AsyncAPI 2.6.0 is the selected standard for messaging interface definitions due to its mature code generation and tooling ecosystems. ([asyncapi.com](https://www.asyncapi.com/docs/reference/specification/v2.6.0?utm_source=openai))
+AsyncAPI 2.6.0 is the selected standard for messaging interface definitions due to its mature code generation and tooling ecosystems. ([asyncapi.com](https://www.asyncapi.com/docs/reference/specification/v2.6.0))
 
 Use:
 
@@ -564,7 +564,7 @@ Selected tools:
 - jqwik for property-based tests
 - ArchUnit for architecture constraints
 
-Spring Boot 4.1’s test starter includes JUnit, AssertJ, Mockito, Hamcrest, JSONassert, JsonPath and Awaitility, and provides dedicated Testcontainers integration. ([docs.spring.io](https://docs.spring.io/spring-boot/appendix/auto-configuration-classes/spring-boot-testcontainers.html?utm_source=openai))
+Spring Boot 4.1’s test starter includes JUnit, AssertJ, Mockito, Hamcrest, JSONassert, JsonPath and Awaitility, and provides dedicated Testcontainers integration. ([docs.spring.io](https://docs.spring.io/spring-boot/appendix/auto-configuration-classes/spring-boot-testcontainers.html))
 
 Rules:
 
@@ -591,7 +591,7 @@ Use:
 - OTLP export
 - Structured JSON logs to stdout
 
-OpenTelemetry recommends the Java agent as the default Spring Boot instrumentation approach because it provides broader out-of-the-box instrumentation. ([opentelemetry.io](https://opentelemetry.io/docs/zero-code/java/spring-boot-starter/?utm_source=openai))
+OpenTelemetry recommends the Java agent as the default Spring Boot instrumentation approach because it provides broader out-of-the-box instrumentation. ([opentelemetry.io](https://opentelemetry.io/docs/zero-code/java/spring-boot-starter/))
 
 Selected baseline:
 
@@ -617,7 +617,7 @@ Use:
 | Traces | Tempo 3.0.x |
 | Collection | OpenTelemetry Collector |
 
-Prometheus 3.12 was released in May 2026. Grafana 13.1 is the current Grafana generation, while Loki 3.6 and Tempo 3.0 provide selected stable baselines for local evaluation. ([github.com](https://github.com/prometheus/prometheus?utm_source=openai))
+Prometheus 3.12 was released in May 2026. Grafana 13.1 is the current Grafana generation, while Loki 3.6 and Tempo 3.0 provide selected stable baselines for local evaluation. ([github.com](https://github.com/prometheus/prometheus))
 
 For an individual project:
 
@@ -643,7 +643,7 @@ Build Java service images with:
 - SBOM output
 - Immutable image digest
 
-Spring Boot’s Maven plugin builds OCI images through Cloud Native Buildpacks, and the generated images run as non-root users. ([docs.spring.io](https://docs.spring.io/spring-boot/maven-plugin/build-image.html?utm_source=openai))
+Spring Boot’s Maven plugin builds OCI images through Cloud Native Buildpacks, and the generated images run as non-root users. ([docs.spring.io](https://docs.spring.io/spring-boot/maven-plugin/build-image.html))
 
 Do not maintain handwritten Java Dockerfiles unless buildpack limitations are demonstrated.
 
@@ -746,7 +746,7 @@ Formatting is automated and must not be debated during code review.
 - Container images use explicit versions and production digests.
 - `latest` tags are prohibited in deployed manifests.
 
-Maven 3.9.16 is the latest supported Maven 3 release; Maven 4 remains release-candidate software and is not selected. ([maven.apache.org](https://maven.apache.org/docs/history?utm_source=openai))
+Maven 3.9.16 is the latest supported Maven 3 release; Maven 4 remains release-candidate software and is not selected. ([maven.apache.org](https://maven.apache.org/docs/history))
 
 ## 17.2 Upgrade cadence
 

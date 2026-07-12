@@ -34,7 +34,7 @@ This document is an engineering security baseline. It does not constitute certif
 
 ## 2. Security standards baseline
 
-The release baseline is **OWASP ASVS 5.0.0 Level 2**, with selected Level 3 controls for privileged access, privacy exports, machine identity, cryptographic keys and emergency intervention. ASVS 5.0.0 is the current stable ASVS release; exact versioned requirement IDs must be recorded in the future security verification matrix. ([github.com](https://github.com/OWASP/ASVS/releases?utm_source=openai))
+The release baseline is **OWASP ASVS 5.0.0 Level 2**, with selected Level 3 controls for privileged access, privacy exports, machine identity, cryptographic keys and emergency intervention. ASVS 5.0.0 is the current stable ASVS release; exact versioned requirement IDs must be recorded in the future security verification matrix. ([github.com](https://github.com/OWASP/ASVS/releases))
 
 Authentication and federation design also uses:
 
@@ -44,13 +44,13 @@ Authentication and federation design also uses:
 - NIST SP 800-63C-4 for federation and assertions
 - NIST SP 800-218 SSDF for secure development practices
 
-RFC 9700 requires modern protections such as PKCE for authorization-code flows and rejects unsafe patterns including open redirectors. ([datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc9700?utm_source=openai))
+RFC 9700 requires modern protections such as PKCE for authorization-code flows and rejects unsafe patterns including open redirectors. ([datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc9700))
 
-JWT processing must follow explicit algorithm, issuer, audience, type and claim validation rather than accepting tokens based only on a valid signature. ([datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc8725?utm_source=openai))
+JWT processing must follow explicit algorithm, issuer, audience, type and claim validation rather than accepting tokens based only on a valid signature. ([datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc8725))
 
-NIST published SP 800-63B-4 and SP 800-63C-4 in July 2025 as the current authentication and federation guidance. ([csrc.nist.gov](https://csrc.nist.gov/pubs/sp/800/63/b/4/final?utm_source=openai))
+NIST published SP 800-63B-4 and SP 800-63C-4 in July 2025 as the current authentication and federation guidance. ([csrc.nist.gov](https://csrc.nist.gov/pubs/sp/800/63/b/4/final))
 
-Secure-development governance follows NIST SSDF practices for preparing the organization, protecting software, producing secure software and responding to vulnerabilities. ([csrc.nist.gov](https://csrc.nist.gov/pubs/sp/800/218/final?utm_source=openai))
+Secure-development governance follows NIST SSDF practices for preparing the organization, protecting software, producing secure software and responding to vulnerabilities. ([csrc.nist.gov](https://csrc.nist.gov/pubs/sp/800/218/final))
 
 ---
 
@@ -218,7 +218,7 @@ The browser never receives or stores:
 
 This reduces the impact of token theft through browser storage or JavaScript compromise.
 
-The IETF browser-application specification is still completing publication, but its BFF profile recommends server-held tokens and strongly protected cookies. It is used here as informative guidance rather than a finalized normative reference. ([datatracker.ietf.org](https://datatracker.ietf.org/doc/draft-ietf-oauth-browser-based-apps/26/?utm_source=openai))
+The IETF browser-application specification is still completing publication, but its BFF profile recommends server-held tokens and strongly protected cookies. It is used here as informative guidance rather than a finalized normative reference. ([datatracker.ietf.org](https://datatracker.ietf.org/doc/draft-ietf-oauth-browser-based-apps/26/))
 
 ## 6.2 Authentication flow
 
@@ -318,7 +318,7 @@ Keycloak currently supports:
 - DPoP
 - MFA and passkey capabilities
 
-These features make it technically suitable for the proposed architecture, but final selection still requires proof-of-concept and operational review. ([keycloak.org](https://www.keycloak.org/securing-apps/token-exchange?utm_source=openai))
+These features make it technically suitable for the proposed architecture, but final selection still requires proof-of-concept and operational review. ([keycloak.org](https://www.keycloak.org/securing-apps/token-exchange))
 
 ## 7.1 Realm separation
 
@@ -377,7 +377,7 @@ Supported initial factors:
 
 SMS MFA is excluded.
 
-NIST SP 800-63B-4 is the reference for authenticator management and authentication assurance. ([csrc.nist.gov](https://csrc.nist.gov/pubs/sp/800/63/b/4/final?utm_source=openai))
+NIST SP 800-63B-4 is the reference for authenticator management and authentication assurance. ([csrc.nist.gov](https://csrc.nist.gov/pubs/sp/800/63/b/4/final))
 
 ## 7.5 Step-up authentication
 
@@ -393,7 +393,7 @@ Recent MFA-backed authentication is required for:
 - Break-glass activation
 - Machine credential issuance or revocation
 
-The API may return an authentication-requirements challenge aligned with the OAuth step-up model. ([rfc-editor.org](https://www.rfc-editor.org/info/rfc9470/?utm_source=openai))
+The API may return an authentication-requirements challenge aligned with the OAuth step-up model. ([rfc-editor.org](https://www.rfc-editor.org/info/rfc9470/))
 
 ---
 
@@ -414,7 +414,7 @@ Resource servers validate:
 - Required scopes
 - Subject where applicable
 
-Spring Security supports issuer, signature, expiry and not-before validation and automatic JWK rotation; audience validation must also be configured explicitly. ([docs.spring.io](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html?utm_source=openai))
+Spring Security supports issuer, signature, expiry and not-before validation and automatic JWK rotation; audience validation must also be configured explicitly. ([docs.spring.io](https://docs.spring.io/spring-security/reference/servlet/oauth2/resource-server/jwt.html))
 
 ## 8.2 Token rules
 
@@ -432,13 +432,13 @@ Spring Security supports issuer, signature, expiry and not-before validation and
 
 Before calling a business service, the BFF obtains or exchanges for a token limited to that target audience.
 
-If Keycloak is selected, Standard Token Exchange V2 is the preferred mechanism. Keycloak supports target-audience filtering, while legacy token exchange is deprecated. ([keycloak.org](https://www.keycloak.org/securing-apps/token-exchange?utm_source=openai))
+If Keycloak is selected, Standard Token Exchange V2 is the preferred mechanism. Keycloak supports target-audience filtering, while legacy token exchange is deprecated. ([keycloak.org](https://www.keycloak.org/securing-apps/token-exchange))
 
 The BFF must not forward one broad multi-service bearer token throughout the platform.
 
 ## 8.4 DPoP
 
-DPoP can bind tokens to a client key and reduce stolen-token replay. Keycloak supports DPoP, and RFC 9449 defines the protocol. ([keycloak.org](https://www.keycloak.org/securing-apps/dpop?utm_source=openai))
+DPoP can bind tokens to a client key and reduce stolen-token replay. Keycloak supports DPoP, and RFC 9449 defines the protocol. ([keycloak.org](https://www.keycloak.org/securing-apps/dpop))
 
 Decision for v1:
 
@@ -474,7 +474,7 @@ Until cloud workload identity is selected:
 - TLS for every connection
 - Keys stored in secret/key management
 
-Keycloak supports private-key signed client assertions and service accounts without requiring shared client secrets. ([keycloak.org](https://www.keycloak.org/docs/latest/server_admin/?utm_source=openai))
+Keycloak supports private-key signed client assertions and service accounts without requiring shared client secrets. ([keycloak.org](https://www.keycloak.org/docs/latest/server_admin/))
 
 ## 9.3 Target deployment profile
 
@@ -683,7 +683,7 @@ An individual-project demonstration may use owner self-activation only in a clea
 
 Every simulated station authenticates through mutual TLS using a unique certificate.
 
-OAuth mTLS standards define certificate-based client authentication and certificate-bound tokens. ([datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc8705?utm_source=openai))
+OAuth mTLS standards define certificate-based client authentication and certificate-bound tokens. ([datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc8705))
 
 ## 14.2 Certificate binding
 
@@ -1088,7 +1088,7 @@ The delivery process must include:
 - Security regression tests
 - Protected production deployment credentials
 
-These practices align with the secure-development activities described by NIST SSDF. ([csrc.nist.gov](https://csrc.nist.gov/pubs/sp/800/218/final?utm_source=openai))
+These practices align with the secure-development activities described by NIST SSDF. ([csrc.nist.gov](https://csrc.nist.gov/pubs/sp/800/218/final))
 
 ---
 

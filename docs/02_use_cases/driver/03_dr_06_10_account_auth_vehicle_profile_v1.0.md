@@ -44,7 +44,7 @@ Rules:
 - Email-Address Ownership: The Identity Provider owns the credentials and verified login/contact email. The Account Service profile stores only a read-only projection of this email and must not modify it independently.
 - Operators and administrators require MFA; drivers may enable it voluntarily.
 
-This follows current OAuth guidance: PKCE is used for browser clients, implicit flow is avoided, and passwords are not sent directly to application services. ([rfc-editor.org](https://www.rfc-editor.org/info/rfc9700/?utm_source=openai))
+This follows current OAuth guidance: PKCE is used for browser clients, implicit flow is avoided, and passwords are not sent directly to application services. ([rfc-editor.org](https://www.rfc-editor.org/info/rfc9700/))
 
 ### DR-08/09 — Profile, vehicles and compatibility
 
@@ -78,13 +78,13 @@ Drivers can view and revoke active login sessions showing:
 - Last activity
 - Current-session indicator
 
-Session identifiers and tokens must never be exposed. Sessions use secure expiry, rotation and revocation controls. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html?utm_source=openai))
+Session identifiers and tokens must never be exposed. Sessions use secure expiry, rotation and revocation controls. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html))
 
 ### Security and acceptance rules
 
 - Generic authentication errors prevent account enumeration.
 - Login, recovery and verification endpoints are rate-limited.
-- No periodic forced password changes without evidence of compromise. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html?utm_source=openai))
+- No periodic forced password changes without evidence of compromise. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html))
 - Suspended or deleted accounts cannot authenticate or book.
 - Account deletion revokes sessions and queues personal-data anonymization.
 - Active bookings/sessions must first be resolved.

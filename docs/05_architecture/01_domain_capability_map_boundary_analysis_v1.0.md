@@ -533,7 +533,7 @@ flowchart LR
     SIM <-->|Secure WebSocket| DEV
 
     BKG -->|Device commands| DEV
-    BKG -->|Authoritative configuration lookup| OPS
+    BKG -->|Configuration projection/events and optional preflight| OPS
 
     ACC <--> BUS
     OPS <--> BUS
@@ -875,7 +875,7 @@ This service never updates another service’s business tables. Emergency interv
 
 ## 9.1 Identity Provider
 
-Provisional technology: Keycloak.
+Approved technology: Keycloak (ADR-001).
 
 Owns:
 
@@ -1250,13 +1250,13 @@ This allows meaningful comparison without designing two unrelated systems.
 ## Supporting runtime components
 
 - Identity Provider
-- RabbitMQ, provisionally
+- RabbitMQ (approved broker)
 - PostgreSQL
 - Email provider
 - Map/tile provider
 - Observability stack
 
-Service names remain provisional until ADR approval, but their boundaries are recommended.
+Service names and boundaries are approved.
 
 ---
 

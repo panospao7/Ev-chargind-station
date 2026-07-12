@@ -134,44 +134,55 @@ Permitted Transitions:
 - `SUSPENDED` → `REVOKED`
 
 ### 1.8 Device Commands Lifecycle
-- `CREATED` — Command prepared in database. (Release applicability: W1)
-- `CANCELLED_BEFORE_DISPATCH` — Cancelled before dispatching to gateway. (Release applicability: W1)
-- `SENT` — Dispatched over connection. (Release applicability: W1)
-- `DELIVERED_TO_DEVICE_INTEGRATION` — Acknowledged by Device Integration Service (represents service/broker receipt, not delivery to physical charger). (Release applicability: W1)
-- `ACCEPTED` — Executed successfully by physical device. (Release applicability: W1)
-- `REJECTED` — Charger rejected command execution. (Release applicability: W1)
-- `TIMED_OUT` — No response received within the timeout window. (Release applicability: W1)
-- `RECONCILING` — Non-terminal state after timeout, waiting for telemetry validation. (Release applicability: W1)
+*Note on ownership (CON-071): Device Integration Service receives commands, dispatches them, and owns the command lifecycle.*
 
-Permitted Transitions:
-- `CREATED` → `SENT` | `CANCELLED_BEFORE_DISPATCH`
-- `SENT` → `DELIVERED_TO_DEVICE_INTEGRATION` | `TIMED_OUT`
-- `DELIVERED_TO_DEVICE_INTEGRATION` → `ACCEPTED` | `REJECTED` | `TIMED_OUT`
+**Main States:**
+- `RECEIVED` — Command received by Device Integration Service from messaging broker (Release applicability: W1).
+- `DISPATCH_PENDING` — Queued for connection dispatch (Release applicability: W1).
+- `SENT_TO_DEVICE` — Dispatched over physical/simulated charger connection (Release applicability: W1).
+
+**Terminal Outcomes:**
+- `DEVICE_ACCEPTED` — Executed successfully by the physical/simulated device (Release applicability: W1).
+- `DEVICE_REJECTED` — Charger rejected command execution (Release applicability: W1).
+- `TIMED_OUT` — No response received within the timeout window (Release applicability: W1).
+
+**Side Outcomes:**
+- `CANCELLED_BEFORE_DISPATCH` — Command cancelled before dispatching to connection (Release applicability: W1).
+- `RECONCILING` — Non-terminal state after timeout, waiting for telemetry validation (Release applicability: W1).
+
+**Permitted Transitions:**
+- `RECEIVED` → `DISPATCH_PENDING` | `CANCELLED_BEFORE_DISPATCH`
+- `DISPATCH_PENDING` → `SENT_TO_DEVICE` | `CANCELLED_BEFORE_DISPATCH`
+- `SENT_TO_DEVICE` → `DEVICE_ACCEPTED` | `DEVICE_REJECTED` | `TIMED_OUT`
 - `TIMED_OUT` → `RECONCILING`
-- `RECONCILING` → `ACCEPTED` | `REJECTED`
+- `RECONCILING` → `DEVICE_ACCEPTED` | `DEVICE_REJECTED`
 
 ### 1.9 Notification Delivery Lifecycle
-- `REQUESTED` — Notification request created in the outbox.
-- `QUEUED` — Notification rendered and queued in the delivery dispatcher.
-- `DISPATCHING` — Submitted to the mail server/SMS gateway.
-- `PROVIDER_ACCEPTED` — Downstream gateway accepted command for delivery.
-- `DELIVERED` — Mailbox delivery confirmed by provider callback.
+*Note on record boundaries (Minor 6): `REQUESTED` is the notification-owned delivery record created after the triggering business transaction commits; it is separate from the business service's outbox integration event.*
 
-Side Outcomes:
-- `TEMPORARILY_FAILED` — Transient network/socket error; scheduled for retry.
-- `PERMANENTLY_FAILED` — Bounced or rejected by provider (e.g. bad address).
-- `BOUNCED` — Provider bounced notice.
-- `COMPLAINT` — Recipient marked message as spam.
-- `SUPPRESSED` — Recipient address on suppression list.
-- `OBSOLETE` — Superseded by a newer notification before dispatch.
-- `CANCELLED_BEFORE_SEND` — Cancelled manually or due to transaction rollback.
+**Main States:**
+- `REQUESTED` — Notification delivery record created (Release applicability: W1).
+- `QUEUED` — Rendered and queued for dispatching (Release applicability: W1).
+- `DISPATCHING` — Submitted to external mail/provider API (Release applicability: W1).
+- `PROVIDER_ACCEPTED` — Provider gateway accepted command for delivery (Release applicability: W1).
 
-Permitted Transitions:
-- `REQUESTED` → `QUEUED` | `CANCELLED_BEFORE_SEND`
+**Pre-Dispatch Outcomes:**
+- `CANCELLED_BEFORE_SEND` — Cancelled before rendering (Release applicability: W1).
+- `OBSOLETE` — Superseded by a newer notification before dispatch (Release applicability: W1).
+- `PRE_DISPATCH_SUPPRESSED` — Recipient address is on local suppression list; dispatch prevented (Release applicability: W1).
+- `DISPATCH_FAILED` — Dispatch to provider failed (transient or permanent) (Release applicability: W1).
+
+**Post-Acceptance Delivery Outcomes (Webhook/Provider feedback):**
+- `INBOX_DELIVERED` — Mailbox delivery confirmed by provider callback (Release applicability: W1).
+- `BOUNCED` — Provider bounced notice (Release applicability: W1).
+- `COMPLAINT` — Recipient marked message as spam (Release applicability: W1).
+
+**Permitted Transitions:**
+- `REQUESTED` → `QUEUED` | `CANCELLED_BEFORE_SEND` | `PRE_DISPATCH_SUPPRESSED`
 - `QUEUED` → `DISPATCHING` | `OBSOLETE`
-- `DISPATCHING` → `PROVIDER_ACCEPTED` | `TEMPORARILY_FAILED` | `PERMANENTLY_FAILED`
-- `PROVIDER_ACCEPTED` → `DELIVERED` | `BOUNCED` | `SUPPRESSED` | `COMPLAINT`
-- `TEMPORARILY_FAILED` → `DISPATCHING` (retry) | `PERMANENTLY_FAILED`
+- `DISPATCHING` → `PROVIDER_ACCEPTED` | `DISPATCH_FAILED`
+- `PROVIDER_ACCEPTED` → `INBOX_DELIVERED` | `BOUNCED` | `COMPLAINT`
+- `DISPATCH_FAILED` → `DISPATCHING` (retry) | `DISPATCH_FAILED`
 
 ### 1.10 Support Cases Lifecycle
 - `OPEN` — Ticket created.
@@ -277,27 +288,35 @@ Permitted Transitions:
 - `DELETION_PENDING` → `DELETED` | `ACTIVE` (cancellation during the 7-day cooling off period)
 
 ### 1.19 Maintenance Planning Record Lifecycle
-- `DRAFT` — Plan created by operator (Owner: Operator Staff).
-- `PROPOSED` — Plan submitted for review (Owner: Operator Staff. Event: `MaintenanceProposed`).
-- `ENFORCEMENT_PENDING` — Request submitted to Booking authority to block capacity (Owner: Station Operations Service).
-- `IMPACT_RESOLUTION` — Handling affected overlapping bookings via reassignment/alerts (Owner: Booking and Session Service).
-- `SCHEDULED` — Capacity restriction enforced; task is officially scheduled (Owner: Booking and Session Service. Event: `MaintenanceScheduled`).
-- `ACTIVE` — Task is in progress; EVSE operational status is marked as `MAINTENANCE` (Owner: Operator Staff/Device Integration Service. Event: `MaintenanceActivated`).
-- `COMPLETED` — Task finished (normal, aborted, failed, or cancelled) (Owner: Operator Staff. Event: `MaintenanceCompleted`).
+*Station Operations Service owns the maintenance planning record and all its transitions. Booking and Session Service owns capacity restrictions (`FREEZE → BLOCKED → RELEASED`). Device Integration Service reports device connection evidence and executes commands, but does not own maintenance state.*
+
+**Main States:**
+- `DRAFT` — Plan created by operator (Release applicability: W1).
+- `PROPOSED` — Plan submitted for review (Event: `MaintenanceProposed`, Release applicability: W1).
+- `ENFORCEMENT_PENDING` — Request submitted to Booking to block capacity (Release applicability: W1).
+- `IMPACT_RESOLUTION` — Handling affected overlapping bookings via reassignment/alerts (Release applicability: W1).
+- `SCHEDULED` — Capacity restriction finalized; task is officially scheduled (Event: `MaintenanceScheduled`, Release applicability: W1).
+- `ACTIVE` — Task is in progress; EVSE operational status is marked as `MAINTENANCE` (Event: `MaintenanceActivated`, Release applicability: W1).
+
+**Terminal States:**
+- `COMPLETED` — Maintenance work finished successfully (Event: `MaintenanceCompleted`, Release applicability: W1).
+- `CANCELLED` — Plan cancelled before execution (Event: `MaintenanceCancelled`, Release applicability: W1).
+- `FAILED` — Enforcement failed or plan aborted due to unresolved conflicts (Event: `MaintenanceFailed`, Release applicability: W1).
 
 Permitted Transitions:
 - `DRAFT` → `PROPOSED` (normal submission)
-- `DRAFT` → `COMPLETED` (cancelled before submit; outcome = `CANCELLED`)
+- `DRAFT` → `CANCELLED` (cancelled before submit)
 - `DRAFT` → `ACTIVE` (emergency activation; bypasses planning)
 - `PROPOSED` → `ENFORCEMENT_PENDING`
-- `PROPOSED` → `COMPLETED` (cancelled; outcome = `CANCELLED`)
-- `ENFORCEMENT_PENDING` → `IMPACT_RESOLUTION` (enforcement accepted)
-- `ENFORCEMENT_PENDING` → `COMPLETED` (enforcement rejected; outcome = `FAILED_ENFORCEMENT`)
-- `IMPACT_RESOLUTION` → `SCHEDULED` (impacts resolved/reassigned)
-- `IMPACT_RESOLUTION` → `COMPLETED` (aborted due to unresolved conflict; outcome = `ABORTED`)
+- `PROPOSED` → `CANCELLED`
+- `ENFORCEMENT_PENDING` → `IMPACT_RESOLUTION` (enforcement accepted / FREEZE committed)
+- `ENFORCEMENT_PENDING` → `FAILED` (enforcement rejected by Booking / FREEZE failed)
+- `IMPACT_RESOLUTION` → `SCHEDULED` (impacts resolved/reassigned and BLOCKED committed)
+- `IMPACT_RESOLUTION` → `FAILED` (aborted due to unresolved conflict)
 - `SCHEDULED` → `ACTIVE` (maintenance work begins)
-- `SCHEDULED` → `COMPLETED` (cancelled before start; outcome = `CANCELLED`)
-- `ACTIVE` → `COMPLETED` (work finished; outcome = `SUCCESS` or `ABORTED`)
+- `SCHEDULED` → `CANCELLED` (cancelled before start)
+- `ACTIVE` → `COMPLETED` (work finished successfully)
+- `ACTIVE` → `FAILED` (work aborted or failed during execution)
 
 ### 1.20 Fault Incident Lifecycle
 - `OPEN` — Fault detected (via simulator telemetry or driver report).
@@ -317,11 +336,16 @@ Permitted Transitions:
 
 ### 2.1 Double-Booking Prevention (Correctness Invariant)
 - **Rule:** No two mutually exclusive new capacity claims may commit with overlapping effective intervals. An operational-occupation claim may overlap a pre-existing planned claim (`BOOKING_ALLOCATION`) during a physical overrun; the existing booking remains durable and enters operational-risk handling. No new conflicting claim may be accepted.
-- **Allocation Interval Boundary Model:** 
-  Capacity allocation is managed through three explicit claim types:
-  - `BOOKING_HOLD`: A temporary, exclusive capacity block (5-minute TTL) assigned to a driver during checkout, preventing competing holds or allocations.
-  - `BOOKING_ALLOCATION`: A confirmed planned capacity claim for a scheduled booking.
-  - `OPERATIONAL_OCCUPATION`: An active operational claim tracking actual connection or charging. An operational-occupation claim may overlap a pre-existing planned allocation in an overrun scenario; the pre-existing allocation becomes `AT_RISK` (risk flag, not a lifecycle state) and undergoes same-station reassignment check.
+- **Allocation Interval Boundary Model:**
+  Capacity allocation is managed through two categories of claims:
+  1. **Planned Capacity Claims:**
+     - `BOOKING_HOLD` (Release applicability: W1): A temporary, exclusive capacity block (5-minute TTL) assigned to a driver during checkout, preventing competing holds or allocations.
+     - `BOOKING_ALLOCATION` (Release applicability: W1): A confirmed planned capacity claim for a scheduled booking.
+     - `MAINTENANCE_BLOCK` (Release applicability: W1): Enforced block during scheduled station/EVSE maintenance.
+     - `EMERGENCY_BLOCK` (Release applicability: W1): Enforced block due to active safety, infrastructure, or grid emergency.
+     - `OPERATOR_RESTRICTION` (Release applicability: W1): Operator-enforced capacity limitation (e.g. power limits, partial closure).
+  2. **Physical Occupation (stored in a separate physical-occupation table):**
+     - `OPERATIONAL_OCCUPATION` (Release applicability: W1): An active operational claim tracking actual connector physical insertion or active charging. An operational-occupation claim may overlap a pre-existing planned allocation in an overrun scenario; the pre-existing allocation becomes `AT_RISK` (risk flag, not a lifecycle state) and undergoes same-station reassignment check.
 - **Enforcement:** Enforced via pessimistic locking or database constraints at transaction boundaries in the Booking authority.
 
 ### 2.2 Resource Ownership & Scope Boundary

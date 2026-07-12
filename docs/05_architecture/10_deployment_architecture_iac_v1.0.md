@@ -41,7 +41,7 @@ ARC-010 proposed splitting the three primary nodes between Nuremberg and Falkens
 
 This is superseded.
 
-K3s embedded-etcd guidance requires at least three server nodes, an odd server count, private connectivity between them and recommends that embedded-etcd servers remain in the same location. ([docs.k3s.io](https://docs.k3s.io/datastore/ha-embedded?utm_source=openai))
+K3s embedded-etcd guidance requires at least three server nodes, an odd server count, private connectivity between them and recommends that embedded-etcd servers remain in the same location. ([docs.k3s.io](https://docs.k3s.io/datastore/ha-embedded))
 
 Therefore:
 
@@ -61,7 +61,7 @@ Reasons:
 
 - Nodes are replaceable through Infrastructure as Code.
 - Server backups do not include attached Hetzner Volumes.
-- K3s etcd, PostgreSQL and application data have dedicated backup mechanisms. ([docs.hetzner.com](https://docs.hetzner.com/cloud/volumes/overview/?utm_source=openai))
+- K3s etcd, PostgreSQL and application data have dedicated backup mechanisms. ([docs.hetzner.com](https://docs.hetzner.com/cloud/volumes/overview/))
 
 The ARC-010 cost estimate must be recalculated to:
 
@@ -77,7 +77,7 @@ The ARC-010 cost estimate must be recalculated to:
 
 Use **K3s**, pinned initially to `v1.36.1+k3s1`.
 
-K3s packages Kubernetes 1.36.1, etcd 3.6.7, containerd 2.2.3 and Flannel 0.28.4 in that release. ([github.com](https://github.com/k3s-io/k3s/releases?utm_source=openai))
+K3s packages Kubernetes 1.36.1, etcd 3.6.7, containerd 2.2.3 and Flannel 0.28.4 in that release. ([github.com](https://github.com/k3s-io/k3s/releases))
 
 K3s is selected because it provides:
 
@@ -148,7 +148,7 @@ Use:
 - Scheduled etcd snapshots
 - S3-compatible remote snapshot storage
 
-An odd number of server nodes preserves etcd quorum; three nodes tolerate one unavailable member. ([docs.k3s.io](https://docs.k3s.io/datastore/ha-embedded?utm_source=openai))
+An odd number of server nodes preserves etcd quorum; three nodes tolerate one unavailable member. ([docs.k3s.io](https://docs.k3s.io/datastore/ha-embedded))
 
 ## 4.2 Disabled packaged components
 
@@ -191,9 +191,9 @@ Install:
 - Hetzner Cloud Controller Manager, at least version `1.30.1`
 - Hetzner CSI Driver, initially `2.21.1`
 
-Hetzner warns that older controller-manager releases will fail after removal of a deprecated API field, so versions must be pinned above the affected line. ([github.com](https://github.com/hetznercloud/hcloud-cloud-controller-manager/blob/main/README.md?utm_source=openai))
+Hetzner warns that older controller-manager releases will fail after removal of a deprecated API field, so versions must be pinned above the affected line. ([github.com](https://github.com/hetznercloud/hcloud-cloud-controller-manager/blob/main/README.md))
 
-The selected CSI version supports Kubernetes 1.36. ([github.com](https://github.com/hetznercloud/csi-driver/releases?utm_source=openai))
+The selected CSI version supports Kubernetes 1.36. ([github.com](https://github.com/hetznercloud/csi-driver/releases))
 
 ---
 
@@ -228,7 +228,7 @@ It forwards:
 
 Targets use node private addresses.
 
-The Hetzner Cloud Controller Manager manages target membership and health integration. It supports Kubernetes LoadBalancer Services and Hetzner-specific load-balancer configuration. ([github.com](https://github.com/hetznercloud/hcloud-cloud-controller-manager/blob/main/README.md?utm_source=openai))
+The Hetzner Cloud Controller Manager manages target membership and health integration. It supports Kubernetes LoadBalancer Services and Hetzner-specific load-balancer configuration. ([github.com](https://github.com/hetznercloud/hcloud-cloud-controller-manager/blob/main/README.md))
 
 ## 5.3 Public hostnames
 
@@ -270,7 +270,7 @@ Inbound node traffic permits only:
 - Restricted emergency SSH
 - Required K3s overlay and etcd communication
 
-Flannel and etcd ports must not be exposed to the public internet. ([docs.k3s.io](https://docs.k3s.io/zh/installation/requirements?os=pi&utm_source=openai))
+Flannel and etcd ports must not be exposed to the public internet. ([docs.k3s.io](https://docs.k3s.io/zh/installation/requirements?os=pi))
 
 ---
 
@@ -328,7 +328,7 @@ Use:
 - DNS-01 validation
 - Cloudflare DNS API token restricted to the required zone
 
-cert-manager supports ACME DNS-01 and Cloudflare as a provider. It also supports delegating the ACME challenge subdomain to reduce root-zone credential exposure. ([cert-manager.io](https://cert-manager.io/docs/configuration/acme/dns01/?utm_source=openai))
+cert-manager supports ACME DNS-01 and Cloudflare as a provider. It also supports delegating the ACME challenge subdomain to reduce root-zone credential exposure. ([cert-manager.io](https://cert-manager.io/docs/configuration/acme/dns01/))
 
 Use separate:
 
@@ -360,7 +360,7 @@ Internal certificates cover:
 
 Use `step-ca` for simulator machine certificates.
 
-`step-ca` supports an offline root, an online intermediate, automated X.509 issuance, mTLS certificates and JWK-provisioner authentication. ([smallstep.com](https://smallstep.com/docs/step-ca/?utm_source=openai))
+`step-ca` supports an offline root, an online intermediate, automated X.509 issuance, mTLS certificates and JWK-provisioner authentication. ([smallstep.com](https://smallstep.com/docs/step-ca/))
 
 Deployment:
 
@@ -516,7 +516,7 @@ A node or Pod loss causes simulator reconnection and replay rather than requirin
 
 Use CloudNativePG, pinned to the selected supported release line.
 
-CloudNativePG provides automated failover using Kubernetes leases and supports controlled switchover-based rolling updates. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/1.29/rolling_update/?utm_source=openai))
+CloudNativePG provides automated failover using Kubernetes leases and supports controlled switchover-based rolling updates. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/1.29/rolling_update/))
 
 ## 11.2 Physical cluster
 
@@ -543,7 +543,7 @@ Cross-database queries and grants remain prohibited.
 
 Use quorum-based synchronous replication requiring one standby acknowledgement.
 
-CloudNativePG supports `ANY 1` quorum synchronous replication for a three-instance cluster. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/1.27/replication/?utm_source=openai))
+CloudNativePG supports `ANY 1` quorum synchronous replication for a three-instance cluster. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/1.27/replication/))
 
 Consequences:
 
@@ -563,7 +563,7 @@ Each PostgreSQL instance uses:
 - Encrypted database transport
 - PostgreSQL checksums
 
-Hetzner Volumes use network block storage with redundant storage of blocks across physical systems, but provider snapshots or backups are not supplied for Volumes. External database backups therefore remain mandatory. ([docs.hetzner.com](https://docs.hetzner.com/cloud/volumes/overview/?utm_source=openai))
+Hetzner Volumes use network block storage with redundant storage of blocks across physical systems, but provider snapshots or backups are not supplied for Volumes. External database backups therefore remain mandatory. ([docs.hetzner.com](https://docs.hetzner.com/cloud/volumes/overview/))
 
 ## 11.5 Connections
 
@@ -571,7 +571,7 @@ Applications connect directly to the CloudNativePG read/write Service using boun
 
 PgBouncer is not deployed initially.
 
-CloudNativePG supports PgBouncer through a Pooler resource, but it is added only if measured connection pressure justifies it. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/devel/connection_pooling/?utm_source=openai))
+CloudNativePG supports PgBouncer through a Pooler resource, but it is added only if measured connection pressure justifies it. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/devel/connection_pooling/))
 
 ## 11.6 Backups
 
@@ -582,7 +582,7 @@ Use the CloudNativePG Barman Cloud Plugin for:
 - Point-in-time recovery
 - Restoration into a new PostgreSQL cluster
 
-The plugin supports online backups, WAL archiving and PITR through object storage. ([cloudnative-pg.io](https://cloudnative-pg.io/plugin-barman-cloud/docs/intro/?utm_source=openai))
+The plugin supports online backups, WAL archiving and PITR through object storage. ([cloudnative-pg.io](https://cloudnative-pg.io/plugin-barman-cloud/docs/intro/))
 
 Initial policy:
 
@@ -606,7 +606,7 @@ Use:
 - RabbitMQ Cluster Operator
 - RabbitMQ Messaging Topology Operator
 
-The Cluster Operator manages RabbitMQ lifecycle and day-two operations, while the Topology Operator manages exchanges, queues, users and policies. ([rabbitmq.com](https://www.rabbitmq.com/kubernetes/operator/operator-overview?utm_source=openai))
+The Cluster Operator manages RabbitMQ lifecycle and day-two operations, while the Topology Operator manages exchanges, queues, users and policies. ([rabbitmq.com](https://www.rabbitmq.com/kubernetes/operator/operator-overview))
 
 ## 12.2 Cluster
 
@@ -620,7 +620,7 @@ Deploy:
 - One user identity per service
 - Quorum queues for release-critical commands and events
 
-Quorum queues require majority availability, and the Operator exposes quorum-critical status for safe maintenance decisions. ([rabbitmq.com](https://www.rabbitmq.com/kubernetes/operator/quorum-status?utm_source=openai))
+Quorum queues require majority availability, and the Operator exposes quorum-critical status for safe maintenance decisions. ([rabbitmq.com](https://www.rabbitmq.com/kubernetes/operator/quorum-status))
 
 ## 12.3 Broker recovery
 
@@ -736,7 +736,7 @@ Configure:
 - Pre-upgrade snapshot
 - Pre-control-plane-maintenance snapshot
 
-K3s supports S3-compatible etcd snapshot configuration and retention controls. ([docs.k3s.io](https://docs.k3s.io/cli/server?utm_source=openai))
+K3s supports S3-compatible etcd snapshot configuration and retention controls. ([docs.k3s.io](https://docs.k3s.io/cli/server))
 
 GitOps manifests remain the desired-state source, but etcd snapshots accelerate restoration of:
 
@@ -762,7 +762,7 @@ Use:
 - Separate age key per environment
 - Offline recovery copy
 
-Flux supports SOPS secret decryption during Kubernetes reconciliation. ([fluxcd.io](https://fluxcd.io/flux/components/kustomize/?utm_source=openai))
+Flux supports SOPS secret decryption during Kubernetes reconciliation. ([fluxcd.io](https://fluxcd.io/flux/components/kustomize/))
 
 ## 16.2 Bootstrap key
 
@@ -838,9 +838,9 @@ Use:
 - CI serialization
 - Native lock file if provider compatibility is validated
 
-OpenTofu recommends remote state for sensitive infrastructure state, supports S3-compatible storage, locking and state encryption. ([opentofu.org](https://opentofu.org/docs/language/settings/backends/s3/?utm_source=openai))
+OpenTofu recommends remote state for sensitive infrastructure state, supports S3-compatible storage, locking and state encryption. ([opentofu.org](https://opentofu.org/docs/language/settings/backends/s3/))
 
-Credentials are never hardcoded into backend configuration because backend settings can be written into local metadata and plan files. ([opentofu.org](https://opentofu.org/docs/language/settings/backends/configuration/?utm_source=openai))
+Credentials are never hardcoded into backend configuration because backend settings can be written into local metadata and plan files. ([opentofu.org](https://opentofu.org/docs/language/settings/backends/configuration/))
 
 ## 17.3 State separation
 
@@ -862,7 +862,7 @@ A failure or replacement in one root should not require unlocking unrelated infr
 
 Use Flux as the continuous-reconciliation system.
 
-Flux bootstrap installs its controllers and configures the cluster to synchronize from Git. Bootstrap is idempotent, and later cluster changes can be performed through Git reconciliation. ([fluxcd.io](https://fluxcd.io/flux/installation/?utm_source=openai))
+Flux bootstrap installs its controllers and configures the cluster to synchronize from Git. Bootstrap is idempotent, and later cluster changes can be performed through Git reconciliation. ([fluxcd.io](https://fluxcd.io/flux/installation/))
 
 Enabled components:
 
@@ -885,7 +885,7 @@ Use:
 - Dependency ordering
 - Automatic drift correction
 
-Flux Kustomizations support health checks, dependency ordering and controlled reconciliation. ([fluxcd.io](https://fluxcd.io/flux/components/kustomize/kustomizations/?utm_source=openai))
+Flux Kustomizations support health checks, dependency ordering and controlled reconciliation. ([fluxcd.io](https://fluxcd.io/flux/components/kustomize/kustomizations/))
 
 ## 18.3 Reconciliation order
 
@@ -1219,7 +1219,7 @@ Flux will otherwise restore the declared state.
 - Check etcd health before continuing.
 - Avoid downgrade assumptions.
 
-K3s 1.36 includes etcd 3.6 data-layout changes that complicate downgrade to earlier versions, so restoration procedures must be prepared before upgrading. ([docs.k3s.io](https://docs.k3s.io/zh/blog/2026/05/27/K3s-1.36-release?utm_source=openai))
+K3s 1.36 includes etcd 3.6 data-layout changes that complicate downgrade to earlier versions, so restoration procedures must be prepared before upgrading. ([docs.k3s.io](https://docs.k3s.io/zh/blog/2026/05/27/K3s-1.36-release))
 
 ## 26.2 Operators
 

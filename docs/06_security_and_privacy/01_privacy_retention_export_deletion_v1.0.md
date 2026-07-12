@@ -45,6 +45,11 @@ A DPIA checkpoint is required before implementation readiness. Whether a formal 
 
 ## 4. Roles and governance
 
+### Privacy Request Coordination Model (Release applicability: W3)
+- **Account Service:** Serves as the primary coordinator for subject-facing privacy requests (intake, verification, and status tracking) and orchestrates the deletion/export sagas.
+- **Authoritative Services:** Each service acts as a local participant and tombstone owner for its own data. No service directly modifies another service's database tables.
+- **Platform Governance and Support Service:** Provides oversight, case escalation, administrative investigations, and audit review. It does not own or execute the deletion/export workflows.
+
 Before deployment, document:
 
 - Platform controller identity and contact details

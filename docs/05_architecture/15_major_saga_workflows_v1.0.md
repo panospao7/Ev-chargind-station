@@ -45,7 +45,7 @@ Release applicability: W1 | W2 | W3 | Cross-cutting
 6. Emit `BookingConfirmed` event (triggers mandatory confirmation email). (Release applicability: W1)
 7. Optionally mirror the reservation to the charger (optional W2 feature; mirror failure does not rollback the platform booking). (Release applicability: W2)
 
-The allocation table uses range/exclusion protection so overlapping EVSE allocations cannot both commit. PostgreSQL supports non-overlap enforcement using range types and exclusion constraints. ([postgresql.org](https://www.postgresql.org/docs/current/ddl-constraints.html?utm_source=openai))
+The allocation table uses range/exclusion protection so overlapping EVSE allocations cannot both commit. PostgreSQL supports non-overlap enforcement using range types and exclusion constraints. ([postgresql.org](https://www.postgresql.org/docs/current/ddl-constraints.html))
 
 Lower-level validation checks are performed locally inside the Booking db.
 
@@ -163,72 +163,78 @@ If the charger continues past the reserved end, the operational-occupation claim
 
 ## 8. Device fault workflow
 
-**Owners:** Network for fault; Charging for active session; Booking for reservations.
+**Owners:** Station Operations Service for fault; Charging module (Booking and Session Service) for active session; Booking module (Booking and Session Service) for reservations.
+**Release applicability:** W1
 
-1. Device Integration Service emits a fault/status event.
-2. Network opens or updates the fault incident.
-3. Critical faults block new near-term bookings.
-4. Booking identifies affected reservations.
-5. Charging interrupts or attempts to stop active sessions.
-6. Booking reassigns future/check-in bookings where possible.
-7. Unresolved bookings become `FULFILMENT_FAILED` or operator-cancelled.
-8. Repair completion does not imply availability; a fresh device status is required.
+1. Device Integration Service emits a fault/status event. (Release applicability: W1)
+2. Station Operations Service opens or updates the fault incident. (Release applicability: W1)
+3. Critical faults block new near-term bookings based on the 60-minute horizon. (Release applicability: W1)
+4. Booking module identifies affected reservations. (Release applicability: W1)
+5. Charging module interrupts or attempts to stop active sessions. (Release applicability: W1)
+6. Booking module reassigns future/check-in bookings where possible. (Release applicability: W1)
+7. Unresolved bookings become `FULFILMENT_FAILED` or operator-cancelled. (Release applicability: W1)
+8. Repair completion does not imply availability; a fresh device status is required. (Release applicability: W1)
 
 This is choreography with an incident tracker, not one distributed transaction.
 
 ## 9. Organization suspension or station closure
 
-**Owner:** Governance or Network, depending on cause.
+**Owner:** Platform Governance and Support Service or Station Operations Service, depending on cause.
+**Release applicability:** W1
 
-1. Record suspension/closure with reason.
-2. Create a Booking capacity freeze at organization/station scope.
-3. Block new reservations immediately.
-4. Resolve existing bookings according to effective date.
-5. Send device availability commands.
-6. Update public projections.
-7. Restrict operator actions based on organization status.
+1. Record suspension/closure with reason. (Release applicability: W1)
+2. Create a Booking capacity freeze at organization/station scope. (Release applicability: W1)
+3. Block new reservations immediately. (Release applicability: W1)
+4. Resolve existing bookings according to effective date. (Release applicability: W1)
+5. Send device availability commands via Device Integration Service. (Release applicability: W1)
+6. Update public projections in Discovery and Insights Service. (Release applicability: W1)
+7. Restrict operator actions based on organization status. (Release applicability: W1)
 
 Operator users are not globally disabled if they belong to another active organization.
 
 ## 10. Operator invitation and role synchronization
 
 **Owner:** Station Operations Service
+**Release applicability:** W1
 
-1. Owner/manager creates an expiring invitation.
-2. Notification sends the invite.
-3. Invitee signs in or registers through Keycloak.
-4. Network validates and consumes the invitation.
-5. Membership is created.
-6. Identity adapter grants the broad operator role when required.
-7. If identity synchronization fails, membership remains `PENDING_IDENTITY_SYNC` and cannot be used.
-8. A reconciliation worker completes or reverses the pending membership.
+1. Owner/manager creates an expiring invitation. (Release applicability: W1)
+2. Notification Service sends the invite. (Release applicability: W1)
+3. Invitee signs in or registers through Keycloak. (Release applicability: W1)
+4. Station Operations Service validates and consumes the invitation. (Release applicability: W1)
+5. Membership is created. (Release applicability: W1)
+6. Identity adapter grants the broad operator role when required. (Release applicability: W1)
+7. If identity synchronization fails, membership remains `PENDING_IDENTITY_SYNC` and cannot be used. (Release applicability: W1)
+8. A reconciliation worker completes or reverses the pending membership. (Release applicability: W1)
 
 Removing the final operator membership removes the broad operator role after reconciliation.
 
 ## 11. Privacy export and deletion
 
-**Owner:** Governance Service
+**Owner:** Account Service coordinates subject-facing requests and orchestrates the deletion/export sagas. Each service owns its local data deletion/export action. Platform Governance and Support Service owns oversight, escalation, and audit review but does not execute the deletion workflow.
+**Release applicability:** W3
 
 ### Export
+**Release applicability:** W3
 
 1. Verify identity and recent authentication.
-2. Create privacy request.
+2. Create privacy request record in Account Service.
 3. Send `CollectSubjectData` to every relevant service.
 4. Services produce encrypted export fragments/manifests.
-5. Governance assembles the package in protected object storage.
-6. User receives a short-lived download notification.
+5. Account Service assembles the package in protected object storage.
+6. User receives a short-lived download notification via Notification Service.
 7. Temporary artifacts expire automatically.
 
 ### Deletion
+**Release applicability:** W3
 
 1. Reject or defer while an active booking/session exists.
 2. Revoke authentication sessions.
 3. Restrict the account during processing.
 4. Send idempotent anonymization/deletion commands.
-5. Each service reports completion.
+5. Each service reports completion (no service directly modifies another service's data; each service acts as local tombstone owner).
 6. Legally retained records are restricted and pseudonymized.
 7. Delete or disable the Keycloak identity after operational dependencies are resolved.
-8. Mark the privacy request completed.
+8. Mark the privacy request completed in Account Service.
 
 Partial failure remains visible and retryable; the system never reports full deletion while a service is incomplete.
 

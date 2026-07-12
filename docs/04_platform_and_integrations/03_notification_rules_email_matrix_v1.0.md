@@ -256,7 +256,7 @@ Final microservice placement remains open.
 
 Email verification, password reset and identity-action links remain owned by the identity provider.
 
-If Keycloak is selected, it supports verification and reset-credentials email workflows and customizable messages. ([keycloak.org](https://www.keycloak.org/docs/latest/server_admin/?utm_source=openai))
+If Keycloak is selected, it supports verification and reset-credentials email workflows and customizable messages. ([keycloak.org](https://www.keycloak.org/docs/latest/server_admin/))
 
 Rules:
 
@@ -280,7 +280,7 @@ Verification, recovery, invitation, email-change and privacy-download links must
 - Be protected by rate limits.
 - Avoid token leakage through logs and referrer headers.
 
-OWASP recommends generic recovery responses, cryptographically strong single-use tokens, expiry, HTTPS, trusted reset origins and protection against referrer leakage. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html?utm_source=openai))
+OWASP recommends generic recovery responses, cryptographically strong single-use tokens, expiry, HTTPS, trusted reset origins and protection against referrer leakage. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html))
 
 Proposed lifetimes:
 
@@ -309,7 +309,7 @@ Requests are rate-limited by:
 - Device/browser indicators
 - Global abuse thresholds
 
-Generic responses and consistent processing reduce account-enumeration risk. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html?utm_source=openai))
+Generic responses and consistent processing reduce account-enumeration risk. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html))
 
 ## 12. Notification record
 
@@ -337,30 +337,31 @@ Full email content follows the approved retention policy.
 
 ## 13. Delivery lifecycle
 
-`REQUESTED → QUEUED → DISPATCHING → PROVIDER_ACCEPTED → DELIVERED`
+`REQUESTED → QUEUED → DISPATCHING → PROVIDER_ACCEPTED → INBOX_DELIVERED`
 
 **Main States:**
-- `REQUESTED` — Notification request created in the outbox. (Release applicability: W1)
-- `QUEUED` — Notification rendered and queued in the delivery dispatcher. (Release applicability: W1)
-- `DISPATCHING` — Submitted to the mail provider. (Release applicability: W1)
-- `PROVIDER_ACCEPTED` — Downstream gateway accepted command for delivery. (Release applicability: W1)
-- `DELIVERED` — Mailbox delivery confirmed by provider callback. (Release applicability: W1)
+- `REQUESTED` — Notification delivery record created. (Release applicability: W1)
+- `QUEUED` — Rendered and queued for dispatching. (Release applicability: W1)
+- `DISPATCHING` — Submitted to external mail/provider API. (Release applicability: W1)
+- `PROVIDER_ACCEPTED` — Provider gateway accepted command for delivery. (Release applicability: W1)
 
-**Side Outcomes:**
-- `TEMPORARILY_FAILED` — Transient network/socket error; scheduled for retry. (Release applicability: W1)
-- `PERMANENTLY_FAILED` — Rejected by provider. (Release applicability: W1)
+**Pre-Dispatch Outcomes:**
+- `CANCELLED_BEFORE_SEND` — Cancelled before rendering. (Release applicability: W1)
+- `OBSOLETE` — Superseded by a newer notification before dispatch. (Release applicability: W1)
+- `PRE_DISPATCH_SUPPRESSED` — Recipient address is on local suppression list; dispatch prevented. (Release applicability: W1)
+- `DISPATCH_FAILED` — Dispatch to provider failed (transient or permanent). (Release applicability: W1)
+
+**Post-Acceptance Delivery Outcomes (Webhook/Provider feedback):**
+- `INBOX_DELIVERED` — Mailbox delivery confirmed by provider callback. (Release applicability: W1)
 - `BOUNCED` — Provider bounced notice. (Release applicability: W1)
 - `COMPLAINT` — Recipient marked message as spam. (Release applicability: W1)
-- `SUPPRESSED` — Recipient address on suppression list. (Release applicability: W1)
-- `OBSOLETE` — Superseded by a newer notification before dispatch. (Release applicability: W1)
-- `CANCELLED_BEFORE_SEND` — Cancelled before send. (Release applicability: W1)
 
 **Permitted Transitions:**
-- `REQUESTED` → `QUEUED` | `CANCELLED_BEFORE_SEND`
+- `REQUESTED` → `QUEUED` | `CANCELLED_BEFORE_SEND` | `PRE_DISPATCH_SUPPRESSED`
 - `QUEUED` → `DISPATCHING` | `OBSOLETE`
-- `DISPATCHING` → `PROVIDER_ACCEPTED` | `TEMPORARILY_FAILED` | `PERMANENTLY_FAILED`
-- `PROVIDER_ACCEPTED` → `DELIVERED` | `BOUNCED` | `SUPPRESSED` | `COMPLAINT`
-- `TEMPORARILY_FAILED` → `DISPATCHING` (retry) | `PERMANENTLY_FAILED`
+- `DISPATCHING` → `PROVIDER_ACCEPTED` | `DISPATCH_FAILED`
+- `PROVIDER_ACCEPTED` → `INBOX_DELIVERED` | `BOUNCED` | `COMPLAINT`
+- `DISPATCH_FAILED` → `DISPATCHING` (retry) | `DISPATCH_FAILED`
 
 `PROVIDER_ACCEPTED` does not prove inbox delivery.
 
@@ -512,7 +513,7 @@ The deployment must configure:
 - Separate controlled sender addresses
 - Bounce/return-path configuration
 
-SPF authorizes sending hosts for a domain, DKIM associates messages with a cryptographic domain signature, and DMARC applies domain-alignment policy and reporting. ([datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc6376?utm_source=openai))
+SPF authorizes sending hosts for a domain, DKIM associates messages with a cryptographic domain signature, and DMARC applies domain-alignment policy and reporting. ([datatracker.ietf.org](https://datatracker.ietf.org/doc/html/rfc6376))
 
 Proposed senders:
 
@@ -560,7 +561,7 @@ A monitored support address should be provided where the email asks users to rep
 - Email content avoids unnecessary booking/location history.
 - Notification events contain references rather than broad profile data.
 
-OWASP recommends excluding access tokens, passwords and sensitive personal information from logs. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html?utm_source=openai))
+OWASP recommends excluding access tokens, passwords and sensitive personal information from logs. ([cheatsheetseries.owasp.org](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html))
 
 ## 24. Observability
 

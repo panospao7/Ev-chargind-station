@@ -36,7 +36,7 @@ Integration events use CloudEvents 1.0 semantics and the stable CloudEvents 1.0.
 
 Asynchronous interfaces are documented using AsyncAPI 2.6.0. ([asyncapi.com](https://www.asyncapi.com/docs/reference))
 
-Payload schemas use JSON Schema Draft 2020-12. ([json-schema.org](https://json-schema.org/draft/2020-12?utm_source=openai))
+Payload schemas use JSON Schema Draft 2020-12. ([json-schema.org](https://json-schema.org/draft/2020-12))
 
 RabbitMQ is the approved messaging broker. Publishers use publisher confirms and consumers use manual acknowledgements after durable processing. RabbitMQ distinguishes publisher confirms from consumer acknowledgements; together they support reliable at-least-once processing. ([rabbitmq.com](https://www.rabbitmq.com/docs/next/confirms))
 
@@ -149,7 +149,7 @@ Conditional extension attributes:
 - `partitionkey`
 - `actorref`
 
-CloudEvents requires uniqueness from the combination of `source` and `id`; platform event IDs must also be globally unique independently. ([github.com](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md?utm_source=openai))
+CloudEvents requires uniqueness from the combination of `source` and `id`; platform event IDs must also be globally unique independently. ([github.com](https://github.com/cloudevents/spec/blob/main/cloudevents/spec.md))
 
 ### 4.1 Example event
 
@@ -1152,7 +1152,7 @@ Generated code may assist serialization but must not replace domain validation.
 | ARC-MSG-08 | Use publisher confirms, mandatory routing and manual consumer acknowledgements on RabbitMQ. |
 | ARC-MSG-09 | Use separate logical exchanges for events, commands, retries and quarantine. |
 | ARC-MSG-10 | Give every logical consumer its own queue. |
-| ARC-MSG-11 | Use aggregate versions and device/session sequences rather than global ordering ordering assumptions. |
+| ARC-MSG-11 | Use aggregate versions and device/session sequences rather than global ordering assumptions. |
 | ARC-MSG-12 | Preserve original IDs through retries and replay. |
 | ARC-MSG-13 | Use a new major message type for breaking schema changes. |
 | ARC-MSG-14 | Publish normalized device evidence rather than raw simulator messages. |

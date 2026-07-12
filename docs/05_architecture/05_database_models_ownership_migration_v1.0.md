@@ -54,9 +54,9 @@ Reasons include:
 - Native UUID support
 - Strong migration-tool support
 
-PostgreSQL range types and GiST exclusion constraints can enforce non-overlapping intervals. PostgreSQL 18 also introduces `WITHOUT OVERLAPS` temporal constraints, but this design does not require PostgreSQL 18 until the deployed version is approved. ([postgresql.org](https://www.postgresql.org/docs/current/rangetypes.html?utm_source=openai))
+PostgreSQL range types and GiST exclusion constraints can enforce non-overlapping intervals. PostgreSQL 18 also introduces `WITHOUT OVERLAPS` temporal constraints, but this design does not require PostgreSQL 18 until the deployed version is approved. ([postgresql.org](https://www.postgresql.org/docs/current/rangetypes.html))
 
-Flyway is the preferred migration tool for the Spring Boot services, pending final technology approval. Flyway tracks ordered versioned migrations in a schema-history table and supports repeatable migrations for objects such as views or functions. ([documentation.red-gate.com](https://documentation.red-gate.com/flyway/flyway-concepts/migrations?utm_source=openai))
+Flyway is the preferred migration tool for the Spring Boot services, pending final technology approval. Flyway tracks ordered versioned migrations in a schema-history table and supports repeatable migrations for objects such as views or functions. ([documentation.red-gate.com](https://documentation.red-gate.com/flyway/flyway-concepts/migrations))
 
 ---
 
@@ -156,7 +156,7 @@ Rules:
 - Must not be placed in public browser URLs unless explicitly approved.
 - Carries no authorization meaning.
 
-UUIDv7 is preferred for newly generated entity references because it is time ordered, but UUIDv4 remains acceptable where UUIDv7 support is unavailable. PostgreSQL 18 provides native UUIDv4 and UUIDv7 generation; application-side generation avoids requiring a specific database version. ([postgresql.org](https://www.postgresql.org/docs/current/functions-uuid.html?utm_source=openai))
+UUIDv7 is preferred for newly generated entity references because it is time ordered, but UUIDv4 remains acceptable where UUIDv7 support is unavailable. PostgreSQL 18 provides native UUIDv4 and UUIDv7 generation; application-side generation avoids requiring a specific database version. ([postgresql.org](https://www.postgresql.org/docs/current/functions-uuid.html))
 
 ## 6.2 Public reference
 
@@ -590,7 +590,7 @@ EXCLUDE USING gist (
 WHERE (state = 'ACTIVE')
 ```
 
-This requires an appropriate equality operator class, such as through `btree_gist`, when using GiST with scalar EVSE identifiers. PostgreSQL documents this pattern for combining a scalar equality key with a range-overlap exclusion. ([postgresql.org](https://www.postgresql.org/docs/current/rangetypes.html?utm_source=openai))
+This requires an appropriate equality operator class, such as through `btree_gist`, when using GiST with scalar EVSE identifiers. PostgreSQL documents this pattern for combining a scalar equality key with a range-overlap exclusion. ([postgresql.org](https://www.postgresql.org/docs/current/rangetypes.html))
 
 The final constraint, isolation level and locking protocol are approved in ARC-006.
 
@@ -1200,7 +1200,7 @@ Partitioning decision criteria:
 - Restore requirements
 - Operational complexity
 
-PostgreSQL declarative partitioning can improve selected workloads and retention operations, but poor partition-key or partition-count choices can increase planning and operational complexity. ([postgresql.org](https://www.postgresql.org/docs/18/ddl-partitioning.html?utm_source=openai))
+PostgreSQL declarative partitioning can improve selected workloads and retention operations, but poor partition-key or partition-count choices can increase planning and operational complexity. ([postgresql.org](https://www.postgresql.org/docs/18/ddl-partitioning.html))
 
 Preferred candidate where justified:
 
@@ -1231,7 +1231,7 @@ If adopted:
 - Table owners do not perform ordinary runtime queries.
 - RLS cannot replace API authorization.
 
-PostgreSQL supports command- and role-specific row-security policies when row security is enabled on a table. ([postgresql.org](https://www.postgresql.org/docs/18/catalog-pg-policy.html?utm_source=openai))
+PostgreSQL supports command- and role-specific row-security policies when row security is enabled on a table. ([postgresql.org](https://www.postgresql.org/docs/18/catalog-pg-policy.html))
 
 ---
 

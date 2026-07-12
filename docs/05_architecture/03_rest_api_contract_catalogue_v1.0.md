@@ -52,7 +52,7 @@ Excluded:
 
 ## 3. API contract standard
 
-OpenAPI is the machine-readable contract format. OpenAPI 3.0.3 is the current published specification and supports language-independent API descriptions. Adoption is provisional until Java and TypeScript tooling compatibility is validated; an ADR may pin OpenAPI 3.0.3 without changing the domain contracts. ([spec.openapis.org](https://spec.openapis.org/oas/v3.2.0.html?utm_source=openai))
+OpenAPI is the machine-readable contract format. OpenAPI 3.0.3 is the current published specification and supports language-independent API descriptions. Adoption is provisional until Java and TypeScript tooling compatibility is validated; an ADR may pin OpenAPI 3.0.3 without changing the domain contracts. ([spec.openapis.org](https://spec.openapis.org/oas/v3.2.0.html))
 
 Every API operation must define:
 
@@ -170,7 +170,7 @@ JSON field names use `lowerCamelCase`.
 
 ## 7.2 Timestamps
 
-Timestamps use RFC 3339-compatible strings and include an offset. Persisted instants and ordinary API responses use UTC with `Z`; station-local display conversion remains a client/presentation concern. RFC 3339 defines an unambiguous internet timestamp representation. ([rfc-editor.org](https://www.rfc-editor.org/info/rfc3339/?utm_source=openai))
+Timestamps use RFC 3339-compatible strings and include an offset. Persisted instants and ordinary API responses use UTC with `Z`; station-local display conversion remains a client/presentation concern. RFC 3339 defines an unambiguous internet timestamp representation. ([rfc-editor.org](https://www.rfc-editor.org/info/rfc3339/))
 
 Examples of semantic field names:
 
@@ -226,7 +226,7 @@ Binary floating-point values must not represent money.
 | `X-Case-Access-Grant` | Internal/provisional | Scoped support authorization |
 | `X-Workflow-ID` | Internal workflows | Long-running workflow correlation |
 
-W3C Trace Context defines `traceparent` and `tracestate` for interoperable distributed trace propagation. ([w3.org](https://www.w3.org/TR/trace-context/?utm_source=openai))
+W3C Trace Context defines `traceparent` and `tracestate` for interoperable distributed trace propagation. ([w3.org](https://www.w3.org/TR/trace-context/))
 
 Clients cannot choose trusted actor, organization, role or account headers. Those values are derived from validated identity and authorization context.
 
@@ -244,7 +244,7 @@ Clients cannot choose trusted actor, organization, role or account headers. Thos
 | `Deprecation` | Provisional pending final standards/tooling decision |
 | `Sunset` | Provisional for scheduled API retirement |
 
-A successful resource creation normally returns `201 Created` with `Location`. A `202 Accepted` response means processing has started but is not complete. ([rfc-editor.org](https://www.rfc-editor.org/rfc/inline-errata/rfc7231.html?utm_source=openai))
+A successful resource creation normally returns `201 Created` with `Location`. A `202 Accepted` response means processing has started but is not complete. ([rfc-editor.org](https://www.rfc-editor.org/rfc/inline-errata/rfc7231.html))
 
 ---
 
@@ -314,7 +314,7 @@ The exact service-identity and actor-context format remains pending the security
 
 ## 12. Problem response model
 
-All REST errors use RFC 9457 Problem Details. RFC 9457 defines `application/problem+json` for machine-readable HTTP API errors and supersedes older API error detail conventions. ([rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9457.html?utm_source=openai))
+All REST errors use RFC 9457 Problem Details. RFC 9457 defines `application/problem+json` for machine-readable HTTP API errors and supersedes older API error detail conventions. ([rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9457.html))
 
 Required fields:
 
@@ -376,9 +376,9 @@ Problem details must not expose:
 | `503 Service Unavailable` | Temporary dependency or service unavailability |
 | `504 Gateway Timeout` | Gateway did not receive a timely response |
 
-HTTP defines `409` for conflict with current resource state, `412` for failed preconditions and `422` for semantically unprocessable content. `If-Match` supports lost-update prevention. ([rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9110.html?utm_source=openai))
+HTTP defines `409` for conflict with current resource state, `412` for failed preconditions and `422` for semantically unprocessable content. `If-Match` supports lost-update prevention. ([rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9110.html))
 
-Rate-limited requests use `429` and should include `Retry-After` where a useful retry time is known. ([rfc-editor.org](https://www.rfc-editor.org/info/rfc6585/?utm_source=openai))
+Rate-limited requests use `429` and should include `Retry-After` where a useful retry time is known. ([rfc-editor.org](https://www.rfc-editor.org/info/rfc6585/))
 
 ---
 
@@ -1165,6 +1165,8 @@ Exact thresholds remain part of the security and performance design.
 - Access tokens are never accepted in query parameters.
 - Tokens, cookies and authorization headers are never logged.
 - CORS uses an explicit allowlist.
+- Browser-to-BFF communication uses secure, opaque HTTP-only session cookies plus CSRF token protection.
+- Service-to-service and BFF-to-service communication uses standard JWT bearer access tokens.
 - Browser mutations require the selected CSRF-safe token/session architecture.
 - Request bodies have strict size limits.
 - Object-level authorization is mandatory.
@@ -1262,14 +1264,14 @@ Critical REST scenarios:
 | ID | Question | Resolution phase |
 |---|---|---|
 | ARC-REST-OQ-01 | Confirm OpenAPI 3.0.3 tooling compatibility | Final technology selection |
-| ARC-REST-OQ-02 | Exact service authentication and actor-context headers/tokens | Security architecture |
+| ARC-REST-OQ-02 | Exact service authentication and actor-context headers/tokens | RESOLVED (BFF session cookie for browser; JWT bearer tokens for S2S; JWS delegated assertion for human S2S) |
 | ARC-REST-OQ-03 | Final support access-grant mechanism | Security architecture |
 | ARC-REST-OQ-04 | Final idempotency retention periods | Database/privacy design |
 | ARC-REST-OQ-05 | Whether internal APIs use separate hostnames or network routes | Deployment design |
 | ARC-REST-OQ-06 | Final geospatial search parameter representation | Frontend/data design |
 | ARC-REST-OQ-07 | Final cache durations for public projections | Performance testing |
 | ARC-REST-OQ-08 | Final rate-limit thresholds | Security testing |
-| ARC-REST-OQ-09 | Whether API Gateway also performs substantial BFF composition | Frontend architecture/ADR |
+| ARC-REST-OQ-09 | Whether API Gateway also performs substantial BFF composition | RESOLVED (BFF composition used for browser endpoints; Gateway handles coarse routing) |
 | ARC-REST-OQ-10 | Exact API deprecation headers and policy | API governance |
 | ARC-REST-OQ-11 | Whether notification recipient resolution remains synchronous | Performance/security review |
 | ARC-REST-OQ-12 | Exact privacy export download mechanism | Cloud/security design |

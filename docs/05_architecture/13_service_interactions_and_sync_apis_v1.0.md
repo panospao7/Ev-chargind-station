@@ -34,14 +34,14 @@ Release applicability: W1 | W2 | W3 | Cross-cutting
 | Information | Authority |
 |---|---|
 | Credentials, MFA, authentication sessions | Keycloak |
-| Driver profile, vehicles, consent | Account Service |
+| Driver profile, vehicles, consent, privacy request coordination | Account Service |
 | Organizations, stations, EVSE configuration, tariffs | Station Operations Service |
 | Reservations, allocations, check-in, capacity restrictions | Booking module (Booking and Session Service) |
 | Charging sessions, meter records, energy/cost summaries | Charging module (Booking and Session Service) |
 | Device identity, live status, charger commands | Device Integration Service |
 | Email delivery | Notification Service |
 | Search and analytics | Discovery and Insights Service |
-| Support, privacy workflows, central audit index | Platform Governance and Support Service |
+| Support cases, audit review, oversight, escalation | Platform Governance and Support Service |
 
 ## 3. Primary dependency matrix
 
@@ -72,7 +72,7 @@ Device Integration Service does not synchronously mutate bookings or sessions.
 
 - Browser-to-BFF: secure opaque session cookies plus CSRF protection. Opaque bearer tokens are not forwarded or returned to the browser.
 - BFF-to-Service: target-audience tokens obtained via Keycloak Token Exchange.
-- Service-to-service human delegation: signed delegated assertion (conforms to RFC 8693) propagated downstream, carrying actor and organization context.
+- Service-to-service human delegation: a platform-specific signed JSON Web Signature (JWS) carried alongside the service token (carrying cryptographically signed actor and organization context), not a raw RFC 8693 token-exchange assertion.
 - Service identity tokens are used for service-owned background calls.
 - Correlation headers, organization IDs, and actor headers are never accepted as authorization proof.
 - Every service independently checks roles, ownership, organization status, and resource state.
@@ -91,7 +91,7 @@ Device Integration Service does not synchronously mutate bookings or sessions.
 
 The record is scoped by actor, operation, and key. It stores the request-body hash and final response. Reusing a key with different content returns `409 IDEMPOTENCY_KEY_REUSED`.
 
-HTTP methods retain their standard semantics; automatic retries of non-idempotent operations require an application-level idempotency mechanism. ([rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9110.html?utm_source=openai))
+HTTP methods retain their standard semantics; automatic retries of non-idempotent operations require an application-level idempotency mechanism. ([rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9110.html))
 
 ### Concurrency
 
@@ -115,17 +115,17 @@ Errors use `application/problem+json` with:
 - `retryable`
 - Optional `violations`, `currentVersion`, and `alternatives`
 
-This follows RFC 9457’s machine-readable problem-details model. ([rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9457.html?utm_source=openai))
+This follows RFC 9457’s machine-readable problem-details model. ([rfc-editor.org](https://www.rfc-editor.org/rfc/rfc9457.html))
 
 ### Tracing
 
-Use W3C `traceparent` and `tracestate` across HTTP and messaging. Do not place PII or credentials in trace baggage. ([opentelemetry.io](https://opentelemetry.io/docs/concepts/context-propagation/?utm_source=openai))
+Use W3C `traceparent` and `tracestate` across HTTP and messaging. Do not place PII or credentials in trace baggage. ([opentelemetry.io](https://opentelemetry.io/docs/concepts/context-propagation/))
 
 ## 5. Required internal APIs
 
 ### Station Operations Service
 
-#### Reservation context
+#### Reservation context (Release applicability: W1)
 
 `GET /internal/v1/stations/{stationId}/reservation-context`
 
@@ -149,19 +149,19 @@ Returns:
 
 It does not determine booking availability.
 
-#### Replacement candidates
+#### Replacement candidates (Release applicability: W1)
 
 `GET /internal/v1/stations/{stationId}/replacement-candidates`
 
 Returns compatible candidates for the full interval, but Booking performs the final allocation.
 
-#### Operator access decision
+#### Operator access decision (Release applicability: W1)
 
 `POST /internal/v1/operator-access-decisions`
 
 Checks current organization membership, role, organization status, and requested action. Used for sensitive operator writes when cached membership is insufficient.
 
-#### Station Operations snapshot
+#### Station Operations snapshot (Release applicability: W1)
 
 `GET /internal/v1/snapshots/station-operations?cursor=...`
 
@@ -169,13 +169,13 @@ Used only to rebuild search/reporting projections.
 
 ### Booking module (Booking and Session Service)
 
-#### Capacity impact preview
+#### Capacity impact preview (Release applicability: W1)
 
 `GET /internal/v1/capacity-impacts`
 
 Inputs include scope, interval, and restriction type. Returns affected booking IDs and states without driver PII.
 
-#### Create capacity restriction
+#### Create capacity restriction (Release applicability: W1)
 
 `POST /internal/v1/capacity-restrictions`
 
@@ -189,19 +189,20 @@ Restriction types:
 
 Initial phase `FREEZE` blocks new holds, confirmations, and rescheduling while allowing existing allocations to be resolved.
 
-#### Finalize capacity restriction
+#### Finalize capacity restriction (Release applicability: W1)
 
 `POST /internal/v1/capacity-restrictions/{id}:finalize`
 
 Permitted only when conflicting bookings/sessions have been resolved. Converts the freeze into a hard capacity block.
 
-#### Release restriction
+#### Release restriction (Release applicability: W1)
 
 `POST /internal/v1/capacity-restrictions/{id}:release`
 
 Idempotently releases an aborted or completed restriction, transitioning the auditable record to `RELEASED` rather than executing physical deletion.
 
-#### Consume start authorization
+#### Consume start authorization (Release applicability: W1)
+*This is an internal module contract between Charging and Booking modules in W1. The HTTP endpoint shape is documented here only as a future extraction contract; the initial runtime path is executed via direct internal class/method invocation.*
 
 `POST /internal/v1/start-authorizations:consume`
 
@@ -214,15 +215,15 @@ Inputs:
 
 The operation atomically binds the authorization to one persisted charging session and returns a booking, EVSE, connector, tariff, and deadline snapshot. Tokens never appear in URLs or logs.
 
-#### Support view
+#### Support view (Release applicability: W2)
 
 `GET /internal/v1/bookings/{id}/support-view`
 
-Returns masked, case-appropriate information to Governance.
+Returns masked, case-appropriate information to Platform Governance and Support Service.
 
 ### Device Integration Service
 
-#### Live EVSE status
+#### Live EVSE status (Release applicability: W1)
 
 `GET /internal/v1/evses/{evseId}/status`
 
@@ -235,19 +236,21 @@ Returns:
 - Active transaction reference
 - Current fault summary
 
-#### Command status
+#### Command status (Release applicability: W1)
 
 `GET /internal/v1/commands/{commandId}`
 
 Used for reconciliation, not routine polling.
 
 #### Device provisioning
+**Release applicability:** W1
 
 `POST /internal/v1/devices`
 
-Creates a device assignment for Network-owned station/EVSE references.
+Creates a device assignment for Station Operations-owned station/EVSE references.
 
 #### Credential rotation/revocation
+**Release applicability:** W1
 
 - `POST /internal/v1/devices/{id}:rotate-credentials`
 - `POST /internal/v1/devices/{id}:revoke`
@@ -255,25 +258,26 @@ Creates a device assignment for Network-owned station/EVSE references.
 Credentials are returned or delivered only through a one-time secure provisioning process.
 
 ### Charging module (Booking and Session Service)
+*This is an internal module interface of Booking and Session Service.*
 
-- `GET /internal/v1/sessions/{id}/support-view`
-- `GET /internal/v1/bookings/{bookingId}/session-control-state`
-- `POST /internal/v1/sessions/{id}:reconcile`
-- `GET /internal/v1/snapshots/sessions?cursor=...`
+- `GET /internal/v1/sessions/{id}/support-view` (Release applicability: W2)
+- `GET /internal/v1/bookings/{bookingId}/session-control-state` (Release applicability: W1)
+- `POST /internal/v1/sessions/{id}:reconcile` (Release applicability: W1)
+- `GET /internal/v1/snapshots/sessions?cursor=...` (Release applicability: W1)
 
-Booking should normally rely on charging events rather than synchronously querying Charging.
+Booking should normally rely on charging events rather than synchronously querying the Charging module.
 
 ### Account Service
 
-- `GET /internal/v1/users/{id}/lifecycle-status`
-- `GET /internal/v1/users/{id}/support-view`
-- `GET /internal/v1/snapshots/accounts?cursor=...`
+- `GET /internal/v1/users/{id}/lifecycle-status` (Release applicability: W1)
+- `GET /internal/v1/users/{id}/support-view` (Release applicability: W2)
+- `GET /internal/v1/snapshots/accounts?cursor=...` (Release applicability: W1)
 
 Notification contact data is distributed through a restricted private event stream rather than general domain events.
 
-### Governance Service
+### Platform Governance and Support Service
 
-Support clients call Governance, which validates case assignment and obtains masked data from owning services. Support users do not receive direct unrestricted access to every service.
+Support clients call Platform Governance and Support Service, which validates case assignment and obtains masked data from owning services. Support users do not receive direct unrestricted access to every service.
 
 ## 6. Failure policy
 

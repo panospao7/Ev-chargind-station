@@ -55,7 +55,7 @@ Authoritative for: Actors and General Access/Permission Bounds
    - Minimise and expire location/history data.
    - Use OWASP ASVS 5.0 as our security-requirements baseline. ([edpb.europa.eu](https://www.edpb.europa.eu/system/files/2026-05/edpb-summary-connected-vehicles-mobility-data_en_0.pdf))
    - Model transparent tariff components and tariff snapshots.
-   - A real EU public-charging deployment would additionally require ad-hoc payments and publication of specified static/dynamic charging-point data through APIs. ([eur-lex.europa.eu](https://eur-lex.europa.eu/eli/reg/2023/1804/oj/eng?utm_source=openai))
+   - A real EU public-charging deployment would additionally require ad-hoc payments and publication of specified static/dynamic charging-point data through APIs. ([eur-lex.europa.eu](https://eur-lex.europa.eu/eli/reg/2023/1804/oj/eng))
 
 The application will be **fully operational as a reservation and simulated-charging platform**, but not presented as production-ready for physical public chargers until real hardware, payments and regulatory integrations are added.
 

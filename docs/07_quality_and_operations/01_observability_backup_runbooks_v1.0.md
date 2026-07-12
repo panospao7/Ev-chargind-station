@@ -45,7 +45,7 @@ This document defines:
 11. Incident response preserves evidence and prioritizes safe containment.
 12. Recovery procedures are executable by the project owner without undocumented knowledge.
 
-Prometheus recommends alerting primarily on symptoms associated with user impact and avoiding alerts for conditions where no meaningful action exists. Alertmanager provides grouping, deduplication, inhibition and silencing to reduce alert floods. ([prometheus.io](https://prometheus.io/docs/alerting/latest/alertmanager/?utm_source=openai))
+Prometheus recommends alerting primarily on symptoms associated with user impact and avoiding alerts for conditions where no meaningful action exists. Alertmanager provides grouping, deduplication, inhibition and silencing to reduce alert floods. ([prometheus.io](https://prometheus.io/docs/alerting/latest/alertmanager/))
 
 ---
 
@@ -217,7 +217,7 @@ When 100% is consumed:
 | RabbitMQ Prometheus plugin | One endpoint per broker node |
 | Keycloak metrics/health | Management interface only |
 
-Alertmanager replicas operate as a cluster, and Prometheus sends alerts directly to all replicas rather than through a Load Balancer. Alertmanager’s HA design may produce duplicate notifications during partitions rather than risk suppressing a critical notification. ([prometheus.io](https://prometheus.io/docs/alerting/latest/high_availability/?utm_source=openai))
+Alertmanager replicas operate as a cluster, and Prometheus sends alerts directly to all replicas rather than through a Load Balancer. Alertmanager’s HA design may produce duplicate notifications during partitions rather than risk suppressing a critical notification. ([prometheus.io](https://prometheus.io/docs/alerting/latest/high_availability/))
 
 ## 4.2 Resource posture
 
@@ -286,7 +286,7 @@ Examples:
 - `ev_outbox_oldest_pending_seconds`
 - `ev_privacy_workflow_age_seconds`
 
-Prometheus recording rules follow the recommended `level:metric:operations` convention and are syntax-checked using `promtool`. ([prometheus.io](https://prometheus.io/docs/practices/rules/?utm_source=openai))
+Prometheus recording rules follow the recommended `level:metric:operations` convention and are syntax-checked using `promtool`. ([prometheus.io](https://prometheus.io/docs/practices/rules/))
 
 ## 5.3 Label policy
 
@@ -384,7 +384,7 @@ Prohibited:
 5. Logs are sent through OTLP HTTP to Loki.
 6. Loki stores searchable metadata and retained chunks.
 
-Loki supports native OTLP ingestion from the OpenTelemetry Collector; its native OTLP endpoint is preferred over the older Loki-specific exporter. ([grafana.com](https://grafana.com/docs/loki/latest/send-data/otel/?utm_source=openai))
+Loki supports native OTLP ingestion from the OpenTelemetry Collector; its native OTLP endpoint is preferred over the older Loki-specific exporter. ([grafana.com](https://grafana.com/docs/loki/latest/send-data/otel/))
 
 ## 6.3 Log levels
 
@@ -408,7 +408,7 @@ Business audit evidence remains in service-owned audit tables, not application l
 - OTel gateway exports traces to Tempo over OTLP.
 - Tempo runs in monolithic mode without Kafka.
 
-Tempo’s monolithic mode can ingest directly without Kafka, and OTLP is the recommended trace-forwarding protocol. ([grafana.com](https://grafana.com/docs/tempo/latest/set-up-for-tracing/instrument-send/set-up-collector/otel-collector/?utm_source=openai))
+Tempo’s monolithic mode can ingest directly without Kafka, and OTLP is the recommended trace-forwarding protocol. ([grafana.com](https://grafana.com/docs/tempo/latest/set-up-for-tracing/instrument-send/set-up-collector/otel-collector/))
 
 ## 7.2 Sampling
 
@@ -459,7 +459,7 @@ Personal or resource references are included only where necessary, protected and
 | Alert history | 90 days where available |
 | Grafana dashboards/rules | Indefinite in Git |
 
-Loki retention is implemented through its Compactor. Retention must be explicitly enabled; the Compactor should be stateful with persistent marker storage, and object-storage lifecycle rules must not delete index or control objects indiscriminately. ([grafana.com](https://grafana.com/docs/loki/latest/operations/storage/retention/?utm_source=openai))
+Loki retention is implemented through its Compactor. Retention must be explicitly enabled; the Compactor should be stateful with persistent marker storage, and object-storage lifecycle rules must not delete index or control objects indiscriminately. ([grafana.com](https://grafana.com/docs/loki/latest/operations/storage/retention/))
 
 Telemetry retention does not override longer authoritative audit-retention requirements.
 
@@ -487,7 +487,7 @@ Telemetry retention does not override longer authoritative audit-retention requi
 - Keycloak database pool
 - MFA/step-up failures
 
-Keycloak provides dedicated started, live and ready health endpoints and can expose metrics through its management interface. ([keycloak.org](https://www.keycloak.org/operator/advanced-configuration?utm_source=openai))
+Keycloak provides dedicated started, live and ready health endpoints and can expose metrics through its management interface. ([keycloak.org](https://www.keycloak.org/operator/advanced-configuration))
 
 ## DASH-03 — Booking and allocation
 
@@ -538,7 +538,7 @@ Keycloak provides dedicated started, live and ready health endpoints and can exp
 - Disk and memory alarms
 - Raft commit latency
 
-RabbitMQ recommends Prometheus and Grafana for long-term monitoring, and the Kubernetes Operator exposes quorum-health status. ([rabbitmq.com](https://www.rabbitmq.com/docs/4.2/monitoring?utm_source=openai))
+RabbitMQ recommends Prometheus and Grafana for long-term monitoring, and the Kubernetes Operator exposes quorum-health status. ([rabbitmq.com](https://www.rabbitmq.com/docs/4.2/monitoring))
 
 ## DASH-07 — Async workflows
 
@@ -706,7 +706,7 @@ Use the CloudNativePG Barman Cloud Plugin for:
 - Point-in-time recovery
 - Full-cluster recovery into a new cluster
 
-CloudNativePG’s plugin supports online backups, WAL archiving and PITR through object storage. Recovery bootstraps a new cluster rather than modifying the failed cluster in place. ([cloudnative-pg.io](https://cloudnative-pg.io/plugin-barman-cloud/docs/intro/?utm_source=openai))
+CloudNativePG’s plugin supports online backups, WAL archiving and PITR through object storage. Recovery bootstraps a new cluster rather than modifying the failed cluster in place. ([cloudnative-pg.io](https://cloudnative-pg.io/plugin-barman-cloud/docs/intro/))
 
 ## 12.2 Schedule
 
@@ -719,7 +719,7 @@ CloudNativePG’s plugin supports online backups, WAL archiving and PITR through
 - Weekly automated restore smoke test
 - Monthly full application restore test
 
-CloudNativePG uses a default five-minute `archive_timeout`, supporting a deterministic five-minute RPO at low write volume when WAL archiving is healthy. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/1.29/wal_archiving/?utm_source=openai))
+CloudNativePG uses a default five-minute `archive_timeout`, supporting a deterministic five-minute RPO at low write volume when WAL archiving is healthy. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/1.29/wal_archiving/))
 
 ## 12.3 Backup source
 
@@ -748,7 +748,7 @@ A backup is successful only when:
 - Backup is within retention
 - Monitoring observed completion
 
-Plugin-specific status and metrics must be used because older centralized CloudNativePG backup status fields are deprecated under the plugin model. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/1.26/installation_upgrade/?utm_source=openai))
+Plugin-specific status and metrics must be used because older centralized CloudNativePG backup status fields are deprecated under the plugin model. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/1.26/installation_upgrade/))
 
 ---
 
@@ -779,7 +779,7 @@ Back up separately:
 - Flux age decryption key
 - Administrative recovery instructions
 
-K3s requires the original server token when restoring an embedded-etcd snapshot because it is used to encrypt confidential datastore content. ([docs.k3s.io](https://docs.k3s.io/datastore/backup-restore?utm_source=openai))
+K3s requires the original server token when restoring an embedded-etcd snapshot because it is used to encrypt confidential datastore content. ([docs.k3s.io](https://docs.k3s.io/datastore/backup-restore))
 
 ## 13.3 Desired state
 
@@ -878,7 +878,7 @@ RabbitMQ topology is restored from Git using the Messaging Topology Operator.
 
 The platform does not depend on filesystem-level message backup.
 
-RabbitMQ notes that live message-store copying is discouraged and that disk restoration requires matching node names, especially for quorum queues. Definitions can be exported/imported independently. ([rabbitmq.com](https://www.rabbitmq.com/docs/next/backup?utm_source=openai))
+RabbitMQ notes that live message-store copying is discouraged and that disk restoration requires matching node names, especially for quorum queues. Definitions can be exported/imported independently. ([rabbitmq.com](https://www.rabbitmq.com/docs/next/backup))
 
 Authoritative recovery sources:
 
@@ -888,7 +888,7 @@ Authoritative recovery sources:
 - Local business state
 - Git-controlled broker topology
 
-Three-member quorum queues tolerate one node loss, but loss of a majority can make a queue permanently unavailable. ([rabbitmq.com](https://www.rabbitmq.com/docs/quorum-queues?utm_source=openai))
+Three-member quorum queues tolerate one node loss, but loss of a majority can make a queue permanently unavailable. ([rabbitmq.com](https://www.rabbitmq.com/docs/quorum-queues))
 
 ---
 
@@ -923,7 +923,7 @@ Three-member quorum queues tolerate one node loss, but loss of a majority can ma
 7. Recreate RabbitMQ topology.
 8. Start business services with public ingress disabled.
 
-CloudNativePG requires distinct archive identities for restored clusters to avoid overwriting an existing WAL archive. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/1.26/recovery/?utm_source=openai))
+CloudNativePG requires distinct archive identities for restored clusters to avoid overwriting an existing WAL archive. ([cloudnative-pg.io](https://cloudnative-pg.io/docs/1.26/recovery/))
 
 ## 17.4 Reconcile application state
 
@@ -1079,7 +1079,7 @@ Commands are maintained in executable, versioned runbook files rather than copie
 11. Start new WAL archive under a distinct cluster identity.
 12. Take a new base backup.
 
-PITR across PostgreSQL major-version boundaries is not supported; a new base backup must be created after a major upgrade. ([cloudnative-pg.io](https://cloudnative-pg.io/documentation/current/postgres_upgrades/?utm_source=openai))
+PITR across PostgreSQL major-version boundaries is not supported; a new base backup must be created after a major upgrade. ([cloudnative-pg.io](https://cloudnative-pg.io/documentation/current/postgres_upgrades/))
 
 ---
 
@@ -1097,7 +1097,7 @@ PITR across PostgreSQL major-version boundaries is not supported; a new base bac
 8. Confirm queue consumers return.
 9. Confirm outbox age decreases.
 
-RabbitMQ pauses delivery briefly during quorum-queue leader election and resumes after a follower is elected. ([rabbitmq.com](https://www.rabbitmq.com/docs/reliability?utm_source=openai))
+RabbitMQ pauses delivery briefly during quorum-queue leader election and resumes after a follower is elected. ([rabbitmq.com](https://www.rabbitmq.com/docs/reliability))
 
 ---
 
@@ -1173,7 +1173,7 @@ If payload correction is required:
 6. Validate BFF login, MFA, logout and service tokens.
 7. Re-enable public traffic.
 
-Keycloak recommends two or more instances for clustered production availability and provides readiness endpoints for routing traffic only to initialized instances. ([keycloak.org](https://www.keycloak.org/server/configuration-production?utm_source=openai))
+Keycloak recommends two or more instances for clustered production availability and provides readiness endpoints for routing traffic only to initialized instances. ([keycloak.org](https://www.keycloak.org/server/configuration-production))
 
 ---
 
@@ -1190,13 +1190,13 @@ Keycloak recommends two or more instances for clustered production availability 
 
 Do not delete certificate Secrets as the ordinary renewal method.
 
-cert-manager automatically renews Certificate resources, and manual reissuance should use `cmctl renew`; private-key rotation should use `rotationPolicy: Always`. ([cert-manager.io](https://cert-manager.io/v1.14-docs/usage/certificate/?utm_source=openai))
+cert-manager automatically renews Certificate resources, and manual reissuance should use `cmctl renew`; private-key rotation should use `rotationPolicy: Always`. ([cert-manager.io](https://cert-manager.io/v1.14-docs/usage/certificate/))
 
 ---
 
 # 27. RUN-CERT-02 — Internal CA rotation
 
-cert-manager CA Issuers do not automatically rotate their CA certificate, and replacing the CA Secret does not automatically reissue existing leaf certificates. ([cert-manager.io](https://cert-manager.io/docs/configuration/ca/?utm_source=openai))
+cert-manager CA Issuers do not automatically rotate their CA certificate, and replacing the CA Secret does not automatically reissue existing leaf certificates. ([cert-manager.io](https://cert-manager.io/docs/configuration/ca/))
 
 Procedure:
 
@@ -1226,7 +1226,7 @@ Root rotation requires a separate architecture review and a longer dual-trust mi
 7. Reconcile affected Sessions.
 8. Record security incident evidence.
 
-step-ca supports certificate revocation, while short-lived certificates and automated renewal reduce exposure. ([smallstep.com](https://smallstep.com/docs/step-cli/reference/ca/revoke/?utm_source=openai))
+step-ca supports certificate revocation, while short-lived certificates and automated renewal reduce exposure. ([smallstep.com](https://smallstep.com/docs/step-cli/reference/ca/revoke/))
 
 ---
 

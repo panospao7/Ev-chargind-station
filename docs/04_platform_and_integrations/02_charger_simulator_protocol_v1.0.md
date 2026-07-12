@@ -52,7 +52,7 @@ It adopts selected concepts such as:
 - Sequence-based reconstruction
 - Secure machine identity
 
-OCPP defines communication between charging stations and charging-management systems and includes device management, transactions, remote control and security capabilities. ([openchargealliance.org](https://openchargealliance.org/certificationocpp/certification-ocpp-2-0-1/?utm_source=openai))
+OCPP defines communication between charging stations and charging-management systems and includes device management, transactions, remote control and security capabilities. ([openchargealliance.org](https://openchargealliance.org/certificationocpp/certification-ocpp-2-0-1/))
 
 The project MUST NOT claim:
 
@@ -276,7 +276,7 @@ A revoked identity cannot be restored; a new credential must be issued.
 
 Use mutual TLS or an equivalently strong certificate-based machine identity.
 
-OCA security material distinguishes TLS server authentication with device credentials from TLS with client-certificate authentication; advanced OCPP security supports TLS client authentication. ([openchargealliance.org](https://openchargealliance.org/certificationocpp/certification-ocpp-2-0-1/?utm_source=openai))
+OCA security material distinguishes TLS server authentication with device credentials from TLS with client-certificate authentication; advanced OCPP security supports TLS client authentication. ([openchargealliance.org](https://openchargealliance.org/certificationocpp/certification-ocpp-2-0-1/))
 
 ### Development profile
 

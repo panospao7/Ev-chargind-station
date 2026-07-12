@@ -145,29 +145,30 @@ Terminal `CANCELLED`, `EXPIRED`, `NO_SHOW` and `FULFILMENT_FAILED` bookings do n
 A hold blocks only until its `expiresAt` timestamp. Expired holds must be made non-blocking during allocation; a delayed cleanup job cannot remain the sole authority.
 
 ### Step 7 — Operational-state policy
+*This policy governs how live device status affects booking eligibility based on time.*
 
-Define a configurable **near-term horizon**, proposed default: 60 minutes before requested start.
+- **Near-Term Horizon:** Fixed 60 minutes before requested start. (Release applicability: W1)
+- **Freshness Threshold:** Fixed 5 minutes (defined as the greater of three expected heartbeat intervals or 300 seconds). (Release applicability: W1)
 
-For near-term reservations:
-
-- `AVAILABLE` with fresh status may be booked.
+**For near-term reservations (starting within the 60-minute horizon):**
+- `AVAILABLE` with fresh status (age within freshness threshold) may be booked.
 - `RESERVED` or `OCCUPIED` is rejected unless the state is explained by the same authoritative booking/session.
-- `OFFLINE`, `UNKNOWN`, stale status or missing heartbeat is not bookable.
+- `OFFLINE`, `UNKNOWN`, stale status (age exceeds threshold), or missing heartbeat is not bookable.
 - `FAULTED` or `MAINTENANCE` is not bookable.
+- Any temporary current offline or stale evidence blocks booking.
 
-For future reservations beyond the near-term horizon:
-
-- Temporary `OFFLINE`, stale or `UNKNOWN` device status does not alone prevent booking.
+**For future reservations (starting beyond the 60-minute horizon):**
+- Temporary current `OFFLINE`, stale, or `UNKNOWN` device status does not alone prevent booking.
 - The result is marked `PLANNED_AVAILABLE` with reduced operational confidence.
-- Blocking maintenance, administrative disablement, station closure and unresolved critical/emergency faults still prevent booking.
-- Availability is re-evaluated as the booking approaches check-in.
+- A fault **with** an explicit/predictive impact interval blocks every overlapping booking interval.
+- A fault **without** predictive impact information is treated as current operational evidence only, and does not block bookings starting after the near-term horizon (60 minutes).
+- Blocking maintenance, administrative disablement, station closure, and unresolved faults with explicit impact intervals prevent booking.
+- Availability is dynamically re-evaluated as the booking approaches check-in.
 
-Proposed freshness rule:
-
-- `LIVE`: age is within the configured freshness threshold.
-- `STALE`: age exceeds the threshold.
-- `UNKNOWN`: no reliable status has been received.
-- Default threshold: the greater of three expected heartbeat intervals or 300 seconds.
+**Freshness States:**
+- `LIVE`: Age is within the configured freshness threshold.
+- `STALE`: Age exceeds the freshness threshold.
+- `UNKNOWN`: No reliable status has been received.
 
 ### Step 8 — Final result
 

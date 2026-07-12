@@ -16,12 +16,16 @@ Targets apply under a reference load of **500 concurrent users, 2,000 simulated 
 
 ### Performance
 
-- Search and station APIs: p95 ≤ 1.5 seconds.
-- Availability calculation: p95 ≤ 1 second.
-- Booking/check-in commands: p95 ≤ 2 seconds.
-- 99% of charger events reflected within 10 seconds.
-- Web Core Vitals meet “Good” thresholds at the 75th percentile.
-- External map/email-provider latency is measured separately.
+- Search and station APIs: p95 ≤ 1.5 seconds. (Release applicability: W1)
+- Availability calculation: p95 ≤ 1 second. (Release applicability: W1)
+- Booking/check-in commands: p95 ≤ 2 seconds. (Release applicability: W1)
+- **Start Charging Latency (Asynchronous phase split):**
+  1. *API intent accepted latency:* p95 ≤ 1 second (time to record transaction intent and enqueue command) (Release applicability: W1)
+  2. *Command dispatched latency:* p95 ≤ 2 seconds (time from API acceptance to dispatch to device connection) (Release applicability: W1)
+  3. *Physical/simulated charging confirmed latency:* p95 ≤ 10 seconds (time from dispatch to physical charging confirmation) (Release applicability: W1)
+- 99% of charger events reflected within 10 seconds. (Release applicability: W1)
+- Web Core Vitals meet “Good” thresholds at the 75th percentile. (Release applicability: W1)
+- External map/email-provider latency is measured separately. (Release applicability: W1)
 
 ### Reliability and availability
 

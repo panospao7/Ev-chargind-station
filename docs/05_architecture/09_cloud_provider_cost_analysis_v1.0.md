@@ -111,7 +111,7 @@ Recommended production-like profile:
 - Self-managed PostgreSQL, RabbitMQ, Keycloak, and DR standby instances
 - Cluster orchestration finalized in ARC-011
 
-Hetzner private networks can span Falkenstein, Nuremberg and Helsinki, and Load Balancer targets do not need to be in the same location as long as they remain in the same network zone. ([docs.hetzner.com](https://docs.hetzner.com/networking/load-balancers/faq/?utm_source=openai))
+Hetzner private networks can span Falkenstein, Nuremberg and Helsinki, and Load Balancer targets do not need to be in the same location as long as they remain in the same network zone. ([docs.hetzner.com](https://docs.hetzner.com/networking/load-balancers/faq/))
 
 ## 5.2 Compute profile
 
@@ -128,7 +128,7 @@ Use one `CAX21` standby node in Falkenstein for DR:
 - 80 GB local SSD
 - Planning price: €10.99 per month
 
-Hetzner’s June 15, 2026 pricing lists `CAX31` at €20.99 per month and `CAX21` at €10.99 per month excluding VAT. CAX plans use shared Ampere ARM resources. All application images must support `linux/arm64`. ([docs.hetzner.com](https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/?utm_source=openai))
+Hetzner’s June 15, 2026 pricing lists `CAX31` at €20.99 per month and `CAX21` at €10.99 per month excluding VAT. CAX plans use shared Ampere ARM resources. All application images must support `linux/arm64`. ([docs.hetzner.com](https://docs.hetzner.com/general/infrastructure-and-availability/price-adjustment/))
 
 ## 5.3 Cost estimate
 
@@ -144,7 +144,7 @@ Hetzner’s June 15, 2026 pricing lists `CAX31` at €20.99 per month and `CAX21
 | Server public IPv4 | €0 if private/IPv6-only targets are used |
 | **Infrastructure subtotal** | **Approximately €96.45** |proximately €88.05** |
 
-Hetzner charges server backups at 20% of the server price and provides seven backup slots. Object Storage starts at €4.99 per month excluding VAT and includes 1 TB of storage and 1 TB of egress. A Load Balancer supplies public IPv4 and IPv6 and can target servers through private addresses. ([docs.hetzner.com](https://docs.hetzner.com/cloud/billing/faq/?utm_source=openai))
+Hetzner charges server backups at 20% of the server price and provides seven backup slots. Object Storage starts at €4.99 per month excluding VAT and includes 1 TB of storage and 1 TB of egress. A Load Balancer supplies public IPv4 and IPv6 and can target servers through private addresses. ([docs.hetzner.com](https://docs.hetzner.com/cloud/billing/faq/))
 
 Expected total after a domain and minor incidental usage:
 
@@ -162,11 +162,11 @@ If shared CPU variance prevents the NFR targets, replace the nodes with three `C
 | Object Storage | €4.99 |
 | **Subtotal** | **Approximately €167.25** |
 
-Hetzner recommends dedicated-resource CCX plans for sustained production or CPU-intensive workloads. ([docs.hetzner.com](https://docs.hetzner.com/cloud/servers/faq/?utm_source=openai))
+Hetzner recommends dedicated-resource CCX plans for sustained production or CPU-intensive workloads. ([docs.hetzner.com](https://docs.hetzner.com/cloud/servers/faq/))
 
 ## 5.5 Availability
 
-Hetzner publishes a 99.9% monthly availability SLA per Cloud Server. Load Balancers are designed for automatic hardware failover. ([docs.hetzner.com](https://docs.hetzner.com/general/company-and-policy/slas-cloud/?utm_source=openai))
+Hetzner publishes a 99.9% monthly availability SLA per Cloud Server. Load Balancers are designed for automatic hardware failover. ([docs.hetzner.com](https://docs.hetzner.com/general/company-and-policy/slas-cloud/))
 
 The three-node design can tolerate an individual-node failure when:
 
@@ -214,7 +214,7 @@ It does not provide a managed database or a contractual platform-wide multi-AZ S
 - Secret Manager
 - Managed logging and monitoring
 
-Cloud Run supports scale to zero, managed TLS and WebSockets. WebSocket connections remain subject to a maximum 60-minute request timeout and clients must reconnect. ([cloud.google.com](https://cloud.google.com/run/pricing?utm_source=openai))
+Cloud Run supports scale to zero, managed TLS and WebSockets. WebSocket connections remain subject to a maximum 60-minute request timeout and clients must reconnect. ([cloud.google.com](https://cloud.google.com/run/pricing))
 
 That timeout is compatible with the simulator protocol only because reconnect and durable event replay are already required.
 
@@ -226,11 +226,11 @@ A non-HA Cloud SQL instance with:
 - 8 GiB RAM
 - 20 GiB storage
 
-is approximately **$135/month** using listed compute, memory and storage rates. HA approximately doubles database compute and memory costs. ([cloud.google.com](https://cloud.google.com/sql/pricing?utm_source=openai))
+is approximately **$135/month** using listed compute, memory and storage rates. HA approximately doubles database compute and memory costs. ([cloud.google.com](https://cloud.google.com/sql/pricing))
 
-One `e2-standard-2` RabbitMQ VM is approximately **$49/month** before disks and backups. ([cloud.google.com](https://cloud.google.com/products/compute/pricing/general-purpose?utm_source=openai))
+One `e2-standard-2` RabbitMQ VM is approximately **$49/month** before disks and backups. ([cloud.google.com](https://cloud.google.com/products/compute/pricing/general-purpose))
 
-Two always-running Cloud Run containers with 1 vCPU and 1 GiB each are approximately **$66/month before free-tier reductions**, while scale-to-zero services would add usage-dependent costs. ([cloud.google.com](https://cloud.google.com/run/pricing?utm_source=openai))
+Two always-running Cloud Run containers with 1 vCPU and 1 GiB each are approximately **$66/month before free-tier reductions**, while scale-to-zero services would add usage-dependent costs. ([cloud.google.com](https://cloud.google.com/run/pricing))
 
 ## 6.3 Planning range
 
@@ -278,7 +278,7 @@ Google Cloud is the preferred **managed-cloud alternative**, but not the initial
 - Key Vault
 - Azure Monitor
 
-Container Apps supports scale to zero and includes monthly free grants of 180,000 vCPU-seconds, 360,000 GiB-seconds and two million requests. ([azure.microsoft.com](https://azure.microsoft.com/en-us/pricing/details/container-apps/?msockid=25a8976d58726bcc2415818e59606a51&utm_source=openai))
+Container Apps supports scale to zero and includes monthly free grants of 180,000 vCPU-seconds, 360,000 GiB-seconds and two million requests. ([azure.microsoft.com](https://azure.microsoft.com/en-us/pricing/details/container-apps/?msockid=25a8976d58726bcc2415818e59606a51))
 
 ## 7.2 Database cost
 
@@ -289,7 +289,7 @@ Published PostgreSQL Flexible Server examples include:
 - B2ms, 2 vCores/8 GiB: $99.28/month
 - Storage: $0.115/GiB/month
 
-The smallest instance is not considered sufficient for the full shared transactional workload. ([azure.microsoft.com](https://azure.microsoft.com/en-us/pricing/details/postgresql/flexible-server/?msockid=3b98de93a43a666f2474c846a5626728&utm_source=openai))
+The smallest instance is not considered sufficient for the full shared transactional workload. ([azure.microsoft.com](https://azure.microsoft.com/en-us/pricing/details/postgresql/flexible-server/?msockid=3b98de93a43a666f2474c846a5626728))
 
 ## 7.3 Planning range
 
@@ -318,7 +318,7 @@ Azure is technically viable and less expensive than a fully managed AWS design, 
 - CloudWatch
 - Application Load Balancer
 
-Fargate charges continuously for allocated vCPU and memory while tasks run. RDS charges for provisioned database instances and storage. Amazon MQ charges for broker instances and storage. ([aws.amazon.com](https://aws.amazon.com/rds/postgresql/pricing/?utm_source=openai))
+Fargate charges continuously for allocated vCPU and memory while tasks run. RDS charges for provisioned database instances and storage. Amazon MQ charges for broker instances and storage. ([aws.amazon.com](https://aws.amazon.com/rds/postgresql/pricing/))
 
 ## 8.2 Planning range
 
@@ -339,9 +339,9 @@ AWS provides the broadest managed-service portfolio, including managed RabbitMQ,
 
 # 9. Option E — Oracle Cloud Free Tier
 
-OCI Always Free currently provides limited ARM compute, block storage, Object Storage, Vault secrets and a 10 Mbps Load Balancer allowance. Free-shape capacity may be unavailable in a selected home region. ([docs.oracle.com](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm?trk=public_post_comment-text&utm_source=openai))
+OCI Always Free currently provides limited ARM compute, block storage, Object Storage, Vault secrets and a 10 Mbps Load Balancer allowance. Free-shape capacity may be unavailable in a selected home region. ([docs.oracle.com](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm?trk=public_post_comment-text))
 
-The current free-only account documentation describes up to 2 OCPUs and 12 GB RAM for Ampere A1 resources, which is insufficient for a reliable implementation of all services, PostgreSQL, RabbitMQ, Keycloak and observability. ([docs.oracle.com](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm?trk=public_post_comment-text&utm_source=openai))
+The current free-only account documentation describes up to 2 OCPUs and 12 GB RAM for Ampere A1 resources, which is insufficient for a reliable implementation of all services, PostgreSQL, RabbitMQ, Keycloak and observability. ([docs.oracle.com](https://docs.oracle.com/en-us/iaas/Content/FreeTier/freetier_topic-Always_Free_Resources.htm?trk=public_post_comment-text))
 
 ## Assessment
 
@@ -391,7 +391,7 @@ Selected:
 - Brevo Free during development and demonstration
 - Brevo Starter when the daily free limit becomes unsuitable
 
-Brevo Free includes 300 email sends per day, while Starter begins at $9/month. Brevo states that its database hosting is located within the European Union, using France, Germany and Belgium. ([help.brevo.com](https://help.brevo.com/hc/en-us/articles/208589409-About-Brevo-s-pricing-plans?utm_source=openai))
+Brevo Free includes 300 email sends per day, while Starter begins at $9/month. Brevo states that its database hosting is located within the European Union, using France, Germany and Belgium. ([help.brevo.com](https://help.brevo.com/hc/en-us/articles/208589409-About-Brevo-s-pricing-plans))
 
 Reasons:
 
@@ -424,9 +424,9 @@ Current plans include:
 - Geocoding: one credit/request
 - Map tiles: 0.25 credits/tile
 
-([geoapify.com](https://www.geoapify.com/pricing/?utm_source=openai))
+([geoapify.com](https://www.geoapify.com/pricing/))
 
-The application must not depend on the public OpenStreetMap tile or Nominatim services for production. OSM’s public tile service is best-effort, and the public Nominatim service has an absolute maximum of one request per second. ([operations.osmfoundation.org](https://operations.osmfoundation.org/policies/tiles/?utm_source=openai))
+The application must not depend on the public OpenStreetMap tile or Nominatim services for production. OSM’s public tile service is best-effort, and the public Nominatim service has an absolute maximum of one request per second. ([operations.osmfoundation.org](https://operations.osmfoundation.org/policies/tiles/))
 
 Geoapify access must be replaceable through configuration.
 
@@ -434,7 +434,7 @@ Geoapify access must be replaceable through configuration.
 
 Use Cloudflare’s free authoritative DNS plan.
 
-Cloudflare states that DNS is available free on all plans and does not charge Free, Pro or Business users based on DNS query count. ([developers.cloudflare.com](https://developers.cloudflare.com/dns/faq/?utm_source=openai))
+Cloudflare states that DNS is available free on all plans and does not charge Free, Pro or Business users based on DNS query count. ([developers.cloudflare.com](https://developers.cloudflare.com/dns/faq/))
 
 The initial architecture uses Cloudflare for DNS only. Proxy/CDN functionality requires a later security and mTLS compatibility review.
 
@@ -442,13 +442,13 @@ The initial architecture uses Cloudflare for DNS only. Proxy/CDN functionality r
 
 Use Let’s Encrypt through automated ACME certificate management.
 
-Let’s Encrypt provides free, automated TLS certificates. ([letsencrypt.org](https://letsencrypt.org/?locale=en_us&utm_source=openai))
+Let’s Encrypt provides free, automated TLS certificates. ([letsencrypt.org](https://letsencrypt.org/?locale=en_us))
 
 ## 11.5 Container registry — GitHub Container Registry
 
 Use GHCR for OCI images.
 
-GitHub currently states that Container Registry image storage and bandwidth are free, and public images may be pulled anonymously. ([docs.github.com](https://docs.github.com/en/enterprise-cloud%40latest/billing/concepts/product-billing/github-packages?apiVersion=2022-11-28&utm_source=openai))
+GitHub currently states that Container Registry image storage and bandwidth are free, and public images may be pulled anonymously. ([docs.github.com](https://docs.github.com/en/enterprise-cloud%40latest/billing/concepts/product-billing/github-packages?apiVersion=2022-11-28))
 
 Production images must still be:
 

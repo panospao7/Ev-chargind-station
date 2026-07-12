@@ -279,16 +279,11 @@ A normal user request should contain no more than:
 Longer synchronous chains require an explicit architecture review.
 
 ## 8.2 Booking hot-path rule
+*To maintain high throughput and reliability during checkout and allocation, the system separates advisory preflight checks from transactional locking enforcement.*
 
-Booking creation, rescheduling, and reassignment must not make remote calls while holding the allocation transaction.
-
-Required information comes from local enforcement projections.
-
-If local inputs are incomplete:
-
-- Do not assume availability.
-- Do not use stale positive authorization.
-- Return a typed conflict, dependency, or unknown-status result.
+- **Optional Remote Preflight:** Any remote API calls to lookup station config, active tariffs, or driver eligibility before locking are purely advisory and optional. Failure or timeout of a remote preflight check does not itself reject a booking.
+- **Fail Closed on Local Data:** The authoritative allocation transaction is executed entirely against the Booking module's local database projections. If Booking-local projection data is missing, stale, incomplete, or has a detected version gap, the booking must immediately fail closed (returning `EVSE_STALE_TELEMETRY` or `DEPENDENCY_UNAVAILABLE`).
+- **No Remote Calls During Locking:** The Booking authority must not perform any remote HTTP, gRPC, or broker calls while holding database allocation locks or transaction contexts. All inputs are resolved from local projections before lock acquisition.
 
 ---
 

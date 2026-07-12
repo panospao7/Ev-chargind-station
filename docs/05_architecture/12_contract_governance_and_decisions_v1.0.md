@@ -28,7 +28,7 @@ Each service will maintain:
 - Example requests and responses
 - Ownership and authorization matrix
 
-OpenAPI provides the machine-readable HTTP contract, while AsyncAPI describes message-based interfaces, channels, operations, and reusable messages. ([asyncapi.com](https://www.asyncapi.com/docs/concepts/asyncapi-document/adding-messages?utm_source=openai))
+OpenAPI provides the machine-readable HTTP contract, while AsyncAPI describes message-based interfaces, channels, operations, and reusable messages. ([asyncapi.com](https://www.asyncapi.com/docs/concepts/asyncapi-document/adding-messages))
 
 Recommended repository layout:
 
@@ -76,7 +76,7 @@ Recommended repository layout:
 
 No service contract is considered complete until it maps back to a functional requirement and automated acceptance test.
 
-## 4. Decisions recommended for approval
+## 4. Approved architectural decisions
 
 1. REST/JSON for synchronous communication.
 2. RabbitMQ for asynchronous events and charger commands.
@@ -90,10 +90,10 @@ No service contract is considered complete until it maps back to a functional re
 10. Discovery and Insights Service is excluded from all authoritative write paths.
 11. Charger command acceptance is distinct from physical/simulated execution.
 12. Uncertain command outcomes remain visible until reconciled.
+13. Device reservation synchronization horizon is fixed to the approved 60 minutes (Release applicability: W2).
 
 ## 5. Remaining implementation-level decisions
 
-- Device reservation synchronization horizon (Release applicability: W2); recommended starting value: 60 minutes
 - RabbitMQ queue sizing, retry timing, and event retention (Release applicability: W1 | Cross-cutting)
 - Exact meter-summary quality classifications (Release applicability: W1 | Cross-cutting)
 - Object-storage provider for privacy exports (Release applicability: W3)
@@ -113,10 +113,25 @@ The next planning phase should be:
 4. Security architecture and threat model (Release applicability: W1 | Cross-cutting)
 5. Deployment topology and cloud design (Release applicability: W1 | Cross-cutting)
 
-## 4. Shared Problem-Code Registry
+## 7. Shared Problem-Code Registry (Release applicability: W1 | Cross-cutting)
 All microservices standardise on the following RFC 9457 error problem codes:
-- `VERSION_CONFLICT` (Wave 1): Entity version mismatch during write locks.
-- `EVSE_ALLOCATION_CONFLICT` (Wave 1): Target EVSE already allocated for the interval.
-- `BOOKING_HOLD_EXPIRED` (Wave 1): Hold period ended before confirmation.
-- `EVSE_STALE_TELEMETRY` (Wave 1): Near-term booking blocked because EVSE is offline/stale.
-- `INVALID_CREDENTIALS` (Wave 1): Credentials verification failed.
+
+| Problem Code | HTTP Status | Retryable | Parameters | Applicable Operations | Description |
+|---|---|---|---|---|---|
+| `VERSION_CONFLICT` | 409 Conflict | Yes | `entityType`, `entityId`, `expectedVersion`, `actualVersion` | Any mutating write | Entity version mismatch during optimistic concurrency checks. |
+| `EVSE_ALLOCATION_CONFLICT` | 409 Conflict | No | `evseId`, `conflictingBookingId`, `requestedInterval` | Create booking/hold, reschedule | The target EVSE is already allocated for the requested interval. |
+| `BOOKING_HOLD_EXPIRED` | 410 Gone | No | `bookingId`, `holdExpiredAt` | Confirm booking | The temporary hold period ended before the confirmation was received. |
+| `EVSE_STALE_TELEMETRY` | 424 Failed Dependency | Yes | `evseId`, `lastHeartbeatAgeSeconds` | Near-term booking/hold, check-in | Near-term booking/hold blocked because EVSE is offline/stale. |
+| `INVALID_CREDENTIALS` | 401 Unauthorized | No | None | Auth, S2S delegation, device provisioning | Authentication or token signature verification failed. |
+| `ALLOCATION_BUSY` | 409 Conflict | Yes | `evseId` | Start charging, reserve EVSE | The EVSE is physically occupied or locked by another concurrent process. |
+| `STATUS_UNKNOWN` | 503 Service Unavailable | Yes | `evseId` | Check-in, start charging | Current device status is unknown due to active communication loss. |
+| `IDEMPOTENCY_KEY_REUSED` | 400 Bad Request | No | `idempotencyKey` | Any mutating write | Mutating request retried with same key but different request body. |
+| `NO_COMPATIBLE_EVSE` | 422 Unprocessable Entity | No | `stationId`, `connectorType`, `minPower` | Availability check, hold | No EVSE at the station matches the specified connector/power constraints. |
+| `DEPENDENCY_UNAVAILABLE` | 503 Service Unavailable | Yes | `dependencyName` | Any remote preflight | Remote preflight/lookups failed or timed out during non-locking phases. |
+
+## 8. Schema Dialect Policy (Release applicability: W1 | Cross-cutting)
+To avoid tooling incompatibilities during code generation and automated contract testing:
+- **Synchronous HTTP APIs:** OpenAPI 3.0.3 documents must use the standard OpenAPI Schema Object dialect (a subset of JSON Schema Draft 5/2019-09 depending on tooling; do not use advanced Draft 2020-12 features inside OpenAPI).
+- **Asynchronous Messaging:** AsyncAPI 2.6.0 documents and standalone JSON Schema files for RabbitMQ events/commands must use JSON Schema Draft 2020-12 dialect (`$schema: "https://json-schema.org/draft/2020-12/schema"`).
+- **Bundling & Code-Gen:** Standalone event/command schemas must be bundled dynamically using node-based tooling to resolve `$ref` anchors before publication.
+- **CI Validation:** The CI build pipeline must run validation tests against OpenAPI and JSON Schema dialects using `spectral` and `ajv-cli` to guarantee machine-readability and strict conformance.

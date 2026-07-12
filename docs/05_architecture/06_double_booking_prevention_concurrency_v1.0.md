@@ -57,7 +57,7 @@ The Booking and Session Service uses four complementary controls:
 
 The transaction isolation level is `READ COMMITTED`, combined with explicit row locks, mandatory revalidation after locking and datastore constraints.
 
-PostgreSQL row locks prevent concurrent transactions from modifying or locking the same selected rows until the transaction ends. PostgreSQL recommends acquiring multiple locks in a consistent order to avoid deadlocks. ([postgresql.org](https://www.postgresql.org/docs/17/explicit-locking.html?utm_source=openai))
+PostgreSQL row locks prevent concurrent transactions from modifying or locking the same selected rows until the transaction ends. PostgreSQL recommends acquiring multiple locks in a consistent order to avoid deadlocks. ([postgresql.org](https://www.postgresql.org/docs/17/explicit-locking.html))
 
 ---
 
@@ -193,7 +193,7 @@ CREATE TABLE capacity_claim (
 );
 ```
 
-PostgreSQL range types support half-open timestamp intervals, and exclusion constraints can prevent overlapping ranges. The `btree_gist` extension supplies GiST equality support for scalar types including UUID, allowing EVSE equality and interval overlap to be combined. ([postgresql.org](https://www.postgresql.org/docs/current/ddl-constraints.html?utm_source=openai))
+PostgreSQL range types support half-open timestamp intervals, and exclusion constraints can prevent overlapping ranges. The `btree_gist` extension supplies GiST equality support for scalar types including UUID, allowing EVSE equality and interval overlap to be combined. ([postgresql.org](https://www.postgresql.org/docs/current/ddl-constraints.html))
 
 ---
 
@@ -223,7 +223,7 @@ Booking Holds are intentionally excluded because their validity depends on datab
 
 Unexpired Holds are protected through the EVSE guard and transactional conflict query.
 
-Adding an exclusion constraint creates the supporting exclusion index. ([postgresql.org](https://www.postgresql.org/docs/current/ddl-constraints.html?utm_source=openai))
+Adding an exclusion constraint creates the supporting exclusion index. ([postgresql.org](https://www.postgresql.org/docs/current/ddl-constraints.html))
 
 ---
 
@@ -383,7 +383,7 @@ Allocation transactions use:
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 ```
 
-`READ COMMITTED` is PostgreSQL’s default isolation level. Each statement observes data committed before that statement begins. ([postgresql.org](https://www.postgresql.org/docs/16/transaction-iso.html?utm_source=openai))
+`READ COMMITTED` is PostgreSQL’s default isolation level. Each statement observes data committed before that statement begins. ([postgresql.org](https://www.postgresql.org/docs/16/transaction-iso.html))
 
 Correctness does not depend on an unlocked multi-statement snapshot. Instead:
 
@@ -396,7 +396,7 @@ Correctness does not depend on an unlocked multi-statement snapshot. Instead:
 
 ## 6.2 Why not `SERIALIZABLE` by default
 
-`SERIALIZABLE` provides stronger general anomaly prevention but requires full-transaction retries when serialization failures occur. The explicit guards make the allocation decision serial per driver and EVSE without imposing serializable overhead on every operation. ([postgresql.org](https://www.postgresql.org/docs/16/transaction-iso.html?utm_source=openai))
+`SERIALIZABLE` provides stronger general anomaly prevention but requires full-transaction retries when serialization failures occur. The explicit guards make the allocation decision serial per driver and EVSE without imposing serializable overhead on every operation. ([postgresql.org](https://www.postgresql.org/docs/16/transaction-iso.html))
 
 `SERIALIZABLE` may be enabled in selected verification tests to compare outcomes, but it is not the production correctness mechanism.
 
@@ -423,7 +423,7 @@ Rules:
 - No broker or device response is awaited inside the transaction.
 - Transactions remain short.
 
-Consistent lock ordering is PostgreSQL’s primary recommended deadlock-avoidance technique. ([postgresql.org](https://www.postgresql.org/docs/17/explicit-locking.html?utm_source=openai))
+Consistent lock ordering is PostgreSQL’s primary recommended deadlock-avoidance technique. ([postgresql.org](https://www.postgresql.org/docs/17/explicit-locking.html))
 
 ---
 
@@ -610,7 +610,7 @@ FOR UPDATE OF g SKIP LOCKED
 LIMIT 1;
 ```
 
-`SKIP LOCKED` can return an inconsistent view and is not suitable as a general availability decision. PostgreSQL documents it primarily as a contention-avoidance mechanism for queue-like access. ([postgresql.org](https://www.postgresql.org/docs/current/sql-select.html?utm_source=openai))
+`SKIP LOCKED` can return an inconsistent view and is not suitable as a general availability decision. PostgreSQL documents it primarily as a contention-avoidance mechanism for queue-like access. ([postgresql.org](https://www.postgresql.org/docs/current/sql-select.html))
 
 Therefore:
 
@@ -697,7 +697,7 @@ For each Booking:
 9. Record audit and outbox.
 10. Commit.
 
-`SKIP LOCKED` is appropriate here because workers are consuming queue-like lifecycle work, and skipped records remain eligible for another pass. ([postgresql.org](https://www.postgresql.org/docs/current/sql-select.html?utm_source=openai))
+`SKIP LOCKED` is appropriate here because workers are consuming queue-like lifecycle work, and skipped records remain eligible for another pass. ([postgresql.org](https://www.postgresql.org/docs/current/sql-select.html))
 
 ---
 
@@ -1043,7 +1043,7 @@ No transaction waits indefinitely.
 | `55P03` | Lock not available | Retry or return `ALLOCATION_BUSY` |
 | `57014` | Statement cancelled/timeout | Retry only where operation remains safe |
 
-PostgreSQL identifies serialization failures as `40001`, deadlocks as `40P01`, and exclusion violations as `23P01`; retries must restart the whole transaction where applicable. ([postgresql.org](https://www.postgresql.org/docs/17/mvcc-serialization-failure-handling.html?utm_source=openai))
+PostgreSQL identifies serialization failures as `40001`, deadlocks as `40P01`, and exclusion violations as `23P01`; retries must restart the whole transaction where applicable. ([postgresql.org](https://www.postgresql.org/docs/17/mvcc-serialization-failure-handling.html))
 
 Database error text is never exposed to clients.
 
@@ -1076,7 +1076,7 @@ Do not automatically retry:
 - Authorization failure
 - Missing critical projection
 
-PostgreSQL does not automatically retry failed transactions because only the application can safely repeat the complete business logic. ([postgresql.org](https://www.postgresql.org/docs/17/mvcc-serialization-failure-handling.html?utm_source=openai))
+PostgreSQL does not automatically retry failed transactions because only the application can safely repeat the complete business logic. ([postgresql.org](https://www.postgresql.org/docs/17/mvcc-serialization-failure-handling.html))
 
 ---
 

@@ -82,7 +82,7 @@ Use:
 - Strictly typed reactive forms
 - `OnPush`-compatible rendering patterns
 
-Angular Signals support granular reactive state tracking, and Angular Router supports nested and lazy-loaded route structures. ([angular.dev](https://angular.dev/guide/signals?utm_source=openai))
+Angular Signals support granular reactive state tracking, and Angular Router supports nested and lazy-loaded route structures. ([angular.dev](https://angular.dev/guide/signals))
 
 ### 3.3 State-library decision
 
@@ -265,7 +265,7 @@ Use functional interceptors for:
 - Retry of explicitly safe reads
 - Client-side timing metrics
 
-Angular recommends functional HTTP interceptors because their ordering is more predictable in complex setups. ([angular.dev](https://angular.dev/guide/http/interceptors?utm_source=openai))
+Angular recommends functional HTTP interceptors because their ordering is more predictable in complex setups. ([angular.dev](https://angular.dev/guide/http/interceptors))
 
 Interceptors must not retry state-changing requests automatically unless the original idempotency key is preserved and the operation explicitly permits retry.
 
@@ -397,7 +397,7 @@ Examples:
 /el/operator/organizations/ORG-123/stations
 ```
 
-Angular Router is the official framework routing library and supports nested routes, route parameters, guards and lazy loading. ([angular.dev](https://angular.dev/guide/routing?utm_source=openai))
+Angular Router is the official framework routing library and supports nested routes, route parameters, guards and lazy loading. ([angular.dev](https://angular.dev/guide/routing))
 
 ### 10.1 Route guards
 
@@ -409,7 +409,7 @@ Guards improve navigation UX for:
 - Unsaved changes
 - Active organization context
 
-They are not security boundaries. Angular explicitly warns that client-side guards must never be the sole access control. ([angular.dev](https://angular.dev/guide/routing/route-guards?utm_source=openai))
+They are not security boundaries. Angular explicitly warns that client-side guards must never be the sole access control. ([angular.dev](https://angular.dev/guide/routing/route-guards))
 
 ### 10.2 Deep links
 
@@ -606,13 +606,13 @@ Every map result must be available through a semantic list containing:
 - Price estimate summary
 - Details action
 
-WCAG 2.2 AA applies to every responsive variation of a page. Maps may require two-dimensional interaction, but equivalent information and functionality must remain available. ([w3.org](https://www.w3.org/TR/WCAG22/?utm_source=openai))
+WCAG 2.2 AA applies to every responsive variation of a page. Maps may require two-dimensional interaction, but equivalent information and functionality must remain available. ([w3.org](https://www.w3.org/TR/WCAG22/))
 
 ## 16.4 Map behaviour
 
 Map technology remains provisional, with MapLibre preferred.
 
-MapLibre GL JS is a TypeScript browser mapping library and provides keyboard pan, zoom and rotation handlers. ([maplibre.org](https://maplibre.org/maplibre-gl-js/docs/?utm_source=openai))
+MapLibre GL JS is a TypeScript browser mapping library and provides keyboard pan, zoom and rotation handlers. ([maplibre.org](https://maplibre.org/maplibre-gl-js/docs/))
 
 Requirements:
 
@@ -894,7 +894,7 @@ Unexpected errors display a safe support reference, never a stack trace.
 
 Use strictly typed reactive forms for business forms.
 
-Angular describes reactive forms as explicit, scalable and testable, with strictly typed forms supported by default. ([angular.dev](https://angular.dev/guide/forms/reactive-forms?utm_source=openai))
+Angular describes reactive forms as explicit, scalable and testable, with strictly typed forms supported by default. ([angular.dev](https://angular.dev/guide/forms/reactive-forms))
 
 Requirements:
 
@@ -918,7 +918,7 @@ Client validation improves UX but never replaces server validation.
 
 Use Angular internationalization support with `@angular/localize`.
 
-Angular supports extraction of translatable text and locale-specific formatting. ([angular.dev](https://angular.dev/guide/i18n/add-package?utm_source=openai))
+Angular supports extraction of translatable text and locale-specific formatting. ([angular.dev](https://angular.dev/guide/i18n/add-package))
 
 Initial locales:
 
@@ -944,7 +944,7 @@ Rules:
 
 # 27. Accessibility
 
-Target: WCAG 2.2 AA. W3C recommends WCAG 2.2 for current accessibility work and requires Level A and AA criteria for AA conformance. ([w3.org](https://www.w3.org/TR/WCAG22/?utm_source=openai))
+Target: WCAG 2.2 AA. W3C recommends WCAG 2.2 for current accessibility work and requires Level A and AA criteria for AA conformance. ([w3.org](https://www.w3.org/TR/WCAG22/))
 
 Required:
 
@@ -1046,7 +1046,7 @@ Principles:
 14. Browser autocomplete is configured according to field meaning.
 15. Route guards never substitute for backend authorization.
 
-Angular treats template-bound values as untrusted and recommends CSP and Trusted Types as additional XSS protections. Direct DOM manipulation and security-trust bypasses require explicit review. ([angular.dev](https://angular.dev/best-practices/security?utm_source=openai))
+Angular treats template-bound values as untrusted and recommends CSP and Trusted Types as additional XSS protections. Direct DOM manipulation and security-trust bypasses require explicit review. ([angular.dev](https://angular.dev/best-practices/security))
 
 ---
 
@@ -1154,7 +1154,7 @@ Test:
 - Route utilities
 - Permission-aware presentation
 
-Angular’s current default testing setup uses Vitest, but the final test runner remains subject to technology selection. Angular also recommends testing component classes together with their rendered DOM behaviour. ([angular.dev](https://angular.dev/guide/testing/components-basics?utm_source=openai))
+Angular’s current default testing setup uses Vitest, but the final test runner remains subject to technology selection. Angular also recommends testing component classes together with their rendered DOM behaviour. ([angular.dev](https://angular.dev/guide/testing/components-basics))
 
 ## 34.2 Component tests
 
