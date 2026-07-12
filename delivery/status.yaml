@@ -9,22 +9,22 @@ project:
 
 tasks:
   I0-ENG-001:
-    state: "READY"
-    assignedAgent: null
-    claimedAt: null
+    state: "CLAIMED"
+    assignedAgent: "orchestrator"
+    claimedAt: "2026-07-12T23:10:00Z"
 
-    baselineCommit: null
+    baselineCommit: "ba4b6e5"
     candidateCommit: null
     mergeCommit: null
-    branch: null
+    branch: "main"
     pullRequest: null
 
     blockers: []
     deviations: []
     unresolvedFindings: []
 
-    handoffSequence: 0
-    latestHandoff: null
+    handoffSequence: 1
+    latestHandoff: "delivery/handoffs/I0-ENG-001/001-initialization.md"
 
     reviews:
       planner: "NOT_STARTED"
@@ -53,7 +53,8 @@ tasks:
 summary:
   counts:
     BACKLOG: 0
-    READY: 1
+    READY: 0
+    CLAIMED: 1
     CLAIMED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0

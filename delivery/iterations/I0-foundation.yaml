@@ -1,0 +1,10 @@
+schemaVersion: "1.0"
+iterationId: "I0"
+title: "Foundation and toolchain"
+goal: "Establish reproducible contract validation, developer toolchain, and delivery control plane before business-feature implementation."
+gates:
+  - "I0-ENG-001: G3 contract validation is reproducible and green from clean checkout"
+status: "ACTIVE"
+startedAt: "2026-07-12"
+tasks:
+  - "I0-ENG-001"
