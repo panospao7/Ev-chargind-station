@@ -19,11 +19,11 @@ This document outlines the current completion status of the planning foundation 
 The design phase is structured into separate gates:
 - **Gate G1: Planning Foundation** — **APPROVED** (tagged as `planning-foundation-v1.2`).
 - **Gate G2: Logical Architecture** — **APPROVED IN PRINCIPLE** (capability boundaries and concurrency rules established in ARC-001 through ARC-011 and ARC-017).
-- **Gate G3: Contract Catalogues** — **IN_REVIEW** (REST API contracts, AsyncAPI event schemas, and saga workflows in ARC-018 through ARC-021).
-- **Gate G3-executable: Contract Schemas** — **PENDING** (OpenAPI, AsyncAPI, and JSON schema machine-readable contracts are not yet fully generated).
+- **Gate G3: Contract Catalogues** — **APPROVED** (REST API contracts, AsyncAPI event schemas, and saga workflows in ARC-018 through ARC-021).
+- **Gate G3-executable: Contract Schemas** — **APPROVED** (OpenAPI, AsyncAPI, and JSON schema machine-readable contracts generated and validated under `contracts/`).
 - **Gate G4/G5/G6: Security, Observability, and Operations** — **IN_REVIEW / PENDING** (dependent on contract and security finalization).
 
-The project is **not yet implementation-ready**; logical planning and specifications are complete, but machine-readable contracts remain pending.
+The project is **approved for W1 foundation and first vertical slice implementation**. Do not claim full production readiness while G4–G6 remain incomplete.
 
 1. **Project Constraints and Scope:** Completed and baselined in [SCP-001] and [SCP-002].
 2. **Actors and Capabilities:** Completed and baselined in [SCP-003].
