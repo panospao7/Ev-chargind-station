@@ -66,7 +66,39 @@ If the tester returns:
 
 Do not continue to review when required tests fail.
 
-### 2. Specialist security review
+### 2. Specialist contract review
+
+Invoke `contract-reviewer` when the task packet's `reviews.contractReviewer` is `true` or when the task affects any of:
+
+- OpenAPI, AsyncAPI, or JSON Schema artifacts;
+- message, lifecycle, problem-code, policy, or traceability registries;
+- contract examples or fixtures;
+- cross-service API contracts;
+- documented compatibility guarantees.
+
+Provide the complete task context, diff, and tester evidence.
+
+If a required specialist agent is unavailable, return `BLOCKED`.
+
+Any unresolved `BLOCKER` or `MAJOR` specialist finding produces `FIX_REQUIRED`.
+
+### 3. Specialist data review
+
+Invoke `data-reviewer` when the task packet's `reviews.dataReviewer` is `true` or when the task affects any of:
+
+- database migrations or schema changes;
+- persistence logic, locking, or concurrency;
+- indexes, constraints, or exclusions;
+- outbox or event-store patterns;
+- data retention or anonymization.
+
+Provide the complete task context, diff, and tester evidence.
+
+If a required specialist agent is unavailable, return `BLOCKED`.
+
+Any unresolved `BLOCKER` or `MAJOR` specialist finding produces `FIX_REQUIRED`.
+
+### 4. Specialist security review
 
 Invoke `security-reviewer` when the task affects any of:
 
@@ -87,7 +119,7 @@ If a required specialist agent is unavailable, return `BLOCKED`.
 
 Any unresolved `BLOCKER` or `MAJOR` specialist finding produces `FIX_REQUIRED`.
 
-### 3. General independent review
+### 5. General independent review
 
 Invoke `reviewer` with:
 
@@ -102,7 +134,7 @@ Invoke `reviewer` with:
 
 The reviewer must assess scope, correctness, architecture, persistence, contracts, security, maintainability, and test sufficiency.
 
-### 4. Determine result
+### 6. Determine result
 
 Set the recommended result to:
 

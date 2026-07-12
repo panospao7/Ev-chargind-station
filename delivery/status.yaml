@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-07-13T00:05:00Z"
+updatedAt: "2026-07-12T23:50:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -9,22 +9,23 @@ project:
 
 tasks:
   I0-ENG-001:
-    state: "READY"
+    state: "BLOCKED"
     assignedAgent: null
     claimedAt: null
 
-    baselineCommit: "b02bae51cd440b7f0cff7e62d29ac1df3992b132"
+    baselineCommit: null
     candidateCommit: null
     mergeCommit: null
     branch: "main"
     pullRequest: null
 
-    blockers: []
+    blockers:
+      - "I0-DEL-001: delivery control plane must be genuinely self-verified before engineering tasks can proceed"
     deviations: []
     unresolvedFindings: []
 
-    handoffSequence: 2
-    latestHandoff: "delivery/handoffs/I0-ENG-001/01-orchestrator.md"
+    handoffSequence: 1
+    latestHandoff: null
 
     reviews:
       planner: "NOT_STARTED"
@@ -51,19 +52,27 @@ tasks:
       paths: []
 
   I0-DEL-001:
-    state: "SELF_VERIFIED"
+    state: "FIX_REQUIRED"
     assignedAgent: null
     claimedAt: null
 
-    baselineCommit: "b02bae51cd440b7f0cff7e62d29ac1df3992b132"
-    candidateCommit: "b02bae51cd440b7f0cff7e62d29ac1df3992b132"
+    baselineCommit: "cac0723591850e169310a906363fef0e4040cf9d"
+    candidateCommit: "b02bae58f37369913b5725cad25baa1e2247e8e0"
     mergeCommit: null
     branch: "main"
     pullRequest: null
 
     blockers: []
-    deviations: []
-    unresolvedFindings: []
+    deviations:
+      - "I0-DEL-001-SCOPE-001: scripts/delivery/** added outside allowedFiles"
+    unresolvedFindings:
+      - "SHA: recorded b02bae51cd440b7f0cff7e62d29ac1df3992b132 which does not exist"
+      - "Timestamp: used future UTC value"
+      - "Timestamp: 2026-07-13T00:05:00Z was ahead of actual current time on July 12"
+      - "SELF_VERIFIED set without handoff, evidence, or completed reviews"
+      - "Validator AC-08 lacked strict YAML duplicate-key detection and SHA hex validation"
+      - "Skills were frontmatter-only stubs without reusable review procedures"
+      - "review-task.md did not invoke contract-reviewer or data-reviewer"
 
     handoffSequence: 0
     latestHandoff: null
@@ -95,21 +104,21 @@ tasks:
 summary:
   counts:
     BACKLOG: 0
-    READY: 1
+    READY: 0
     CLAIMED: 0
-    BLOCKED: 0
+    BLOCKED: 1
     IMPLEMENTING: 0
-    SELF_VERIFIED: 1
+    SELF_VERIFIED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
     HUMAN_REVIEW: 0
     MERGED: 0
     VERIFIED: 0
-    FIX_REQUIRED: 0
+    FIX_REQUIRED: 1
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
     SUPERSEDED: 0
     CANCELLED: 0
 
   activeTask: null
-  nextRecommendedTask: "I0-ENG-001"
+  nextRecommendedTask: "I0-DEL-001"

@@ -1,0 +1,20 @@
+schemaVersion: "1.0"
+deviationId: "I0-DEL-001-SCOPE-001"
+taskId: "I0-DEL-001"
+type: "SCOPE_CHANGE"
+status: "APPROVED"
+approvedBy: "human (review of b02bae5)"
+approvedAt: "2026-07-12T23:50:00Z"
+
+description: >
+  The task packet's prohibitedFiles included scripts/**, but the
+  delivery validation script was necessarily created at
+  scripts/delivery/validate.ps1 to satisfy AC-08.
+
+resolution: >
+  Remove scripts/delivery/** from prohibitedFiles and add
+  scripts/delivery/** to allowedFiles in the I0-DEL-001 task packet.
+  The broad scripts/** prohibition remains in effect for other scripts.
+
+authorityReferences:
+  - "I0-DEL-001.yaml scope.prohibitedFiles"

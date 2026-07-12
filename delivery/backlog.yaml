@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-07-12"
+updatedAt: "2026-07-12T23:50:00Z"
 
 authority:
   taskDefinition: "delivery/tasks/<TASK-ID>.yaml"
@@ -34,4 +34,17 @@ items:
       - ci
       - reproducibility
 
-nextRecommendedTask: "I0-ENG-001"
+  - id: "I0-DEL-001"
+    order: 20
+    priority: "P0"
+    iteration: "I0"
+    epic: "EPIC-01"
+    title: "Make OpenCode delivery control plane executable"
+    packet: "delivery/tasks/I0-DEL-001.yaml"
+    dependsOn: []
+    tags:
+      - foundation
+      - delivery
+      - ai-agents
+
+nextRecommendedTask: "I0-DEL-001"

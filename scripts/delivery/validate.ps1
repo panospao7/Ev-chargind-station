@@ -9,22 +9,83 @@ $errors = @()
 
 Write-Host "=== Delivery Control Plane Validation ==="
 
-# 1. SHA validation - all baselineCommit values must be 40-char hex
-Write-Host "`n[CHECK] SHA length (must be 40-char hex)..."
+if (-not (Test-Path $StatusFile)) {
+  Write-Host "FATAL: Status file not found: $StatusFile" -ForegroundColor Red
+  exit 1
+}
 $content = Get-Content -Raw $StatusFile
-$shaMatches = [regex]::Matches($content, 'baselineCommit:\s+"([^"]+)"')
-foreach ($m in $shaMatches) {
-  $sha = $m.Groups[1].Value
-  if ($sha -ne "null" -and $sha.Length -ne 40) {
-    $errors += "SHA length violation: '$sha' is $($sha.Length) chars (expected 40)"
-    $exitCode = 1
+$lines = $content -split "`r`n|`n"
+
+# ---- 1. Duplicate YAML key detection via scope-aware tracker ----
+Write-Host "`n[CHECK] Duplicate YAML keys..."
+
+function Find-DuplicateYamlKeys {
+  param([string[]]$Lines)
+  $errs = @()
+
+  # Stack of hashtables: each entry is @{ Indent = N; Keys = @{} }
+  $stack = New-Object System.Collections.ArrayList
+
+  for ($i = 0; $i -lt $Lines.Length; $i++) {
+    $line = $Lines[$i]
+    if ($line -match '^\s*$' -or $line -match '^\s*#') { continue }
+
+    if ($line -match '^(\s*)(\S[\w/.-]*)\s*:\s*(.*)') {
+      $indent = $matches[1].Length
+      $key    = $matches[2]
+      $value  = $matches[3].Trim()
+      $lineNo = $i + 1
+
+      # Pop any scopes whose indent is >= current key indent
+      while ($stack.Count -gt 0 -and $stack[$stack.Count-1].Indent -ge $indent) {
+        $null = $stack.RemoveAt($stack.Count-1)
+      }
+
+      # The current scope (if any) is the top of stack after popping
+      $currentScope = if ($stack.Count -gt 0) { $stack[$stack.Count-1].Keys } else { $null }
+
+      if ($currentScope -ne $null -and $currentScope.ContainsKey($key)) {
+        $errs += "Duplicate key '$key' at indent $indent (line $lineNo)"
+      }
+
+      if ($value -eq "" -or $value -eq "{" -or $value -match "^\[") {
+        $newScope = @{ Indent = $indent; Keys = @{} }
+        $newScope.Keys[$key] = $true
+        if ($currentScope -ne $null) { $currentScope[$key] = $true }
+        $null = $stack.Add($newScope)
+      } else {
+        if ($currentScope -ne $null) { $currentScope[$key] = $true }
+      }
+    }
+  }
+  return $errs
+}
+
+$dupErrors = Find-DuplicateYamlKeys -Lines $lines
+foreach ($e in $dupErrors) { $errors += $e; $exitCode = 1 }
+
+# ---- 2. SHA hex content and length validation ----
+Write-Host "`n[CHECK] SHA hex content (40-char, hex only)..."
+$shaPatterns = @('baselineCommit', 'candidateCommit')
+foreach ($p in $shaPatterns) {
+  $matches = [regex]::Matches($content, "$p\:\s+""([^""]+)""")
+  foreach ($m in $matches) {
+    $sha = $m.Groups[1].Value
+    if ($sha -eq "null") { continue }
+    if ($sha.Length -ne 40) {
+      $errors += "SHA length violation in '$p': '$sha' is $($sha.Length) chars (expected 40)"
+      $exitCode = 1
+    } elseif ($sha -notmatch '^[0-9a-f]{40}$') {
+      $errors += "SHA hex violation in '$p': '$sha' contains non-hex characters"
+      $exitCode = 1
+    }
   }
 }
 
-# 2. Collect actual task states from the tasks section
-Write-Host "`n[CHECK] Task state summary consistency..."
+# ---- 3. Task state summary consistency + unknown state detection ----
+Write-Host "`n[CHECK] Task state consistency..."
 $taskStates = @()
-$taskSection = [regex]::Match($content, '(?s)tasks:\s*\n(.*?)summary:')
+$taskSection = [regex]::Match($content, '(?s)tasks:\s*\n(.*?)(?=\n\S|\Z)')
 if ($taskSection.Success) {
   $taskBody = $taskSection.Groups[1].Value
   $stateMatches = [regex]::Matches($taskBody, 'state:\s+"([^"]+)"')
@@ -36,6 +97,18 @@ $validStates = @("BACKLOG","READY","CLAIMED","IMPLEMENTING","SELF_VERIFIED",
                  "VERIFIED","FIX_REQUIRED","BLOCKED","CLARIFICATION_REQUIRED",
                  "SPEC_CONFLICT","SUPERSEDED","CANCELLED")
 
+# Unknown state detection
+$foundUnknown = $false
+foreach ($ts in $taskStates) {
+  if ($ts -notin $validStates) {
+    $errors += "Unknown task state '$ts'"
+    $foundUnknown = $true
+    $exitCode = 1
+  }
+}
+if (-not $foundUnknown) { Write-Host "  All states valid" } else { Write-Host "  Found unknown state(s)" }
+
+# Count consistency
 foreach ($s in $validStates) {
   $actualCount = ($taskStates | Where-Object {$_ -eq $s}).Count
   $pattern = "(?m)^\s+$s\:\s+(\d+)"
@@ -48,19 +121,23 @@ foreach ($s in $validStates) {
   }
 }
 
-# 3. Handoff file references exist
+# ---- 4. Handoff file references exist ----
 Write-Host "`n[CHECK] Handoff file references..."
 $handoffRefs = [regex]::Matches($content, 'latestHandoff:\s+"([^"]+)"')
+$handoffOk = $true
 foreach ($hr in $handoffRefs) {
   $path = $hr.Groups[1].Value
   if ($path -ne "null" -and -not (Test-Path $path)) {
     $errors += "Missing handoff file: $path"
+    $handoffOk = $false
     $exitCode = 1
   }
 }
+if ($handoffOk) { Write-Host "  All handoff references valid" }
 
-# 4. Iteration task references exist as task YAML files
+# ---- 5. Iteration task references exist as task YAML files ----
 Write-Host "`n[CHECK] Iteration task references..."
+$iterOk = $true
 if (Test-Path $IterationDir) {
   $iterFiles = Get-ChildItem "$IterationDir/*.yaml"
   foreach ($f in $iterFiles) {
@@ -73,10 +150,28 @@ if (Test-Path $IterationDir) {
       $taskFile = Join-Path $TaskDir "$taskId.yaml"
       if (-not (Test-Path $taskFile)) {
         $errors += "Iteration '$($f.BaseName)' references '$taskId' but $taskFile not found"
+        $iterOk = $false
         $exitCode = 1
       }
     }
   }
+}
+if ($iterOk) { Write-Host "  All iteration task references valid" }
+
+# ---- 6. Summary counts all present ----
+Write-Host "`n[CHECK] All expected summary state keys present..."
+$summarySection = [regex]::Match($content, '(?s)summary:\s*\n\s+counts:\s*\n(.*?)(?=\n\S|\Z)')
+if ($summarySection.Success) {
+  $summaryBlock = $summarySection.Groups[1].Value
+  $summaryOk = $true
+  foreach ($s in $validStates) {
+    if ($summaryBlock -notmatch "(?m)^\s+$s\:\s+\d+") {
+      $errors += "Missing summary count for state '$s'"
+      $summaryOk = $false
+      $exitCode = 1
+    }
+  }
+  if ($summaryOk) { Write-Host "  All 15 summary state keys present" }
 }
 
 if ($errors.Count -eq 0) {
