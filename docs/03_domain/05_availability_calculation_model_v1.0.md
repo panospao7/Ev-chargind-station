@@ -136,7 +136,7 @@ A candidate is unavailable if its allocation interval overlaps:
 
 - An unexpired `HELD` booking
 - `CONFIRMED`, `CHECKED_IN` or `ACTIVE` booking allocation
-- A session in `STARTING`, `CHARGING`, `SUSPENDED` or `STOPPING`
+- A session in `AUTHORIZING`, `STARTING`, `CHARGING`, `SUSPENDED`, `STOPPING` or `FINALIZING`
 - A completed/interrupted session whose turnaround release time has not passed
 - An unresolved session whose physical outcome is uncertain
 
@@ -148,7 +148,7 @@ A hold blocks only until its `expiresAt` timestamp. Expired holds must be made n
 *This policy governs how live device status affects booking eligibility based on time.*
 
 - **Near-Term Horizon:** Fixed 60 minutes before requested start. (Release applicability: W1)
-- **Freshness Threshold:** Fixed 5 minutes (defined as the greater of three expected heartbeat intervals or 300 seconds). (Release applicability: W1)
+- **Freshness Threshold:** Fixed 300 seconds (5 minutes). Expected heartbeat frequency must be configured below this threshold (e.g., 60-second intervals produce 3 heartbeats within the window). (Release applicability: W1)
 
 **For near-term reservations (starting within the 60-minute horizon):**
 - `AVAILABLE` with fresh status (age within freshness threshold) may be booked.
@@ -329,18 +329,19 @@ Failure caused by equipment routes to reassignment or fulfilment handling and ca
 - Search-projection delay/failure tests
 - Public-information leakage tests
 
-## 17. Proposed decisions for approval
+## 17. Approved decisions
 
 1. Use half-open intervals `[start, end)`.
 2. Apply one post-booking turnaround buffer in v1.
 3. Set the near-term operational-status horizon to 60 minutes.
-4. Set freshness to the greater of three heartbeat intervals or 300 seconds.
+4. Set freshness to a fixed 300 seconds (5 minutes); expected heartbeat frequency is configured below that threshold.
 5. Permit future booking despite temporary offline/stale/unknown status, labelled `PLANNED_AVAILABLE`.
 6. Never permit booking over blocking maintenance, administrative closure or unresolved critical/emergency faults.
 7. Treat no-time searches as operational summaries, not reservation availability.
 8. Require the complete charging interval—but not necessarily the post-buffer—to fit opening hours.
 9. Release unused cancelled allocations immediately.
 10. Keep administrative, device-reported and derived availability states separate.
+11. Explicit fault-impact intervals block every overlapping interval; current offline/stale evidence without a predictive interval blocks near-term bookings only.
 
 ## 18. Traceability
 

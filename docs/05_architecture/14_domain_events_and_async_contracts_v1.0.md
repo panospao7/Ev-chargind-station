@@ -129,10 +129,10 @@ A consumer receiving version 12 before version 11 may temporarily hold it, retry
 
 | Event | Minimum data | Main consumers |
 |---|---|---|
-| `AccountProfileCreated` | User ID, status, locale | Discovery and Insights, Platform Governance | (Release applicability: W1) |
-| `AccountProfileUpdated` | User ID, changed fields, version | Discovery and Insights, Platform Governance | (Release applicability: W1) |
-| `VehicleUpserted` | User ID, vehicle compatibility snapshot | Discovery and Insights | (Release applicability: W1) |
-| `VehicleRemoved` | User ID, vehicle ID | Discovery and Insights | (Release applicability: W1) |
+| `AccountProfileCreated` | User ID, status, locale | Platform Governance only. Discovery receives no account profile events. | (Release applicability: W1) |
+| `AccountProfileUpdated` | User ID, changed fields, version | Platform Governance only. Discovery receives no account profile events. | (Release applicability: W1) |
+| `VehicleUpserted` | User ID, vehicle compatibility snapshot | Platform Governance only. Discovery receives no vehicle events. | (Release applicability: W1) |
+| `VehicleRemoved` | User ID, vehicle ID | Platform Governance only. Discovery receives no vehicle events. | (Release applicability: W1) |
 | `ConsentRecorded` | User ID, policy type/version/time | Platform Governance | (Release applicability: W1) |
 | `AccountStatusChanged` | User ID, old/new status, reason code | Booking module, Platform Governance | (Release applicability: W1) |
 | `AccountAnonymized` | Subject ID, completion time | Platform Governance | (Release applicability: W3) |
@@ -147,17 +147,17 @@ Email addresses do not appear on the general domain exchange.
 
 ### Station Operations Service
 
-- `OperatorApplicationSubmitted` (Release applicability: W1)
-- `OperatorApplicationUnderReview` (Release applicability: W1)
-- `OperatorApplicationClarificationRequested` (Release applicability: W1)
-- `OperatorApplicationWithdrawn` (Release applicability: W1)
-- `OperatorApplicationApproved` (Release applicability: W1)
-- `OperatorApplicationRejected` (Release applicability: W1)
+- `OperatorApplicationSubmitted` (Release applicability: W2)
+- `OperatorApplicationUnderReview` (Release applicability: W2)
+- `OperatorApplicationClarificationRequested` (Release applicability: W2)
+- `OperatorApplicationWithdrawn` (Release applicability: W2)
+- `OperatorApplicationApproved` (Release applicability: W2)
+- `OperatorApplicationRejected` (Release applicability: W2)
 - `OperatorOrganizationCreated` (Release applicability: W1)
 - `OperatorOrganizationStatusChanged` (Release applicability: W1)
-- `StaffMembershipGranted` (Release applicability: W1)
-- `StaffMembershipChanged` (Release applicability: W1)
-- `StaffMembershipRevoked` (Release applicability: W1)
+- `StaffMembershipGranted` (Release applicability: W2)
+- `StaffMembershipChanged` (Release applicability: W2)
+- `StaffMembershipRevoked` (Release applicability: W2)
 - `StationPublished` (Release applicability: W1)
 - `StationUpdated` (Release applicability: W1)
 - `StationStatusChanged` (Release applicability: W1)
@@ -181,13 +181,13 @@ Email addresses do not appear on the general domain exchange.
 Configuration events contain the public projection data required by Discovery and Insights. They do not contain device secrets or internal diagnostics.
 
 ### Booking module (Booking and Session Service)
-*Note on Driver Privacy (CON-080): BookingHeld and other booking events published to the message broker use pseudonymous driver/subject IDs only. Discovery and Insights Service subscribes to capacity updates/pseudonymous records and does not receive driver personal identity.*
+*Note on Driver Privacy (CON-093): Discovery and Insights subscribes to consumer-specific capacity projection events that contain no driver/subject reference. Profile, vehicle and booking events containing user or pseudonymous subject IDs are not routed to Discovery. Instead, Discovery receives: `EVSECapacityChanged`, `StationBookableCountChanged`, `AvailabilityProjectionInvalidated`.*
 
 | Event | Important data |
 |---|---|
-| `BookingHeld` | Booking, pseudonymous driver ID, EVSE, interval, hold expiry | (Release applicability: W1) |
-| `BookingConfirmed` | Booking reference, assignment and snapshots | (Release applicability: W1) |
-| `BookingHoldExpired` | Booking and release time | (Release applicability: W1) |
+| `BookingHeld` | Booking, pseudonymous driver ID, EVSE, interval, hold expiry. Not routed to Discovery. | (Release applicability: W1) |
+| `BookingConfirmed` | Booking reference, assignment and snapshots. Not routed to Discovery. | (Release applicability: W1) |
+| `BookingHoldExpired` | Booking and release time. Not routed to Discovery. | (Release applicability: W1) |
 | `BookingRescheduled` | Old/new interval and assignment version | (Release applicability: W1) |
 | `BookingCancelled` | Actor type and structured reason | (Release applicability: W1) |
 | `BookingCheckedIn` | Booking, EVSE and check-in time | (Release applicability: W1) |
@@ -196,10 +196,22 @@ Configuration events contain the public projection data required by Discovery an
 | `BookingFulfilmentFailed` | Failure category and responsible party | (Release applicability: W1) |
 | `BookingActivated` | Booking and charging-session ID | (Release applicability: W1) |
 | `BookingCompleted` | Session outcome and release time | (Release applicability: W1) |
-| `CapacityRestrictionCreated` | Scope, interval, type and phase | (Release applicability: W1) |
-| `CapacityRestrictionFinalized` | Restriction ID and block interval | (Release applicability: W1) |
-| `CapacityRestrictionReleased` | Restriction ID and reason | (Release applicability: W1) |
+| `CapacityRestrictionCreated` | Scope, interval, type and phase (generic; non-maintenance restrictions) | (Release applicability: W1) |
+| `CreateCapacityFreeze` | Workflow ID, restriction ID, source maintenance ID, scope, interval, version, deadline, idempotency key (maintenance handshake) | (Release applicability: W1) |
+| `CapacityFreezeCommitted` | Workflow ID, restriction ID, scope, interval, committed timestamp | (Release applicability: W1) |
+| `CapacityFreezeRejected` | Workflow ID, restriction ID, reason, remaining interval | (Release applicability: W1) |
+| `FinalizeCapacityBlock` | Workflow ID, restriction ID, idempotency key | (Release applicability: W1) |
+| `CapacityBlockCommitted` | Workflow ID, restriction ID, block interval | (Release applicability: W1) |
+| `CapacityRestrictionReleaseRequested` | Workflow ID, restriction ID, source maintenance ID, reason, idempotency key | (Release applicability: W1) |
+| `CapacityRestrictionReleased` | Restriction ID, reason, released timestamp | (Release applicability: W1) |
 | `StartAuthorizationConsumed` | Booking/session IDs only; never token | (Release applicability: W1) |
+
+**Discovery-specific projection events:**
+| Event | Important data |
+|---|---|
+| `EVSECapacityChanged` | EVSE ID, interval, new capacity state. No driver/subject reference. | (Release applicability: W1) |
+| `StationBookableCountChanged` | Station ID, compatible/bookable counts. No driver/subject reference. | (Release applicability: W1) |
+| `AvailabilityProjectionInvalidated` | Station or EVSE ID, affected intervals, reason. No driver/subject reference. | (Release applicability: W1) |
 
 ### Charging module (Booking and Session Service)
 
@@ -238,9 +250,10 @@ Raw protocol-specific messages are normalized before being published.
 
 ### Notification and Platform Governance and Support Services
 
-- `NotificationQueued` (Release applicability: W1)
-- `NotificationDelivered` (Release applicability: W1)
-- `NotificationPermanentlyFailed` (Release applicability: W1)
+- `NotificationProviderAccepted` (Release applicability: W1)
+- `NotificationInboxDelivered` (Release applicability: W1)
+- `NotificationDispatchFailed` (Release applicability: W1)
+- `NotificationPermanentlyFailed` (Release applicability: W1) (terminal, after retry exhaustion)
 - `SupportCaseCreated` (Release applicability: W2)
 - `SupportCaseStateChanged` (Release applicability: W2)
 - `PrivacyRequestCreated` (Release applicability: W3)
@@ -294,9 +307,9 @@ Each service emits a success or failure event for the request and service step.
 
 | Consumer | Main subscriptions |
 |---|---|
-| Discovery and Insights Service | Public account, station-operations, booking-session, and device-integration events (Release applicability: W1) |
+| Discovery and Insights Service | Station-operations, booking-session capacity projection events, and device-integration events. No account/profile/vehicle events. No booking events containing driver/subject references. (Release applicability: W1) |
 | Notification Service | booking-session and account-security events (Release applicability: W1) |
-| Platform Governance and Support Service | Audit, privacy, incident and delivery-failure events (Release applicability: W2) |
+| Platform Governance and Support Service | Audit, privacy, incident and delivery-failure events (Release applicability: W2). Operator application and staff invitation events (Release applicability: W2). |
 | Booking module (Booking & Session) | Device Integration Service telemetry/status events, and Station Operations Service configuration events (Release applicability: W1) |
 | Charging module (Booking & Session) | Device Integration Service transaction/meter events (Release applicability: W1) |
 | Station Operations Service | Device Integration Service telemetry/fault events, and Booking capacity restriction outcomes (Release applicability: W1) |

@@ -28,10 +28,13 @@ stateDiagram-v2
     CONFIRMED --> NO_SHOW : Start time + grace elapsed
     CONFIRMED --> FULFILMENT_FAILED : Equipment failure before check-in
     CHECKED_IN --> ACTIVE : Session started (TransactionStarted event received)
-    CHECKED_IN --> FULFILMENT_FAILED : Start command rejected / Device fault
+    CHECKED_IN --> START_REJECTED : Start command rejected by device
     CHECKED_IN --> CONFIRMED : Driver abandons check-in (before session starts)
     CHECKED_IN --> CANCELLED : Operator emergency cancellation (before session starts)
     CHECKED_IN --> NO_SHOW : Start time + grace elapsed (before session starts)
+    START_REJECTED --> ACTIVE : Retry with new authorization succeeds
+    START_REJECTED --> FULFILMENT_FAILED : Retry/reassignment exhausted
+    START_REJECTED --> NO_SHOW : Start time + grace elapsed (before session starts)
     ACTIVE --> COMPLETED : Session ends normally / interrupted
     EXPIRED --> [*]
     CANCELLED --> [*]
@@ -43,7 +46,8 @@ stateDiagram-v2
 Permitted Transitions:
 - `HELD` → `CONFIRMED` | `EXPIRED` | `CANCELLED`
 - `CONFIRMED` → `CHECKED_IN` | `CANCELLED` | `NO_SHOW` | `FULFILMENT_FAILED`
-- `CHECKED_IN` → `ACTIVE` | `FULFILMENT_FAILED` | `CONFIRMED` | `CANCELLED` | `NO_SHOW`
+- `CHECKED_IN` → `ACTIVE` | `START_REJECTED` | `CONFIRMED` | `CANCELLED` | `NO_SHOW`
+- `START_REJECTED` → `ACTIVE` | `FULFILMENT_FAILED` | `NO_SHOW`
 - `ACTIVE` → `COMPLETED` (Any failure during active session energy transfer results in COMPLETED with an interrupted outcome or INTERRUPTED session state, never FULFILMENT_FAILED).
 
 *Booking vs. Session Lifecycle Correlation:*
@@ -52,26 +56,30 @@ Permitted Transitions:
   - `COMPLETED` if energy transfer had already begun (actual charging occurred);
   - `FULFILMENT_FAILED` if the interruption occurred before any energy transfer took place (charging never started).
 
-*Note:* Terminal states (`EXPIRED`, `CANCELLED`, `NO_SHOW`, `COMPLETED`, `FULFILMENT_FAILED`) cannot be reopened.
+*Note:* Terminal states (`EXPIRED`, `CANCELLED`, `NO_SHOW`, `COMPLETED`, `FULFILMENT_FAILED`) cannot be reopened. `START_REJECTED` is non-terminal; retry remains available until retry/reassignment is exhausted, at which point the Booking transitions to `FULFILMENT_FAILED`.
 
 ### 1.2 Charging Session Lifecycle
+- `AUTHORIZING` — Authorization being validated and start command being prepared (internal processing substate).
 - `STARTING` — Remote start command submitted. (Can be flagged with `uncertain=true` during connection timeouts or ambiguous responses, remaining in `STARTING` until resolved.)
 - `CHARGING` — Physical energy transfer in progress.
 - `SUSPENDED` — Temporarily paused (e.g., vehicle request or grid load control).
 - `STOPPING` — Stop requested, waiting for final meter values.
+- `FINALIZING` — Meter data being reconciled and final cost calculated (internal processing substate).
 - `COMPLETED` — Session ended normally with full meter data.
 - `INTERRUPTED` — Session ended due to device fault, grid loss, or emergency override.
 - `START_REJECTED` — Central management system or charger rejected start.
 
 Permitted Transitions:
-- `STARTING` → `CHARGING` | `START_REJECTED` | `INTERRUPTED` (Timeout, lost connection, or ambiguous start result does not transition to `INTERRUPTED` or `START_REJECTED` immediately. The session remains in `STARTING` with `uncertain=true` until downstream reconciliation or a definitive charger telemetry event resolves the state.)
+- `AUTHORIZING` → `STARTING` | `START_REJECTED`
+- `STARTING` → `CHARGING` | `START_REJECTED` | `INTERRUPTED` (Timeout, lost connection, or ambiguous start result does not transition to `INTERRUPTED` or `START_REJECTED` immediately. The session remains in `STARTING` with `uncertain=true` until downstream reconciliation or a definitive charger telemetry event resolves the state. Explicit device rejection transitions to `START_REJECTED`. Confirmed transaction evidence transitions to `CHARGING`. Reconciliation may later establish definitive rejection if a device snapshot proves no transaction began.)
 - `CHARGING` → `SUSPENDED` | `STOPPING` | `INTERRUPTED` | `COMPLETED`
 - `SUSPENDED` → `CHARGING` | `STOPPING` | `INTERRUPTED` | `COMPLETED`
-- `STOPPING` → `COMPLETED` | `INTERRUPTED` | `CHARGING` | `SUSPENDED`
+- `STOPPING` → `FINALIZING` | `COMPLETED` | `INTERRUPTED` | `CHARGING` | `SUSPENDED`
+- `FINALIZING` → `COMPLETED` | `INTERRUPTED`
 
 *Reconciliation/Guard transitions:*
 - `STOPPING` → `CHARGING` or `SUSPENDED` represents reconciliation where a stop command was sent but failed to reconcile or the charger rejects/fails to stop, keeping the session active.
-- `STARTING` → `INTERRUPTED` is strictly guarded. It requires positive confirmation (via subsequent telemetry or meter sequence logs) that physical energy transfer actually began before the connection was lost. A mere start command acceptance followed by disconnection without energy transfer results in `START_REJECTED`.
+- `STARTING` → `INTERRUPTED` is strictly guarded. It requires positive confirmation (via subsequent telemetry or meter sequence logs) that physical energy transfer actually began before the connection was lost. Disconnection or timeout without energy evidence leaves the session in `STARTING` with `uncertain=true`. Reconciliation may later resolve to `START_REJECTED` if the device snapshot definitively shows no transaction began, or to `CHARGING` if evidence confirms transfer.
 
 ### 1.3 Start Authorization Lifecycle
 - `ISSUED` — Token generated upon successful check-in.
@@ -144,10 +152,10 @@ Permitted Transitions:
 **Terminal Outcomes:**
 - `DEVICE_ACCEPTED` — Executed successfully by the physical/simulated device (Release applicability: W1).
 - `DEVICE_REJECTED` — Charger rejected command execution (Release applicability: W1).
-- `TIMED_OUT` — No response received within the timeout window (Release applicability: W1).
 
-**Side Outcomes:**
+**Side / Non-Terminal Outcomes:**
 - `CANCELLED_BEFORE_DISPATCH` — Command cancelled before dispatching to connection (Release applicability: W1).
+- `TIMED_OUT` — No response received within the timeout window. Non-terminal; transitions to `RECONCILING` for telemetry validation (Release applicability: W1).
 - `RECONCILING` — Non-terminal state after timeout, waiting for telemetry validation (Release applicability: W1).
 
 **Permitted Transitions:**
@@ -182,7 +190,8 @@ Permitted Transitions:
 - `QUEUED` → `DISPATCHING` | `OBSOLETE`
 - `DISPATCHING` → `PROVIDER_ACCEPTED` | `DISPATCH_FAILED`
 - `PROVIDER_ACCEPTED` → `INBOX_DELIVERED` | `BOUNCED` | `COMPLAINT`
-- `DISPATCH_FAILED` → `DISPATCHING` (retry) | `DISPATCH_FAILED`
+- `DISPATCH_FAILED` → `DISPATCHING` (retry) | `PERMANENTLY_FAILED`
+- `PERMANENTLY_FAILED` — Terminal state after retry exhaustion
 
 ### 1.10 Support Cases Lifecycle
 - `OPEN` — Ticket created.

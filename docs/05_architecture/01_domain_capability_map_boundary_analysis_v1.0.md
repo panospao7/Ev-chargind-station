@@ -1,7 +1,7 @@
 Document ID: ARC-001  
 Title: Domain Capability Map and Microservice Boundary Analysis  
 Version: 1.0  
-Status: IN_REVIEW  
+Status: APPROVED  
 Owner: DA/BA  
 Last reviewed: 2026-07-12  
 Depends on: GOV-001, GOV-003, REQ-001, DOM-001, DOM-002, PLT-001  
@@ -1262,7 +1262,7 @@ Service names and boundaries are approved.
 
 # 20. Boundary decisions
 
-## Proposed for approval
+## Approved boundary decisions
 
 | ID | Decision |
 |---|---|
@@ -1342,7 +1342,7 @@ This boundary analysis is approved when:
 
 # 24. Recommendation
 
-Adopt **Option B — Balanced decomposition** with seven custom business services.
+**Option B — Balanced decomposition** with seven custom business services is approved.
 
 The most important design choice is the combined **Booking and Session Service**. This reduces distributed-consistency risk around allocation, check-in, charging start, meter processing, session completion and EVSE release.
 

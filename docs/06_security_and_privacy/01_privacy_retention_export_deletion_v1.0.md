@@ -6,7 +6,7 @@ Owner: PA/SA/BA
 Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: DOM-001
-Authoritative for: GDPR Compliance, Deletion purge bounds, and location masking
+Authoritative for: Privacy engineering controls, retention, export, deletion and anonymization workflows
 
 ---
 
@@ -20,13 +20,13 @@ This is an engineering specification, not a declaration of legal compliance. Bef
 
 ## 2. Regulatory design baseline
 
-The platform uses GDPR principles including purpose limitation, data minimization, storage limitation, integrity/confidentiality and accountability. GDPR rights include access, rectification, erasure, restriction and portability, but those rights have different scopes and exceptions. citeturn2view0turn2view2turn2view3turn1view3
+The platform uses GDPR principles including purpose limitation, data minimization, storage limitation, integrity/confidentiality and accountability. GDPR rights include access, rectification, erasure, restriction and portability, but those rights have different scopes and exceptions. [GDPR Articles 15–22]
 
-Requests under GDPR Articles 15–22 generally require action without undue delay and within one month; a justified extension of up to two further months is possible. The platform will use an internal 20-day target to preserve review time. citeturn2view1
+Requests under GDPR Articles 15–22 generally require action without undue delay and within one month; a justified extension of up to two further months is possible. The platform will use an internal 20-day target to preserve review time. [GDPR Article 12(3)]
 
-Mobility and location-related data deserve particular minimization because they can expose a person’s movements. The project will avoid continuous driver tracking and retain only the station/session information required for the requested service. citeturn1view1
+Mobility and location-related data deserve particular minimization because they can expose a person’s movements. The project will avoid continuous driver tracking and retain only the station/session information required for the requested service. [EDPB Guidelines 3/2019 on processing of personal data through video devices]
 
-A DPIA checkpoint is required before implementation readiness. Whether a formal DPIA is legally mandatory depends on the final processing risk, but the HDPA identifies systematic processing descriptions, necessity/proportionality, risks, and safeguards as core DPIA content. citeturn1view4
+A DPIA checkpoint is required before implementation readiness. Whether a formal DPIA is legally mandatory depends on the final processing risk, but the HDPA identifies systematic processing descriptions, necessity/proportionality, risks, and safeguards as core DPIA content. [Hellenic DPA, Guidelines on Data Protection Impact Assessment]
 
 ## 3. Privacy principles
 
@@ -62,7 +62,7 @@ Before deployment, document:
 - Records of processing activities
 - DPIA outcome and residual risks
 
-GDPR Article 30 provides for records of processing activities, and Article 32 requires security measures appropriate to risk, including measures such as encryption, resilience, restoration and regular testing. citeturn2view6turn2view7
+GDPR Article 30 provides for records of processing activities, and Article 32 requires security measures appropriate to risk, including measures such as encryption, resilience, restoration and regular testing. [GDPR Article 30; GDPR Article 32]
 
 ## 5. Data classification
 
@@ -235,7 +235,7 @@ Proposed download expiry: seven days. Export generation and download are audited
 
 ## 12. Portability
 
-Portability is not identical to a complete access export. The portability dataset is limited to applicable data provided by the user and relevant observed data processed by automated means under the applicable legal basis. GDPR Article 20 specifies a structured, commonly used, machine-readable format and limits the right to processing based on consent or contract. citeturn2view2turn2view4
+Portability is not identical to a complete access export. The portability dataset is limited to applicable data provided by the user and relevant observed data processed by automated means under the applicable legal basis. GDPR Article 20 specifies a structured, commonly used, machine-readable format and limits the right to processing based on consent or contract. [GDPR Article 20]
 
 The project supports JSON and CSV. Direct controller-to-controller transfer is deferred, but the architecture must not prevent it.
 
@@ -313,7 +313,7 @@ This is a product safeguard, not a claimed legal requirement.
 10. Delete the identity-provider account when required steps complete.
 11. Preserve only minimal completion evidence.
 
-Erasure is not absolute where an applicable exception or continuing necessity exists; retained data must be limited, protected and tied to a documented reason. citeturn2view3
+Erasure is not absolute where an applicable exception or continuing necessity exists; retained data must be limited, protected and tied to a documented reason. [GDPR Article 17(3)]
 
 ## 16. Anonymization and pseudonymization
 
@@ -458,7 +458,7 @@ The security plan must define:
 - Notification decision workflow
 - Corrective action and lessons learned
 
-GDPR Article 33 sets a supervisory-authority notification rule of without undue delay and, where feasible, within 72 hours after awareness when the applicable risk threshold is met. citeturn2view0
+GDPR Article 33 sets a supervisory-authority notification rule of without undue delay and, where feasible, within 72 hours after awareness when the applicable risk threshold is met. [GDPR Article 33]
 
 No automated job independently decides that an incident is legally reportable; authorized review is required.
 

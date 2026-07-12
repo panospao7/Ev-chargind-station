@@ -1,7 +1,7 @@
 Document ID: ARC-018
 Title: Contract Governance and Decision Register v1.0
 Version: 1.0
-Status: IN_REVIEW
+Status: APPROVED
 Owner: Architecture Lead
 Last reviewed: 2026-07-12
 Depends on: ARC-001–017
@@ -82,7 +82,7 @@ No service contract is considered complete until it maps back to a functional re
 2. RabbitMQ for asynchronous events and charger commands.
 3. CloudEvents-compatible event envelope.
 4. Domain-owned saga orchestration; no generic Saga Service initially.
-5. Capacity `FREEZE → BLOCK` workflow for maintenance, closure, and suspension.
+5. Capacity `FREEZE → BLOCKED → RELEASED` workflow for maintenance, closure, and suspension.
 6. No reliance on broker event ordering.
 7. Internal charging substates `AUTHORIZING` and `FINALIZING`.
 8. Device reservation is a synchronized mirror; Booking remains authoritative.
@@ -118,14 +118,14 @@ All microservices standardise on the following RFC 9457 error problem codes:
 
 | Problem Code | HTTP Status | Retryable | Parameters | Applicable Operations | Description |
 |---|---|---|---|---|---|
-| `VERSION_CONFLICT` | 409 Conflict | Yes | `entityType`, `entityId`, `expectedVersion`, `actualVersion` | Any mutating write | Entity version mismatch during optimistic concurrency checks. |
-| `EVSE_ALLOCATION_CONFLICT` | 409 Conflict | No | `evseId`, `conflictingBookingId`, `requestedInterval` | Create booking/hold, reschedule | The target EVSE is already allocated for the requested interval. |
+| `VERSION_CONFLICT` | 412 Precondition Failed | Yes | `entityType`, `entityId`, `expectedVersion`, `actualVersion` | Any mutating write with `If-Match` | Entity version mismatch during optimistic concurrency checks. |
+| `EVSE_ALLOCATION_CONFLICT` | 409 Conflict | No | `evseId`, `requestedInterval` (no `conflictingBookingId` in public edge responses) | Create booking/hold, reschedule | The target EVSE is already allocated for the requested interval. |
 | `BOOKING_HOLD_EXPIRED` | 410 Gone | No | `bookingId`, `holdExpiredAt` | Confirm booking | The temporary hold period ended before the confirmation was received. |
 | `EVSE_STALE_TELEMETRY` | 424 Failed Dependency | Yes | `evseId`, `lastHeartbeatAgeSeconds` | Near-term booking/hold, check-in | Near-term booking/hold blocked because EVSE is offline/stale. |
 | `INVALID_CREDENTIALS` | 401 Unauthorized | No | None | Auth, S2S delegation, device provisioning | Authentication or token signature verification failed. |
-| `ALLOCATION_BUSY` | 409 Conflict | Yes | `evseId` | Start charging, reserve EVSE | The EVSE is physically occupied or locked by another concurrent process. |
+| `ALLOCATION_BUSY` | 409 Conflict | Yes | `evseId`, `retryAfterSeconds` | Start charging, reserve EVSE | Transient contention only; the EVSE is locked by another concurrent process. Actual physical occupation returns `EVSE_ALLOCATION_CONFLICT`. |
 | `STATUS_UNKNOWN` | 503 Service Unavailable | Yes | `evseId` | Check-in, start charging | Current device status is unknown due to active communication loss. |
-| `IDEMPOTENCY_KEY_REUSED` | 400 Bad Request | No | `idempotencyKey` | Any mutating write | Mutating request retried with same key but different request body. |
+| `IDEMPOTENCY_KEY_REUSED` | 409 Conflict | No | `idempotencyKey` | Any mutating write | Mutating request retried with same key but different request body. |
 | `NO_COMPATIBLE_EVSE` | 422 Unprocessable Entity | No | `stationId`, `connectorType`, `minPower` | Availability check, hold | No EVSE at the station matches the specified connector/power constraints. |
 | `DEPENDENCY_UNAVAILABLE` | 503 Service Unavailable | Yes | `dependencyName` | Any remote preflight | Remote preflight/lookups failed or timed out during non-locking phases. |
 

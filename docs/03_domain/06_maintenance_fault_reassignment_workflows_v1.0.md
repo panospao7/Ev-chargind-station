@@ -3,7 +3,7 @@ Title: Maintenance, Fault and Reassignment Workflows v1.0
 Version: 1.0
 Status: APPROVED
 Owner: DA/BA/QA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: DOM-003, DOM-004
 Authoritative for: Maintenance scheduling, faults lifecycles, and reassignment checks
@@ -35,7 +35,7 @@ Maintenance records include:
 2. **Freeze Handshake:** Station Operations Service sends a capacity restriction request to Booking and Session Service, transitioning the plan to `ENFORCEMENT_PENDING`. Booking immediately commits a `FREEZE` status on the restriction. This prevents any new bookings or holds from entering the affected interval (Release applicability: W1).
 3. **Impact Resolution:** While the restriction is in `FREEZE`, the plan transitions to `IMPACT_RESOLUTION`. The Booking module automatically attempts to reassign affected bookings or flags conflicts for operator action (Release applicability: W1).
 4. **Final Block Commit:** Once conflicting bookings are resolved, Booking and Session Service finalizes the capacity restriction to `BLOCKED`. The Maintenance Plan transitions to `SCHEDULED` (or `ACTIVE` if immediate) (Release applicability: W1).
-5. **Execution & Release:** At start time, affected infrastructure becomes `MAINTENANCE`. Upon completion (normal, cancelled, or failed), the capacity restriction transitions to `RELEASED` and the infrastructure status is updated based on fresh device status (Release applicability: W1).
+5. **Execution & Release:** At start time, affected infrastructure becomes `MAINTENANCE`. Upon normal completion or cancellation before execution, the capacity restriction transitions to `RELEASED` and the infrastructure status is updated based on fresh device evidence confirming safe state. A failed active maintenance operation leaves the restriction `BLOCKED` until Station Operations provides explicit safe withdrawal or a replacement restriction is installed (Release applicability: W1).
 
 Maintenance cannot silently invalidate bookings or interrupt active sessions without an emergency reason.
 

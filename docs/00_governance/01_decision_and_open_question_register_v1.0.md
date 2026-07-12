@@ -3,7 +3,7 @@ Title: Decision and Open-Question Register v1.0
 Version: 1.0
 Status: APPROVED
 Owner: PO/DA/BA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: None
 Authoritative for: Decision Baseline and Open Questions
@@ -124,8 +124,8 @@ Default owner: **DA/BA**.
 | DEC-AVL-04 | Treat search availability as advisory and eventually consistent. | APPROVED | G1 |
 | DEC-AVL-05 | Use `AVAILABLE`, `PLANNED_AVAILABLE`, `UNAVAILABLE`, `UNKNOWN` and `INCOMPATIBLE`. | APPROVED | G1 |
 | DEC-AVL-06 | Keep administrative state, device-reported state and derived availability separate. | APPROVED | G1 |
-| DEC-AVL-07 | Use a 60-minute near-term status horizon initially. | PROVISIONAL | G3 |
-| DEC-AVL-08 | Define freshness initially as the greater of three heartbeat intervals or 5 minutes. | PROVISIONAL | G3 |
+| DEC-AVL-07 | Use a 60-minute near-term status horizon initially. | APPROVED | G3 |
+| DEC-AVL-08 | Define freshness as fixed 300 seconds (5 minutes). | APPROVED | G3 |
 | DEC-AVL-09 | Permit future reservations despite temporary offline, stale or unknown status, labelled `PLANNED_AVAILABLE`. | APPROVED | G1 |
 | DEC-AVL-10 | Never allow reservations over blocking maintenance, administrative closure or unresolved critical/emergency faults. | APPROVED | G1 |
 | DEC-AVL-11 | A search without a requested interval is an operational summary, not reservation availability. | APPROVED | G1 |
@@ -309,7 +309,7 @@ Default owner: **DA/QA/AR**.
 | DEC-TECH-04 | Use MapLibre with OpenStreetMap-based map data. | APPROVED | FA/CA | |
 | DEC-TECH-05 | Use Redis only where a measured requirement justifies it. | APPROVED | BA |
 | DEC-TECH-06 | Display gross EUR estimates with versioned tariff/tax snapshots. | APPROVED | DA |
-| DEC-TECH-07 | Select the cloud platform after architecture and cost analysis. | OPEN | CA | G5 |
+| DEC-TECH-07 | Select the cloud platform after architecture and cost analysis. Hetzner selected as provisional baseline in GOV-004; final approval at G5. | PROVISIONAL | CA | G5 |
 | DEC-TECH-08 | Select the transactional email provider after deployment analysis. | OPEN | CA/SA | G5 |
 | DEC-TECH-09 | Select observability tooling after deployment-topology design. | OPEN | CA | G5 |
 | DEC-TECH-10 | Prefer managed free/low-cost services when they do not undermine architectural goals. | APPROVED | PO/CA |
@@ -354,33 +354,33 @@ Default owner: **DA/QA/AR**.
 
 | ID | Question | Owner | Deadline |
 |---|---|---|---|
-| OQ-ARC-01 | What are the final microservice boundaries? | BA/DA | G2 |
-| OQ-ARC-02 | Which logical capabilities may safely share one service without weakening ownership? | BA | G2 |
-| OQ-ARC-03 | Which workflows require an explicit coordinator and where will it reside? | BA | G2 |
-| OQ-ARC-04 | Will the API gateway also act as a backend-for-frontend, or will those concerns remain separate? | BA/FA | G2 |
-| OQ-ARC-05 | How will the modular-monolith alternative map the same domain boundaries? | BA/AR | G6 |
+| OQ-ARC-01 | What are the final microservice boundaries? | BA/DA | RESOLVED_BY ARC-001 |
+| OQ-ARC-02 | Which logical capabilities may safely share one service without weakening ownership? | BA | RESOLVED_BY ARC-001 |
+| OQ-ARC-03 | Which workflows require an explicit coordinator and where will it reside? | BA | RESOLVED_BY ARC-001, ARC-021 |
+| OQ-ARC-04 | Will the API gateway also act as a backend-for-frontend, or will those concerns remain separate? | BA/FA | RESOLVED_BY ARC-019 |
+| OQ-ARC-05 | How will the modular-monolith alternative map the same domain boundaries? | BA/AR | RESOLVED_BY ARC-001 §18 |
 
 ## Data and consistency
 
 | ID | Question | Owner | Deadline |
 |---|---|---|---|
-| OQ-DAT-01 | Will each service use a separate PostgreSQL database, separate schema, or separate logical ownership in one instance? | BA/CA | G2 |
-| OQ-DAT-02 | Which database mechanism will enforce non-overlapping EVSE allocations? | BA | G3 |
+| OQ-DAT-01 | Will each service use a separate PostgreSQL database, separate schema, or separate logical ownership in one instance? | BA/CA | RESOLVED_BY ARC-001 §15 |
+| OQ-DAT-02 | Which database mechanism will enforce non-overlapping EVSE allocations? | BA | RESOLVED_BY ARC-006, ARC-021 |
 | OQ-DAT-03 | What transaction-isolation level is required for allocation and rescheduling? | BA/QA | G3 |
 | OQ-DAT-04 | What is the supported broker/event replay window? | BA/CA | G3 |
 | OQ-DAT-05 | How long must inbox, outbox and command-result deduplication records be retained? | BA/PA | G3 |
 | OQ-DAT-06 | What event store/source-data strategy will support projection rebuilds? | BA | G3 |
-| OQ-DAT-07 | Which data must be queried synchronously during authoritative booking allocation? | BA | G2 |
+| OQ-DAT-07 | Which data must be queried synchronously during authoritative booking allocation? | BA | RESOLVED_BY ARC-019, ARC-021 |
 
 ## Availability and booking policy
 
 | ID | Question | Owner | Deadline |
 |---|---|---|---|
-| OQ-BKG-01 | Validate or adjust the 60-minute near-term horizon. | DA/QA | G3 |
-| OQ-BKG-02 | Validate or adjust the heartbeat freshness formula. | BA/QA | G3 |
-| OQ-BKG-03 | Should operators be allowed to require turnaround buffers to fit within opening hours? | DA | G3 |
+| OQ-BKG-01 | Validate or adjust the 60-minute near-term horizon. | DA/QA | RESOLVED_BY DOM-005 §7 |
+| OQ-BKG-02 | Validate or adjust the heartbeat freshness formula. | BA/QA | RESOLVED_BY DOM-005 §7 (fixed 300s) |
+| OQ-BKG-03 | Should operators be allowed to require turnaround buffers to fit within opening hours? | DA | DEFERRED |
 | OQ-BKG-04 | What exact platform-wide minimum and maximum policy limits may operators configure? | PO/DA | G3 |
-| OQ-BKG-05 | May a permanently rejected start be retried using the same session aggregate, or must a new start attempt record be created? | DA/BA | G3 |
+| OQ-BKG-05 | May a permanently rejected start be retried using the same session aggregate, or must a new start attempt record be created? | DA/BA | RESOLVED_BY DOM-002 §1.3 (new authorization, new attempt) |
 | OQ-BKG-06 | What support override, if any, is permitted after the check-in grace deadline? | PO/SA | G4 |
 | OQ-BKG-07 | How should future bookings be reviewed automatically when they enter the near-term horizon? | BA/DA | G3 |
 
@@ -388,8 +388,8 @@ Default owner: **DA/QA/AR**.
 
 | ID | Question | Owner | Deadline |
 |---|---|---|---|
-| OQ-SEC-01 | Confirm Keycloak through an identity-provider ADR and proof of concept. | SA/BA | G2 |
-| OQ-SEC-02 | Define service-to-service authentication and authorization. | SA/BA | G4 |
+| OQ-SEC-01 | Confirm Keycloak through an identity-provider ADR and proof of concept. | SA/BA | RESOLVED_BY DEC-TECH-01 |
+| OQ-SEC-02 | Define service-to-service authentication and authorization. | SA/BA | RESOLVED_BY ARC-019 §3 |
 | OQ-SEC-03 | Determine whether deployed simulator mTLS is practical on the selected cloud platform. | SA/CA | G5 |
 | OQ-SEC-04 | Select secrets-management technology. | SA/CA | G5 |
 | OQ-SEC-05 | Define rate-limit values and abuse thresholds. | SA/QA | G4 |
@@ -434,7 +434,7 @@ Default owner: **DA/QA/AR**.
 
 | ID | Question | Owner | Deadline |
 |---|---|---|---|
-| OQ-OPS-01 | Select the cloud provider and region. | CA | G5 |
+| OQ-OPS-01 | Select the cloud provider and region. Hetzner (Nuremberg) used as provisional baseline. | CA | RESOLVED_BY GOV-004 (provisional); G5 |
 | OQ-OPS-02 | Decide between Kubernetes and a simpler managed container platform. | CA/BA | G5 |
 | OQ-OPS-03 | Define production-like, staging and local deployment topologies. | CA | G5 |
 | OQ-OPS-04 | Select logging, metrics and tracing technologies. | CA | G5 |
@@ -491,13 +491,14 @@ Default owner: **DA/QA/AR**.
 
 | Status | Approximate count |
 |---|---:|
-| Approved | 120+ |
-| Provisional | 17 |
-| Deferred | 5 |
+| Approved | 130+ |
+| Provisional | 16 |
+| Deferred | 6 |
 | Rejected/superseded | 25 |
-| Open questions | 60+ |
+| Resolved by ADR/approved document | 16 |
+| Open questions | 50+ |
 
-The quantity of open questions is expected because final architecture, security, cloud, UX and implementation planning have not begun. None invalidates the approved product/domain foundation, but all release-critical questions must be resolved before implementation readiness.
+Logical architecture, service boundaries and contract catalogues are now complete (G2/G3). Security, cloud and implementation planning remain in progress. None invalidates the approved product/domain foundation, but all release-critical questions must be resolved before implementation readiness.
 
 ---
 

@@ -250,7 +250,7 @@ It:
 
 The provider transports email but never determines business state.
 
-Final microservice placement remains open.
+Notification Service is the application-delivery owner, as defined in ARC-001 §8.6. Identity verification and reset delivery remain owned by the Identity Provider (Keycloak).
 
 ## 9. Identity-provider messages
 
@@ -361,7 +361,8 @@ Full email content follows the approved retention policy.
 - `QUEUED` → `DISPATCHING` | `OBSOLETE`
 - `DISPATCHING` → `PROVIDER_ACCEPTED` | `DISPATCH_FAILED`
 - `PROVIDER_ACCEPTED` → `INBOX_DELIVERED` | `BOUNCED` | `COMPLAINT`
-- `DISPATCH_FAILED` → `DISPATCHING` (retry) | `DISPATCH_FAILED`
+- `DISPATCH_FAILED` → `DISPATCHING` (retry) | `PERMANENTLY_FAILED`
+- `PERMANENTLY_FAILED` — Terminal state after retry exhaustion (Release applicability: W1)
 
 `PROVIDER_ACCEPTED` does not prove inbox delivery.
 

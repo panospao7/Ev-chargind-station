@@ -281,7 +281,7 @@ Support clients call Platform Governance and Support Service, which validates ca
 
 ## 6. Failure policy
 
-- If Station Operations validation fails, new booking writes fail safely.
+- Optional remote-preflight failure does not reject allocation. Preflight is advisory; Booking-local projections are authoritative for allocation. Missing, stale, incomplete or gap-detected Booking-local enforcement data causes the authoritative transaction to fail closed.
 - If live status is required and Device Integration Service is unavailable, near-term booking/check-in fails as `STATUS_UNKNOWN`.
 - Search projection failure never changes authoritative state.
 - Timeouts return an uncertain or retryable response; they never invent success.

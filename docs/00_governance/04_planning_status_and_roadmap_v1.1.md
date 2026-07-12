@@ -78,8 +78,8 @@ To ensure a realistic scope for an individual developer, the platform's features
 11. **Cloud Deployment:** Hetzner container deployment baseline.
 
 ### Release 2 (Deferred to Later Releases)
-1. **Operator Applications:** Full sign-up review workflow (handled manually in MVP).
-2. **Staff Invitations:** Automated invitation emails (provisioned manually in MVP).
+1. **Operator Applications:** Full sign-up review workflow including operator application lifecycle events, approval saga and automated organization creation (handled manually with pre-seeded operators in W1).
+2. **Staff Invitations:** Automated invitation workflow lifecycle, emails, and acceptance handling (provisioned manually in W1).
 3. **Platform Support Cases:** Central ticket management system.
 4. **Data Privacy Exports:** GDPR data packaging worker.
 5. **Data Deletion Coordination:** Automated deletion workers.

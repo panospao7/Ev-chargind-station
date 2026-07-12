@@ -1,10 +1,10 @@
 Document ID: ARC-003  
 Title: REST API Contract Catalogue  
 Version: 1.0  
-Status: IN_REVIEW  
+Status: APPROVED  
 Owner: Backend / API Architect  
 Last reviewed: 2026-07-12  
-Depends on: ARC-001, ARC-002, REQ-001, DOM-001, DOM-002, SEC architecture pending  
+Depends on: ARC-001, ARC-002, ARC-019, REQ-001, DOM-001, DOM-002  
 Authoritative for: REST API conventions, operations, ownership, synchronous semantics, errors, concurrency and idempotency  
 
 # REST API Contract Catalogue v1.0
@@ -52,7 +52,7 @@ Excluded:
 
 ## 3. API contract standard
 
-OpenAPI is the machine-readable contract format. OpenAPI 3.0.3 is the current published specification and supports language-independent API descriptions. Adoption is provisional until Java and TypeScript tooling compatibility is validated; an ADR may pin OpenAPI 3.0.3 without changing the domain contracts. ([spec.openapis.org](https://spec.openapis.org/oas/v3.2.0.html))
+OpenAPI is the machine-readable contract format. OpenAPI 3.0.3 is selected as the API specification version, as confirmed by ARC-018 §1 and §8. Java and TypeScript tooling compatibility has been validated for 3.0.3. ([spec.openapis.org](https://spec.openapis.org/oas/v3.0.3.html))
 
 Every API operation must define:
 
@@ -1232,13 +1232,13 @@ Critical REST scenarios:
 
 ---
 
-# 42. REST decisions proposed for approval
+# 42. Approved REST decisions
 
 | ID | Decision |
 |---|---|
 | ARC-REST-01 | Use versioned JSON REST APIs for browser and selected synchronous internal communication. |
 | ARC-REST-02 | Use `/api/v1` for edge APIs and `/internal/v1` for service APIs. |
-| ARC-REST-03 | Describe contracts in OpenAPI, provisionally targeting 3.2.0. |
+| ARC-REST-03 | Describe contracts in OpenAPI 3.0.3, as confirmed by ARC-018 §1 and §8. |
 | ARC-REST-04 | Use RFC 9457 Problem Details for all REST errors. |
 | ARC-REST-05 | Use opaque public references rather than database IDs. |
 | ARC-REST-06 | Use cursor pagination by default. |
