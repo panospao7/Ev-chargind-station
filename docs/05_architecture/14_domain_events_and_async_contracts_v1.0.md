@@ -1,17 +1,22 @@
 Document ID: ARC-020
 Title: Domain Events and Asynchronous Contracts v1.0
 Version: 1.0
-Status: APPROVED
+Status: IN_REVIEW
 Owner: Architecture Lead
 Last reviewed: 2026-07-12
 Depends on: ARC-001–017
 Authoritative for: Domain Events And Async Contracts
+Refines: ARC-004
+Does not supersede: Service topology and data ownership in ARC-001
+Release applicability: W1 | W2 | W3 | Cross-cutting
 
 ---
 
+
+
 # Domain Events and Asynchronous Contracts v1.0
 
-**Status:** Draft for approval
+**Status:** Draft (In Review)
 
 ## 1. Message classifications
 
@@ -142,7 +147,7 @@ Email addresses do not appear on the general domain exchange.
 
 ### Network
 
-- `OperatorOrganizationSubmitted`
+- `OperatorApplicationSubmitted`
 - `OperatorOrganizationStatusChanged`
 - `StaffMembershipGranted`
 - `StaffMembershipChanged`

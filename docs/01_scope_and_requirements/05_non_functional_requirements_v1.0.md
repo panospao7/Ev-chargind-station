@@ -3,7 +3,7 @@ Title: Non-Functional Requirements v1.0
 Version: 1.0
 Status: APPROVED
 Owner: DA/BA/SA/PA/QA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: SCP-001
 Authoritative for: Performance, Reliability, Security, and Quality Targets
@@ -77,6 +77,6 @@ To satisfy reliability requirements, platform operations must behave as follows 
 | Check-In / Start Charging | Station Operations | **Succeeds**: Uses Booking-local cached configuration projections. |
 | Cancel Booking | Station Operations | **Succeeds**: Capacity released immediately; notification queued in outbox. |
 | Create Booking Hold | Station Operations | **Fails Closed**: Blocked if local config projections are stale or unavailable. |
-| Event Publishing | RabbitMQ Broker | **Succeeds**: Events are safely persisted in the outbox table for retry. |
-| Send Notification | Email Provider | **Succeeds**: Keeps the booking intact; retries email rendering and dispatch. |
-| Simulator Status Update | Booking Service | **Succeeds**: Event queue buffers heartbeats; state reconciled on reconnect. |
+| Event Publishing | RabbitMQ Broker | **Transaction Succeeds**: Business commit completes; outbox event remains pending/retryable. |
+| Send Notification | Email Provider | **Transaction Succeeds**: Business commit completes; notification delivery remains pending/retryable. |
+| Simulator Status Update | Device Integration | **Transaction Succeeds**: Live status and heartbeats buffered; state reconciled on reconnect. |

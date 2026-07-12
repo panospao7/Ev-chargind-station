@@ -1,17 +1,22 @@
 Document ID: ARC-019
 Title: Service Interactions and Synchronous APIs v1.0
 Version: 1.0
-Status: APPROVED
+Status: IN_REVIEW
 Owner: Architecture Lead
 Last reviewed: 2026-07-12
 Depends on: ARC-001–017
 Authoritative for: Service Interactions And Sync Apis
+Refines: ARC-002, ARC-003
+Does not supersede: Service topology and data ownership in ARC-001
+Release applicability: W1 | W2 | W3 | Cross-cutting
 
 ---
 
+
+
 # Service Interactions and Synchronous APIs v1.0
 
-**Status:** Draft for approval
+**Status:** Draft (In Review)
 
 ## 1. Interaction model
 
@@ -20,7 +25,7 @@ Authoritative for: Service Interactions And Sync Apis
 - The API Gateway/BFF handles routing and presentation aggregation but owns no business workflow.
 - Every write is owned by one domain service and committed in that service’s database.
 - No cross-service database access, foreign keys, or distributed transactions.
-- Query & Reporting must never participate in authoritative write decisions.
+- Discovery and Insights Service must never participate in authoritative write decisions.
 - Synchronous chains should normally stop at: `Client → BFF → owning service → one dependency`.
 - Domain events describe committed facts and must not be used as uncommitted remote procedure calls.
 
@@ -30,30 +35,30 @@ Authoritative for: Service Interactions And Sync Apis
 |---|---|
 | Credentials, MFA, authentication sessions | Keycloak |
 | Driver profile, vehicles, consent | Account Service |
-| Organizations, stations, EVSE configuration, tariffs | Network Service |
-| Reservations, allocations, check-in, capacity restrictions | Booking Service |
-| Charging sessions, meter records, energy/cost summaries | Charging Service |
-| Device identity, live status, charger commands | Device Gateway |
+| Organizations, stations, EVSE configuration, tariffs | Station Operations Service |
+| Reservations, allocations, check-in, capacity restrictions | Booking module (Booking and Session Service) |
+| Charging sessions, meter records, energy/cost summaries | Charging module (Booking and Session Service) |
+| Device identity, live status, charger commands | Device Integration Service |
 | Email delivery | Notification Service |
-| Search and analytics | Query & Reporting |
-| Support, privacy workflows, central audit index | Platform Governance |
+| Search and analytics | Discovery and Insights Service |
+| Support, privacy workflows, central audit index | Platform Governance and Support Service |
 
 ## 3. Primary dependency matrix
 
 | Caller | Callee | Purpose | Dependency |
 |---|---|---|---|
-| Booking | Network | Reservation context, tariff/policy and compatible EVSEs | Hard for new booking |
-| Booking | Device Gateway | Fresh near-term EVSE status | Hard near-term; optional future |
+| Booking | Station Operations | Reservation context, tariff/policy (advisory preflight validation only) | Optional |
+| Booking | Device Integration Service | Fresh near-term EVSE status | Hard near-term; optional future |
 | Charging | Booking | Consume start authorization | Hard |
 | Network | Booking | Capacity freeze/block for maintenance or closure | Hard |
-| Network | Device Gateway | Provision simulator/device | Hard during provisioning |
+| Network | Device Integration Service | Provision simulator/device | Hard during provisioning |
 | Governance | Domain services | Support views and privacy operations | Workflow dependent |
 | Account/Governance | Keycloak | Identity lifecycle | Hard for identity completion |
 | All domain services | Governance | Audit events | Asynchronous |
 | All relevant services | Query/Notification | Projections and messages | Asynchronous |
-| Charging/Network/Booking | Device Gateway | Charger actions | Asynchronous commands |
+| Charging/Network/Booking | Device Integration Service | Charger actions | Asynchronous commands |
 
-Device Gateway does not synchronously mutate bookings or sessions.
+Device Integration Service does not synchronously mutate bookings or sessions.
 
 ## 4. API conventions
 
@@ -118,7 +123,7 @@ Use W3C `traceparent` and `tracestate` across HTTP and messaging. Do not place P
 
 ## 5. Required internal APIs
 
-### Network Service
+### Station Operations Service
 
 #### Reservation context
 
@@ -162,7 +167,7 @@ Checks current organization membership, role, organization status, and requested
 
 Used only to rebuild search/reporting projections.
 
-### Booking Service
+### Booking module (Booking and Session Service)
 
 #### Capacity impact preview
 
@@ -215,7 +220,7 @@ The operation atomically binds the authorization to one persisted charging sessi
 
 Returns masked, case-appropriate information to Governance.
 
-### Device Gateway
+### Device Integration Service
 
 #### Live EVSE status
 
@@ -249,7 +254,7 @@ Creates a device assignment for Network-owned station/EVSE references.
 
 Credentials are returned or delivered only through a one-time secure provisioning process.
 
-### Charging Service
+### Charging module (Booking and Session Service)
 
 - `GET /internal/v1/sessions/{id}/support-view`
 - `GET /internal/v1/bookings/{bookingId}/session-control-state`
@@ -273,7 +278,7 @@ Support clients call Governance, which validates case assignment and obtains mas
 ## 6. Failure policy
 
 - If Network validation fails, new booking writes fail safely.
-- If live status is required and Device Gateway is unavailable, near-term booking/check-in fails as `STATUS_UNKNOWN`.
+- If live status is required and Device Integration Service is unavailable, near-term booking/check-in fails as `STATUS_UNKNOWN`.
 - Search projection failure never changes authoritative state.
 - Timeouts return an uncertain or retryable response; they never invent success.
 - Mutating retries require the original idempotency key.

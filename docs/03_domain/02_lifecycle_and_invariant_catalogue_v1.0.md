@@ -3,7 +3,7 @@ Title: Lifecycle and Invariant Catalogue v1.0
 Version: 1.0
 Status: APPROVED
 Owner: DA/BA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: DOM-003, DOM-004, BKG-LC
 Authoritative for: System State Transitions and Domain Invariants
@@ -316,5 +316,12 @@ Permitted Transitions:
 - **Rule:** Location history and detailed driver identities must be masked on support consoles unless actively assigned to an open support case. Personally identifiable information must be purged/anonymized within configured retention bounds after account deletion.
 
 ### 2.6 Session Overrun & Downstream Booking Conflicts
-- **Rule:** When a vehicle does not unplug after its booking period ends, it creates a session overrun.
-- **Enforcement:** If a downstream booking on the same EVSE is conflicted, the Booking authority automatically attempts same-station reassignment to another compatible EVSE. The driver is alerted of the reassignment. If no reassignment is possible, the operator and driver are immediately notified of the potential delay, and capacity on the original EVSE is released only when the vehicle physically disconnects (unplugs).
+- **Rule:** When a vehicle does not unplug after its booking period ends, it creates a session overrun. The planned booking allocation concludes normally, and a separate operational-occupation claim continues tracking the physical connection.
+- **Enforcement:** Already-existing future bookings on the same EVSE become `AT_RISK`. The Booking authority automatically attempts same-station reassignment to another compatible EVSE based on equivalence/driver-approval rules. The driver is notified. If reassignment is impossible, the operator and driver are immediately notified of the potential delay. The occupation claim is released only upon definitive disconnect or reconciliation evidence.
+
+### 2.7 Restriction and Maintenance Handshake Lifecycles
+- **Maintenance Planning Record Lifecycle:**
+  `DRAFT → PROPOSED → ENFORCEMENT_PENDING → IMPACT_RESOLUTION → SCHEDULED → ACTIVE → COMPLETED`
+- **Booking Capacity Restriction Lifecycle:**
+  `FREEZE → BLOCKED → RELEASED`
+- **Enforcement:** When maintenance is proposed, a capacity restriction in the Booking authority commits a `FREEZE` immediately before affected bookings are resolved. This prevents new booking creations during the impact resolution phase. Upon resolution, it transitions to `BLOCKED` (hard block), or is `RELEASED` if aborted.

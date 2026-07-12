@@ -3,7 +3,7 @@ Title: Inter-Service Communication and Consistency Matrix
 Version: 1.0  
 Status: IN_REVIEW  
 Owner: Backend / Distributed Systems Architect  
-Last reviewed: 2026-07-11  
+Last reviewed: 2026-07-12  
 Depends on: ARC-001, GOV-001, GOV-003, REQ-001, DOM-002, PLT-001  
 Authoritative for: Inter-service communication styles, consistency expectations, failure handling, retries, and service dependencies  
 

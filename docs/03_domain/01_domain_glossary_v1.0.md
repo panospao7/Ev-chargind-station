@@ -3,7 +3,7 @@ Title: Domain Glossary v1.0
 Version: 1.0
 Status: APPROVED
 Owner: PO/DA/BA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: None
 Authoritative for: Canonical Terminology and Vocabulary Definition

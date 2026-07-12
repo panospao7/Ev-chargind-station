@@ -3,7 +3,7 @@ Title: Planning Status and Roadmap v1.1
 Version: 1.1
 Status: APPROVED
 Owner: PO/DA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: docs/00_governance/04_planning_status_and_roadmap_v1.0.md
 Depends on: None
 Authoritative for: Milestones and Planning Roadmaps
@@ -23,7 +23,7 @@ All planning and system design phases have been fully completed and approved:
 - **Phase 4: Security, Observability & UI Flows (Gate G4–G5)** — **APPROVED** (Threat model, runbooks, QA, and frontend flows).
 - **Phase 5: Operations & Readiness (Gate G6)** — **APPROVED** (CI/CD, Gantt dependency roadmap, and Hetzner IaC deployment).
 
-The project is **100% ready for implementation**.
+Logical planning is complete; technical contract specifications are complete and currently **IN_REVIEW**. Executable contract schema generation remains pending.
 
 1. **Project Constraints and Scope:** Completed and baselined in [SCP-001] and [SCP-002].
 2. **Actors and Capabilities:** Completed and baselined in [SCP-003].

@@ -3,7 +3,7 @@ Title: Domain Capability Map and Microservice Boundary Analysis
 Version: 1.0  
 Status: IN_REVIEW  
 Owner: DA/BA  
-Last reviewed: 2026-07-11  
+Last reviewed: 2026-07-12  
 Depends on: GOV-001, GOV-003, REQ-001, DOM-001, DOM-002, PLT-001  
 Authoritative for: Proposed microservice boundaries and capability ownership  
 

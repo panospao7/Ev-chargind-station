@@ -1,13 +1,18 @@
 Document ID: ARC-018
 Title: Contract Governance and Decision Register v1.0
 Version: 1.0
-Status: APPROVED
+Status: IN_REVIEW
 Owner: Architecture Lead
 Last reviewed: 2026-07-12
 Depends on: ARC-001–017
 Authoritative for: Contract Governance And Decisions
+Refines: ARC-002, ARC-003, ARC-004
+Does not supersede: Service topology and data ownership in ARC-001
+Release applicability: W1 | W2 | W3 | Cross-cutting
 
 ---
+
+
 
 # Contract Governance and Decision Register v1.0
 
@@ -15,8 +20,8 @@ Authoritative for: Contract Governance And Decisions
 
 Each service will maintain:
 
-- OpenAPI document for synchronous APIs
-- AsyncAPI document for events, commands, channels, and bindings
+- OpenAPI 3.0.3 document for synchronous APIs
+- AsyncAPI 2.6.0 document for events, commands, channels, and bindings
 - JSON Schemas for every event/command payload
 - Problem-code registry
 - State-transition catalogue
@@ -109,3 +114,11 @@ The next planning phase should be:
 3. AsyncAPI/event-schema definitions
 4. Security architecture and threat model
 5. Deployment topology and cloud design
+
+## 4. Shared Problem-Code Registry
+All microservices standardise on the following RFC 9457 error problem codes:
+- `VERSION_CONFLICT` (Wave 1): Entity version mismatch during write locks.
+- `EVSE_ALLOCATION_CONFLICT` (Wave 1): Target EVSE already allocated for the interval.
+- `BOOKING_HOLD_EXPIRED` (Wave 1): Hold period ended before confirmation.
+- `EVSE_STALE_TELEMETRY` (Wave 1): Near-term booking blocked because EVSE is offline/stale.
+- `INVALID_CREDENTIALS` (Wave 1): Credentials verification failed.

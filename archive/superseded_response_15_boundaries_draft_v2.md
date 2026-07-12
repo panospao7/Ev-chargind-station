@@ -1,3 +1,9 @@
+---
+Status: SUPERSEDED
+Superseded by: docs/05_architecture/01_domain_capability_map_boundary_analysis_v1.0.md (ARC-001)
+Non-authoritative: true
+---
+
 ## Final Microservice Boundaries v1.0 — Draft
 
 Recommended scope: **8 business services**, plus Keycloak and an API Gateway. This avoids excessive fragmentation while demonstrating realistic microservice architecture.
@@ -46,15 +52,15 @@ Recommended scope: **8 business services**, plus Keycloak and an API Gateway. Th
 ### Supporting components
 
 - **API Gateway/BFF:** routing, token validation and rate limiting; no domain data
-- **Keycloak:** authentication and broad role claims; application services still enforce organization and resource ownership. Keycloak supports roles, organizations and organization membership. ([keycloak.org](https://www.keycloak.org/docs/latest/server_admin/index.html?utm_source=openai))
-- **RabbitMQ:** asynchronous domain events with acknowledgements, publisher confirms, outbox/inbox and dead-letter queues. ([blog.rabbitmq.com](https://blog.rabbitmq.com/docs/next/confirms?utm_source=openai))
+- **Keycloak:** authentication and broad role claims; application services still enforce organization and resource ownership. Keycloak supports roles, organizations and organization membership. ([keycloak.org](https://www.keycloak.org/docs/latest/server_admin/index.html))
+- **RabbitMQ:** asynchronous domain events with acknowledgements, publisher confirms, outbox/inbox and dead-letter queues. ([blog.rabbitmq.com](https://blog.rabbitmq.com/docs/next/confirms))
 
 ### Data rules
 
 - Each service exclusively owns its data.
 - One PostgreSQL cluster is acceptable initially, but services receive separate databases/schemas and credentials.
 - No cross-service SQL joins or foreign keys.
-- Booking allocations use PostgreSQL range/exclusion constraints for database-level overlap prevention. ([postgresql.org](https://www.postgresql.org/docs/current/ddl-constraints.html?utm_source=openai))
+- Booking allocations use PostgreSQL range/exclusion constraints for database-level overlap prevention. ([postgresql.org](https://www.postgresql.org/docs/current/ddl-constraints.html))
 - Cross-service references use immutable IDs and snapshots.
 - Immediate validation uses synchronous APIs; state propagation uses versioned events.
 - Admin/support interfaces call the owning services rather than bypassing them.

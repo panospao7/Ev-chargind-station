@@ -3,7 +3,7 @@ Title: Database Models, Ownership and Migration Strategy
 Version: 1.0  
 Status: IN_REVIEW  
 Owner: Backend / Data Architect  
-Last reviewed: 2026-07-11  
+Last reviewed: 2026-07-12  
 Depends on: ARC-001, ARC-002, ARC-003, ARC-004, DOM-002, PRV-001  
 Authoritative for: Logical database ownership, principal tables, identifiers, persistence constraints, indexing, retention implementation and schema migration governance  
 
@@ -1738,6 +1738,6 @@ It must finalize:
 - Concurrency and property-based test strategy
 
 ### Initial Data Bootstrap Strategy
-- **Liquibase Seed Migrations:** Seed data (operator organizations, station maps, compatibility grids, default policies, and simulator profiles) must be versioned and executed through database-level Liquibase seed migration classes.
-- **Service API Isolation:** Seeding must never rely on cross-database SQL scripts. External systems populate seed records via the respective service's API endpoints, preserving data encapsulation.
-- ** repeat reset:** Non-production environments expose a protected reset API that safely truncates tables and replays seed migrations.
+- **Liquibase Seed Migrations:** Liquibase is used exclusively for schemas and immutable reference/metadata tables.
+- **Idempotent Bootstrap API Runner:** Operational domain aggregates (organizations, stations, EVSEs, tariffs, and policies) are populated via a service-owned idempotent bootstrap runner API. Seeding uses normal domain validation and publishes outbox events, maintaining database encapsulation.
+- ** Repeat Reset:** Non-production environments expose a protected reset API that safely truncates tables and replays seed migrations.

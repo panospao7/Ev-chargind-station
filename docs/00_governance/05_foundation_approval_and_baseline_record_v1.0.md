@@ -3,7 +3,7 @@ Title: Foundation Approval and Baseline Record v1.0
 Version: 1.0
 Status: APPROVED
 Owner: PO/DA/BA
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: Git tag planning-foundation-v1.0 (Superseded due to final G1 corrections)
 Depends on: All governance and specification documents
 Authoritative for: Foundation Gate Approval Record
@@ -82,4 +82,15 @@ The following architectural directions are provisionally accepted but require va
   - Notification delivery states differ from the detailed notification specification.
   - Some secondary transitions remain omitted, such as deletion cooling-off cancellation and the full operator-application draft/withdrawal flow.
 - **Impact:** Non-blocking for capability decomposition or service-boundary analysis.
-- **Resolution:** **RESOLVED & ALIGNED**. All secondary lifecycles (Overrides, Device Commands, Privacy, Notifications, Operator Applications, Deletion cancellation) have been fully reconciled in DOM-002 as of 2026-07-12.
+- **Resolution:** **RESOLVED & ALIGNED**. See Section 6 for itemized closure evidence.
+
+## 6. Errata Resolution Table
+
+| Erratum ID | Topic | Resolution Wording / Evidence | Document | Section |
+|---|---|---|---|---|
+| **FE-001.1** | Overrides | `SCHEDULED → ACTIVE → EXPIRED/REVOKED` states defined. | `DOM-002` | Section 1.6 |
+| **FE-001.2** | Device Commands | `CREATED`, `SENT`, `DELIVERED`, `ACCEPTED`, `REJECTED`, `TIMED_OUT`, `RECONCILING` defined. | `DOM-002` | Section 1.8 |
+| **FE-001.3** | Privacy Request | Separate deletion and export lifecycles specified. | `DOM-002` | Sections 1.11, 1.12 |
+| **FE-001.4** | Notifications | `QUEUED`, `DISPATCHED`, `DELIVERED`, `PROVIDER_REJECTED`, `NETWORK_ERROR`, `RETRIES_EXHAUSTED` defined. | `DOM-002` | Section 1.9 |
+| **FE-001.5** | Operator Application | Full `DRAFT`, `SUBMITTED`, `UNDER_REVIEW`, `CLARIFICATION_REQUESTED`, `WITHDRAWN`, `APPROVED`, `REJECTED` defined. | `DOM-002` | Section 1.16 |
+| **FE-001.6** | Deletion cooling-off | Transition `DELETION_PENDING → ACTIVE` added. | `DOM-002` | Section 1.18 |

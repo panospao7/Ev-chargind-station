@@ -21,6 +21,7 @@ This specification serves as the master entry point and index for all approved d
 - **[GOV-002] Consistency Review:** [02_cross_document_consistency_review_v1.0.md](02_cross_document_consistency_review_v1.0.md)
 - **[GOV-004] Planning Status & Roadmap:** [04_planning_status_and_roadmap_v1.1.md](04_planning_status_and_roadmap_v1.1.md)
 - **[GOV-005] Foundation Approval & Baseline Record:** [05_foundation_approval_and_baseline_record_v1.0.md](05_foundation_approval_and_baseline_record_v1.0.md)
+- **[GOV-006] Contradiction Register:** [06_contradiction_and_resolution_register_v1.0.md](06_contradiction_and_resolution_register_v1.0.md)
 
 ### 1.2 System Scope & Requirements
 - **[SCP-001] Project Constraints:** [../01_scope_and_requirements/01_project_constraints_v1.0.md](../01_scope_and_requirements/01_project_constraints_v1.0.md)

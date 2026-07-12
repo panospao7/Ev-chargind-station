@@ -3,7 +3,7 @@ Title: REST API Contract Catalogue
 Version: 1.0  
 Status: IN_REVIEW  
 Owner: Backend / API Architect  
-Last reviewed: 2026-07-11  
+Last reviewed: 2026-07-12  
 Depends on: ARC-001, ARC-002, REQ-001, DOM-001, DOM-002, SEC architecture pending  
 Authoritative for: REST API conventions, operations, ownership, synchronous semantics, errors, concurrency and idempotency  
 
@@ -1348,6 +1348,6 @@ It must define:
 ### REST Contract Implementation Roadmap
 To convert this catalogue into machine-readable OpenAPI contracts:
 - **OpenAPI Schema Generation:** Public and internal endpoints will be formally described in OpenAPI 3.0 specification files.
-- **Standardized Error Codes:** Every failure returns a RFC 7807 problem details object containing a stable error code (e.g. `BOOKING_HOLD_EXPIRED`, `EVSE_STALE_TELEMETRY`).
+- **Standardized Error Codes:** Every failure returns a RFC 9457 problem details object containing a stable error code (e.g. `BOOKING_HOLD_EXPIRED`, `EVSE_STALE_TELEMETRY`).
 - **Idempotency Key Behavior:** Booking-changing POST operations validate the `Idempotency-Key` header, returning cached responses for duplicates.
 - **Optimistic Concurrency:** HTTP ETags and `If-Match` headers are evaluated to verify configuration state consistency.

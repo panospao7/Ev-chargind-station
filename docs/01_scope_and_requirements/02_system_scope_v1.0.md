@@ -3,7 +3,7 @@ Title: System Scope v1.0
 Version: 1.0
 Status: APPROVED
 Owner: PO
-Last reviewed: 2026-07-11
+Last reviewed: 2026-07-12
 Supersedes: None
 Depends on: SCP-001
 Authoritative for: In-Scope, Out-of-Scope, and Deferred Capabilities
@@ -83,3 +83,14 @@ We should begin with the **Driver actor**, following the complete journey:
 **Account creation → station discovery → availability inspection → booking → arrival/check-in → charging session → completion/cancellation → booking history**
 
 For every step, we’ll identify business rules, errors, edge cases and acceptance criteria.
+
+## Canonical Transactional Email Catalogue
+All emails dispatched by the platform belong to one of the following canonical templates:
+- **`DriverEmailVerification` (Wave 1):** Sent upon registration containing single-use account verification link.
+- **`DriverPasswordRecovery` (Wave 1):** Sent upon request containing recovery link.
+- **`BookingConfirmation` (Wave 1):** Sent immediately upon successful EVSE allocation.
+- **`BookingCancellation` (Wave 1):** Sent upon driver or operator cancellation.
+- **`SecurityAlertNotification` (Wave 1):** Sent upon password changes, MFA changes, or login locks.
+- **`SupportCaseOpened` (Wave 2):** Sent upon case submission.
+- **`DataExportCompleted` (Wave 3):** Sent containing secure download link.
+- **`AccountDeletionConfirmed` (Wave 3):** Sent upon coordinated deletion completion.

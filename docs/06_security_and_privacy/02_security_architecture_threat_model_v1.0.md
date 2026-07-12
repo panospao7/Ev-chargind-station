@@ -3,7 +3,7 @@ Title: Security Architecture and Threat Model
 Version: 1.0  
 Status: IN_REVIEW  
 Owner: Security Architect  
-Last reviewed: 2026-07-11  
+Last reviewed: 2026-07-12  
 Depends on: ARC-001–006, REQ-001, REQ-002, DOM-002, SIM-001, PRV-001  
 Authoritative for: Trust boundaries, authentication, authorization, service identity, simulator identity, security controls, threat treatment and security-verification requirements  
 

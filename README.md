@@ -60,8 +60,9 @@ Specifies boundaries, communications, contracts, database models, and concurrenc
 - **[ARC-017] Modular-Monolith Alternative Design:** [11_modular_monolith_alternative_design_v1.0.md](docs/05_architecture/11_modular_monolith_alternative_design_v1.0.md) — Modular architecture, transactions, and fallback design.
 - **[ARC-018] Contract Governance:** [12_contract_governance_and_decisions_v1.0.md](docs/05_architecture/12_contract_governance_and_decisions_v1.0.md) — OpenAPI/AsyncAPI rules and API decision register.
 - **[ARC-019] Sync APIs & Interactions:** [13_service_interactions_and_sync_apis_v1.0.md](docs/05_architecture/13_service_interactions_and_sync_apis_v1.0.md) — HTTP REST endpoint definitions and sources of truth.
-- **[ARC-020] Domain Events & Async Contracts:** [14_domain_events_and_async_contracts_v1.0.md](docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md) — RabbitMQ message channel schemas and schemas.
+- **[ARC-020] Domain Events & Async Contracts:** [14_domain_events_and_async_contracts_v1.0.md](docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md) — RabbitMQ message channel contracts and schemas.
 - **[ARC-021] Major Saga Workflows:** [15_major_saga_workflows_v1.0.md](docs/05_architecture/15_major_saga_workflows_v1.0.md) — Orchestrated and choreographed transactions.
+- **[GOV-006] Contradiction Register:** [06_contradiction_and_resolution_register_v1.0.md](docs/00_governance/06_contradiction_and_resolution_register_v1.0.md) — Resolution record for system contradictions.
 
 ### 7. [06_security_and_privacy](docs/06_security_and_privacy)
 - **[PRV-001] Privacy & Retention:** [01_privacy_retention_export_deletion_v1.0.md](docs/06_security_and_privacy/01_privacy_retention_export_deletion_v1.0.md) — GDPR data deletion and anonymization workflows.

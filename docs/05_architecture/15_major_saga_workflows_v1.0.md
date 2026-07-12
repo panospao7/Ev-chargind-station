@@ -1,17 +1,22 @@
 Document ID: ARC-021
 Title: Major Saga Workflows v1.0
 Version: 1.0
-Status: APPROVED
+Status: IN_REVIEW
 Owner: Architecture Lead
 Last reviewed: 2026-07-12
 Depends on: ARC-001–017
 Authoritative for: Major Saga Workflows
+Refines: ARC-001, ARC-002, DOM-002, DOM-006
+Does not supersede: Service topology and data ownership in ARC-001
+Release applicability: W1 | W2 | W3 | Cross-cutting
 
 ---
 
+
+
 # Major Saga Workflows v1.0
 
-**Status:** Draft for approval
+**Status:** Draft (In Review)
 
 ## 1. Saga policy
 
@@ -24,11 +29,11 @@ Authoritative for: Major Saga Workflows
 
 ## 2. Reservation hold and confirmation
 
-**Owner:** Booking Service  
+**Owner:** Booking module (Booking and Session Service)  
 **Type:** Primarily one local transaction, not a distributed saga.
 
 1. Resolve reservation context from Network.
-2. For near-term requests, obtain fresh Device Gateway status.
+2. For near-term requests, obtain fresh Device Integration Service status.
 3. Select compatible EVSE candidates.
 4. In one Booking transaction:
    - Check capacity restrictions.
@@ -47,7 +52,7 @@ A device-side reservation rejection does not silently undo a confirmed platform 
 
 ## 3. Rescheduling and reassignment
 
-**Owner:** Booking Service
+**Owner:** Booking module (Booking and Session Service)
 
 ### Driver rescheduling
 
@@ -69,7 +74,7 @@ A device-side reservation rejection does not silently undo a confirmed platform 
 
 ## 4. Maintenance and closure workflow
 
-**Owner:** Network Service, with Booking owning capacity.
+**Owner:** Station Operations Service, with Booking owning capacity.
 
 This introduces a necessary **capacity-freeze phase**.
 
@@ -97,7 +102,7 @@ This closes a race where a new booking could otherwise appear between maintenanc
 
 ## 5. Check-in and start authorization
 
-**Owner:** Booking Service
+**Owner:** Booking module (Booking and Session Service)
 
 1. Verify driver, booking, time window, EVSE identifier, status freshness, and compatibility.
 2. Reassign if the assigned EVSE has failed and an eligible replacement exists.
@@ -110,7 +115,7 @@ Check-in itself does not start charging.
 
 ## 6. Start charging
 
-**Owner:** Charging Service
+**Owner:** Charging module (Booking and Session Service)
 
 Add internal technical state `AUTHORIZING`; public states remain unchanged.
 
@@ -118,7 +123,7 @@ Add internal technical state `AUTHORIZING`; public states remain unchanged.
 2. Charging asks Booking to consume the start authorization, bound to that session ID.
 3. Booking marks a `startPending` flag and returns the immutable start context.
 4. Charging changes the session to `STARTING` and publishes `StartChargingAtEVSE`.
-5. Device Gateway sends the command.
+5. Device Integration Service sends the command.
 6. Command acceptance means only that the charger accepted the instruction.
 7. `DeviceTransactionStarted` proves charging began.
 8. Charging changes to `CHARGING` and emits `ChargingSessionStarted`.
@@ -135,7 +140,7 @@ Add internal technical state `AUTHORIZING`; public states remain unchanged.
 
 ## 7. Stop and completion
 
-**Owner:** Charging Service
+**Owner:** Charging module (Booking and Session Service)
 
 1. Validate driver/operator authority.
 2. Change session to `STOPPING`.
@@ -154,7 +159,7 @@ If the charger continues past the reserved end, the allocation remains blocked, 
 
 **Owners:** Network for fault; Charging for active session; Booking for reservations.
 
-1. Device Gateway emits a fault/status event.
+1. Device Integration Service emits a fault/status event.
 2. Network opens or updates the fault incident.
 3. Critical faults block new near-term bookings.
 4. Booking identifies affected reservations.
@@ -181,7 +186,7 @@ Operator users are not globally disabled if they belong to another active organi
 
 ## 10. Operator invitation and role synchronization
 
-**Owner:** Network Service
+**Owner:** Station Operations Service
 
 1. Owner/manager creates an expiring invitation.
 2. Notification sends the invite.
