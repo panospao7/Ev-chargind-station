@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-07-12T23:50:00Z"
+updatedAt: "2026-07-13T00:55:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -9,18 +9,17 @@ project:
 
 tasks:
   I0-ENG-001:
-    state: "BLOCKED"
+    state: "READY"
     assignedAgent: null
     claimedAt: null
 
-    baselineCommit: null
+    baselineCommit: "eed92ec11961d63e19f01f26e535a0b7141e89f2"
     candidateCommit: null
     mergeCommit: null
     branch: "main"
     pullRequest: null
 
-    blockers:
-      - "I0-DEL-001: delivery control plane must be genuinely self-verified before engineering tasks can proceed"
+    blockers: []
     deviations: []
     unresolvedFindings: []
 
@@ -52,12 +51,12 @@ tasks:
       paths: []
 
   I0-DEL-001:
-    state: "FIX_REQUIRED"
+    state: "SELF_VERIFIED"
     assignedAgent: null
     claimedAt: null
 
     baselineCommit: "cac0723591850e169310a906363fef0e4040cf9d"
-    candidateCommit: "b02bae58f37369913b5725cad25baa1e2247e8e0"
+    candidateCommit: "eed92ec11961d63e19f01f26e535a0b7141e89f2"
     mergeCommit: null
     branch: "main"
     pullRequest: null
@@ -65,29 +64,22 @@ tasks:
     blockers: []
     deviations:
       - "I0-DEL-001-SCOPE-001: scripts/delivery/** added outside allowedFiles"
-    unresolvedFindings:
-      - "SHA: recorded b02bae51cd440b7f0cff7e62d29ac1df3992b132 which does not exist"
-      - "Timestamp: used future UTC value"
-      - "Timestamp: 2026-07-13T00:05:00Z was ahead of actual current time on July 12"
-      - "SELF_VERIFIED set without handoff, evidence, or completed reviews"
-      - "Validator AC-08 lacked strict YAML duplicate-key detection and SHA hex validation"
-      - "Skills were frontmatter-only stubs without reusable review procedures"
-      - "review-task.md did not invoke contract-reviewer or data-reviewer"
+    unresolvedFindings: []
 
-    handoffSequence: 0
-    latestHandoff: null
+    handoffSequence: 1
+    latestHandoff: "delivery/handoffs/I0-DEL-001/01-debugger.md"
 
     reviews:
-      planner: "NOT_STARTED"
-      tester: "NOT_STARTED"
+      planner: "NOT_REQUIRED"
+      tester: "COMPLETE"
       generalReviewer: "NOT_STARTED"
-      contractReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_APPLICABLE"
-      securityReviewer: "NOT_STARTED"
+      securityReviewer: "NOT_REQUIRED"
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_STARTED"
+      status: "NOT_REQUIRED"
       candidateRunReference: null
       mergeRunReference: null
       requiredChecks: []
@@ -98,27 +90,28 @@ tasks:
       approvedCandidateCommit: null
 
     evidence:
-      status: "NOT_STARTED"
-      paths: []
+      status: "COMPLETE"
+      paths:
+        - "delivery/evidence/I0-DEL-001/control-plane-integrity.md"
 
 summary:
   counts:
     BACKLOG: 0
-    READY: 0
+    READY: 1
     CLAIMED: 0
-    BLOCKED: 1
+    BLOCKED: 0
     IMPLEMENTING: 0
-    SELF_VERIFIED: 0
+    SELF_VERIFIED: 1
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
     HUMAN_REVIEW: 0
     MERGED: 0
     VERIFIED: 0
-    FIX_REQUIRED: 1
+    FIX_REQUIRED: 0
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
     SUPERSEDED: 0
     CANCELLED: 0
 
   activeTask: null
-  nextRecommendedTask: "I0-DEL-001"
+  nextRecommendedTask: "I0-ENG-001"
