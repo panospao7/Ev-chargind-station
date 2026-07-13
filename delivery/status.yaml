@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-07-13T00:55:00Z"
+updatedAt: "2026-07-13T10:38:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -9,17 +9,18 @@ project:
 
 tasks:
   I0-ENG-001:
-    state: "READY"
+    state: "BLOCKED"
     assignedAgent: null
     claimedAt: null
 
-    baselineCommit: "eed92ec11961d63e19f01f26e535a0b7141e89f2"
+    baselineCommit: null
     candidateCommit: null
     mergeCommit: null
     branch: "main"
     pullRequest: null
 
-    blockers: []
+    blockers:
+      - "I0-DEL-001: delivery control plane must be genuinely self-verified before engineering tasks can proceed"
     deviations: []
     unresolvedFindings: []
 
@@ -51,7 +52,7 @@ tasks:
       paths: []
 
   I0-DEL-001:
-    state: "SELF_VERIFIED"
+    state: "FIX_REQUIRED"
     assignedAgent: null
     claimedAt: null
 
@@ -71,7 +72,7 @@ tasks:
 
     reviews:
       planner: "NOT_REQUIRED"
-      tester: "COMPLETE"
+      tester: "NOT_STARTED"
       generalReviewer: "NOT_STARTED"
       contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_APPLICABLE"
@@ -90,28 +91,28 @@ tasks:
       approvedCandidateCommit: null
 
     evidence:
-      status: "COMPLETE"
-      paths:
-        - "delivery/evidence/I0-DEL-001/control-plane-integrity.md"
+      status: "NOT_STARTED"
+      paths: []
 
 summary:
   counts:
     BACKLOG: 0
-    READY: 1
+    READY: 0
     CLAIMED: 0
-    BLOCKED: 0
+    BLOCKED: 1
     IMPLEMENTING: 0
-    SELF_VERIFIED: 1
+    SELF_VERIFIED: 0
+    FIX_REQUIRED: 1
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
     HUMAN_REVIEW: 0
     MERGED: 0
     VERIFIED: 0
-    FIX_REQUIRED: 0
+
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
     SUPERSEDED: 0
     CANCELLED: 0
 
   activeTask: null
-  nextRecommendedTask: "I0-ENG-001"
+  nextRecommendedTask: "I0-DEL-001"

@@ -1,34 +1,38 @@
 ---
 taskId: I0-DEL-001
 evidenceType: static-validation
-validator: scripts/delivery/validate.ps1
-date: 2026-07-12T23:50:00Z
+validator: scripts/delivery/self-test.mjs
+date: 2026-07-13T10:37:00Z
 status: PASS
 ---
 
 # Control plane integrity evidence
 
-## Positive validation
+## Self-test runner
+
+The self-test runner (`scripts/delivery/self-test.mjs`) executes the Node.js
+YAML validator (`scripts/delivery/validate.mjs`) against each fixture and
+asserts both exit code and expected diagnostic message.
+
+### Test results
 
 Command:
 ```
-powershell -File scripts/delivery/validate.ps1 -StatusFile delivery/status.yaml
+node scripts/delivery/self-test.mjs
 ```
 
-Result: ALL CHECKS PASSED
+| Test | Fixture | Expected | Actual | Status |
+|------|---------|----------|--------|--------|
+| Duplicate YAML keys | `tests/duplicate-key.yaml` | exit 1, "duplicated mapping key" | exit 1, match | PASS |
+| Invalid SHA | `tests/invalid-sha.yaml` | exit 1, "SHA length violation" | exit 1, match | PASS |
+| Unknown state | `tests/unknown-state.yaml` | exit 1, "Unknown task state" | exit 1, match | PASS |
+| Valid status.yaml | `delivery/status.yaml` | exit 0, "ALL CHECKS PASSED" | exit 0, match | PASS |
 
-Checks performed:
-- SHA hex content and length
-- Task state summary consistency
+### Validator capabilities
+
+- Strict YAML parsing via `js-yaml` library, which throws on duplicate mapping keys
+- SHA hex validation for all SHA fields: `baselineCommit`, `candidateCommit`, `mergeCommit`, `approvedCandidateCommit`, `observedRemoteBaseline`
+- Task state consistency check: all 15 valid states are enumerated, unknown states are rejected
+- Summary count consistency: declared vs actual task state counts must match
 - Handoff file reference existence
 - Iteration task reference existence
-
-## Negative validation
-
-Three controlled-invalid fixtures demonstrate that the validator rejects violations:
-
-| Fixture | Violation | Result |
-|---------|-----------|--------|
-| `scripts/delivery/tests/duplicate-key.yaml` | Duplicate YAML key `state:` | REJECTED |
-| `scripts/delivery/tests/invalid-sha.yaml` | Non-hex and short SHA values | REJECTED |
-| `scripts/delivery/tests/unknown-state.yaml` | Unknown task state `GARBAGE` | REJECTED |

@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-07-12T23:50:00Z"
+updatedAt: "2026-07-13T10:37:00Z"
 
 authority:
   taskDefinition: "delivery/tasks/<TASK-ID>.yaml"
@@ -20,22 +20,8 @@ ordering:
     - "Backlog order does not authorize implementation."
 
 items:
-  - id: "I0-ENG-001"
-    order: 10
-    priority: "P0"
-    iteration: "I0"
-    epic: "EPIC-01"
-    title: "Restore reproducible and enforceable G3 contract validation"
-    packet: "delivery/tasks/I0-ENG-001.yaml"
-    dependsOn: []
-    tags:
-      - foundation
-      - contracts
-      - ci
-      - reproducibility
-
   - id: "I0-DEL-001"
-    order: 20
+    order: 10
     priority: "P0"
     iteration: "I0"
     epic: "EPIC-01"
@@ -47,4 +33,19 @@ items:
       - delivery
       - ai-agents
 
-nextRecommendedTask: "I0-DEL-001"
+  - id: "I0-ENG-001"
+    order: 20
+    priority: "P0"
+    iteration: "I0"
+    epic: "EPIC-01"
+    title: "Restore reproducible and enforceable G3 contract validation"
+    packet: "delivery/tasks/I0-ENG-001.yaml"
+    dependsOn:
+      - "I0-DEL-001"
+    tags:
+      - foundation
+      - contracts
+      - ci
+      - reproducibility
+
+nextRecommendedTask: "I0-ENG-001"

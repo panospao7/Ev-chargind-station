@@ -4,7 +4,7 @@ taskId: "I0-DEL-001"
 type: "SCOPE_CHANGE"
 status: "APPROVED"
 approvedBy: "human (review of b02bae5)"
-approvedAt: "2026-07-12T23:50:00Z"
+approvedAt: "2026-07-13T10:37:00Z"
 
 description: >
   The task packet's prohibitedFiles included scripts/**, but the
