@@ -3,18 +3,23 @@ deviationId: "I0-DEL-001-SCOPE-001"
 taskId: "I0-DEL-001"
 type: "SCOPE_CHANGE"
 status: "APPROVED"
-approvedBy: "human (review of b02bae5)"
-approvedAt: "2026-07-13T10:37:00Z"
+approvedBy: "human (multiple reviews)"
+approvedAt: "2026-07-13T11:35:00Z"
 
 description: >
-  The task packet's prohibitedFiles included scripts/**, but the
-  delivery validation script was necessarily created at
-  scripts/delivery/validate.ps1 to satisfy AC-08.
+  The task packet's prohibitedFiles and allowedFiles did not anticipate
+  several files that were necessarily created or modified:
+
+  1. scripts/delivery/** — delivery validation script and test fixtures
+  2. delivery/backlog.yaml — dependency graph update for I0-DEL-001
+  3. delivery/handoffs/I0-DEL-001/** — task handoff records
+  4. delivery/evidence/I0-DEL-001/** — task evidence records
 
 resolution: >
-  Remove scripts/delivery/** from prohibitedFiles and add
-  scripts/delivery/** to allowedFiles in the I0-DEL-001 task packet.
-  The broad scripts/** prohibition remains in effect for other scripts.
+  Add all four paths to allowedFiles in the I0-DEL-001 task packet.
+  The broad scripts/* prohibition remains in effect for other scripts.
+  Other task handoffs/evidence remain governed by their own scope.
 
 authorityReferences:
   - "I0-DEL-001.yaml scope.prohibitedFiles"
+  - "I0-DEL-001.yaml scope.allowedFiles"

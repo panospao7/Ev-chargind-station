@@ -1,0 +1,21 @@
+schemaVersion: "1.0"
+updatedAt: "2026-07-13T11:35:00Z"
+tasks: {}
+summary:
+  counts:
+    BACKLOG: 0
+    READY: 0
+    CLAIMED: 0
+    IMPLEMENTING: 0
+    SELF_VERIFIED: 0
+    INDEPENDENT_REVIEW: 0
+    CI_PENDING: 0
+    HUMAN_REVIEW: 0
+    MERGED: 0
+    VERIFIED: 0
+    FIX_REQUIRED: 0
+    BLOCKED: 0
+    CLARIFICATION_REQUIRED: 0
+    SPEC_CONFLICT: 0
+    SUPERSEDED: 0
+    CANCELLED: 0

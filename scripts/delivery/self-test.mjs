@@ -22,6 +22,31 @@ const tests = [
     expectMessage: 'Unknown task state',
   },
   {
+    name: 'Status-count mismatch',
+    fixture: 'scripts/delivery/tests/count-mismatch.yaml',
+    expectExit: 1,
+    expectMessage: 'Count mismatch',
+  },
+  {
+    name: 'Missing handoff file',
+    fixture: 'scripts/delivery/tests/missing-handoff.yaml',
+    expectExit: 1,
+    expectMessage: 'Missing handoff file',
+  },
+  {
+    name: 'Non-hex SHA',
+    fixture: 'scripts/delivery/tests/non-hex-sha.yaml',
+    expectExit: 1,
+    expectMessage: 'SHA hex violation',
+  },
+  {
+    name: 'Missing iteration task',
+    fixture: 'scripts/delivery/tests/missing-task/status.yaml',
+    extraArgs: 'scripts/delivery/tests/missing-task/iterations',
+    expectExit: 1,
+    expectMessage: 'but',
+  },
+  {
     name: 'Valid real status.yaml',
     fixture: 'delivery/status.yaml',
     expectExit: 0,
@@ -35,7 +60,7 @@ let failed = 0;
 console.log('=== Delivery Validation Self-Test ===\n');
 
 for (const test of tests) {
-  const cmd = `${VALIDATOR} "${test.fixture}"`;
+  const cmd = `${VALIDATOR} "${test.fixture}"${test.extraArgs ? ` "${test.extraArgs}"` : ''}`;
   let output = '';
   let exitCode = -1;
 

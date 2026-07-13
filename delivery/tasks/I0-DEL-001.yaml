@@ -96,7 +96,10 @@ scope:
     - "delivery/status.yaml"
     - "delivery/iterations/I0-foundation.yaml"
     - "delivery/handoffs/I0-ENG-001/**"
+    - "delivery/handoffs/I0-DEL-001/**"
+    - "delivery/evidence/I0-DEL-001/**"
     - "delivery/deviations/**"
+    - "delivery/backlog.yaml"
     - "scripts/delivery/**"
     - "start-task.md"
     - "plan-task.md"
@@ -115,7 +118,6 @@ scope:
     - "AGENTS.md"
     - "README.md"
     - "delivery/tasks/I0-ENG-001.yaml"
-    - "delivery/backlog.yaml"
     - "delivery/tasks/I0-DEL-001.yaml"
 
   maximumExpectedDiff: >

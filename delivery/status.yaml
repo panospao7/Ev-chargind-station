@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-07-13T10:38:00Z"
+updatedAt: "2026-07-13T11:35:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -57,18 +57,18 @@ tasks:
     claimedAt: null
 
     baselineCommit: "cac0723591850e169310a906363fef0e4040cf9d"
-    candidateCommit: "eed92ec017560406b686c0c8d519ae133fc809c8"
+    candidateCommit: "46753d929d596f8988816c8b16fd0838530549d7"
     mergeCommit: null
     branch: "main"
     pullRequest: null
 
     blockers: []
     deviations:
-      - "I0-DEL-001-SCOPE-001: scripts/delivery/** added outside allowedFiles"
+      - "I0-DEL-001-SCOPE-001: allowed scripts/delivery/**, backlog.yaml, handoffs/I0-DEL-*, evidence/I0-DEL-* outside initial scope"
     unresolvedFindings: []
 
-    handoffSequence: 2
-    latestHandoff: "delivery/handoffs/I0-DEL-001/02-debugger.md"
+    handoffSequence: 3
+    latestHandoff: "delivery/handoffs/I0-DEL-001/03-debugger.md"
 
     reviews:
       planner: "NOT_REQUIRED"
@@ -91,8 +91,9 @@ tasks:
       approvedCandidateCommit: null
 
     evidence:
-      status: "NOT_STARTED"
-      paths: []
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I0-DEL-001/control-plane-integrity.md"
 
 summary:
   counts:

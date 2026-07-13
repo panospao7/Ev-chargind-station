@@ -1,0 +1,6 @@
+schemaVersion: "1.0"
+updatedAt: "2026-07-13T11:35:00Z"
+tasks:
+  I0-TEST:
+    state: "SELF_VERIFIED"
+    baselineCommit: "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz"
