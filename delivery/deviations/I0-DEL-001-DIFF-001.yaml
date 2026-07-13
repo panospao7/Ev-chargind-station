@@ -1,0 +1,26 @@
+schemaVersion: "1.0"
+deviationId: "I0-DEL-001-DIFF-001"
+taskId: "I0-DEL-001"
+type: "DIFF_LIMIT_EXCEEDED"
+status: "APPROVED"
+approvedBy: >
+  Project Owner — review of b02bae5
+  (https://github.com/panospao7/Ev-chargind-station/commit/b02bae58f37369913b5725cad25baa1e2247e8e0)
+approvedAt: "2026-07-13T11:40:00Z"
+
+description: >
+  The task packet estimates about 500 changed lines. Commit b02bae5 alone
+  changed 874 lines (464 insertions, 410 deletions) due to moving 6 command
+  files and removing 398 lines of agent definitions from opencode.json
+  (mechanical rename/remove). Subsequent fix commits added further changes.
+
+resolution: >
+  The 874-line diff is accepted because the majority are mechanical
+  renames (commands to .opencode/commands/; 6 files at 100% similarity)
+  and the removal of the large agent block from opencode.json. No business
+  logic was affected. Cumulative diff across all DEL commits is
+  approximately 1100 lines; the packet's 500-line estimate is updated to
+  1500 lines to reflect the actual scope.
+
+authorityReferences:
+  - "I0-DEL-001.yaml scope.maximumExpectedDiff"

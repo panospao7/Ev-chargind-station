@@ -57,14 +57,15 @@ tasks:
     claimedAt: null
 
     baselineCommit: "cac0723591850e169310a906363fef0e4040cf9d"
-    candidateCommit: "46753d929d596f8988816c8b16fd0838530549d7"
+    candidateCommit: "9edb43aa8447c909d9860a22b9245de74862b599"
     mergeCommit: null
     branch: "main"
     pullRequest: null
 
     blockers: []
     deviations:
-      - "I0-DEL-001-SCOPE-001: allowed scripts/delivery/**, backlog.yaml, handoffs/I0-DEL-*, evidence/I0-DEL-* outside initial scope"
+      - "I0-DEL-001-SCOPE-001: scope expansion (scripts, backlog, handoffs, evidence, self-edit)"
+      - "I0-DEL-001-DIFF-001: diff-limit exceeded (874 lines in b02bae5, ~1100 cumulative)"
     unresolvedFindings: []
 
     handoffSequence: 3

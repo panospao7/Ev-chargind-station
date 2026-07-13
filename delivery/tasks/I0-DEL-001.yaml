@@ -100,6 +100,8 @@ scope:
     - "delivery/evidence/I0-DEL-001/**"
     - "delivery/deviations/**"
     - "delivery/backlog.yaml"
+    - "delivery/deviations/I0-DEL-001-DIFF-001.yaml"
+    - "delivery/tasks/I0-DEL-001.yaml"
     - "scripts/delivery/**"
     - "start-task.md"
     - "plan-task.md"
@@ -121,7 +123,11 @@ scope:
     - "delivery/tasks/I0-DEL-001.yaml"
 
   maximumExpectedDiff: >
-    500 changed lines across delivery, .opencode, and opencode.json.
+    1500 changed lines across delivery, .opencode, and opencode.json.
+    The 500-line estimate was exceeded due to mechanical renames (6
+    command files moved to .opencode/commands/) and removal of the
+    agent block from opencode.json. Deviation I0-DEL-001-DIFF-001
+    records owner acceptance.
 
   generatedFilesPolicy: "Not applicable."
 

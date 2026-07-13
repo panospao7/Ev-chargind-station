@@ -2,7 +2,7 @@
 taskId: I0-DEL-001
 evidenceType: static-validation
 validator: scripts/delivery/self-test.mjs
-date: 2026-07-13T11:35:00Z
+date: 2026-07-13T11:40:00Z
 status: PASS
 ---
 
@@ -29,7 +29,7 @@ node scripts/delivery/self-test.mjs
 | 4 | Status-count mismatch | `tests/count-mismatch.yaml` | exit 1, "Count mismatch" | exit 1, match | PASS |
 | 5 | Missing handoff file | `tests/missing-handoff.yaml` | exit 1, "Missing handoff file" | exit 1, match | PASS |
 | 6 | Non-hex SHA | `tests/non-hex-sha.yaml` | exit 1, "SHA hex violation" | exit 1, match | PASS |
-| 7 | Missing iteration task | `tests/missing-iteration-task.yaml` | exit 1, "Iteration" | exit 1, match | PASS |
+| 7 | Missing iteration task | `tests/missing-task/status.yaml` (with custom iter dir) | exit 1, "references 'I0-NONEXISTENT-TASK' but" | exit 1, match | PASS |
 | 8 | Valid real status.yaml | `delivery/status.yaml` | exit 0, "ALL CHECKS PASSED" | exit 0, match | PASS |
 
 ### Validator capabilities
@@ -38,7 +38,7 @@ node scripts/delivery/self-test.mjs
 - SHA hex validation for all fields (traversed from parsed YAML tree):
   `baselineCommit`, `candidateCommit`, `mergeCommit`,
   `approvedCandidateCommit`, `observedRemoteBaseline`
-- Task state consistency: all 15 valid states enumerated, unknown states rejected
+- Task state consistency: all 16 valid states enumerated, unknown states rejected
 - Summary count consistency: declared vs actual task state counts must match
 - Handoff file reference existence (from parsed YAML)
 - Iteration task reference existence (from parsed YAML, with `js-yaml`)

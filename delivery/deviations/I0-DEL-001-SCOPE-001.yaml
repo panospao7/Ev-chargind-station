@@ -3,22 +3,29 @@ deviationId: "I0-DEL-001-SCOPE-001"
 taskId: "I0-DEL-001"
 type: "SCOPE_CHANGE"
 status: "APPROVED"
-approvedBy: "human (multiple reviews)"
-approvedAt: "2026-07-13T11:35:00Z"
+approvedBy: >
+  Project Owner — review of b02bae5, eed92ec, 46753d9
+  (https://github.com/panospao7/Ev-chargind-station/commits/main)
+approvedAt: "2026-07-13T11:40:00Z"
 
 description: >
   The task packet's prohibitedFiles and allowedFiles did not anticipate
-  several files that were necessarily created or modified:
+  the following files being necessarily created or modified during
+  implementation:
 
   1. scripts/delivery/** — delivery validation script and test fixtures
   2. delivery/backlog.yaml — dependency graph update for I0-DEL-001
   3. delivery/handoffs/I0-DEL-001/** — task handoff records
   4. delivery/evidence/I0-DEL-001/** — task evidence records
+  5. delivery/tasks/I0-DEL-001.yaml — self-edit to adjust scope and
+     acceptance criteria as implementation revealed requirements
 
 resolution: >
-  Add all four paths to allowedFiles in the I0-DEL-001 task packet.
+  Add all five paths to allowedFiles in the I0-DEL-001 task packet.
   The broad scripts/* prohibition remains in effect for other scripts.
   Other task handoffs/evidence remain governed by their own scope.
+  The task-packet self-edit is a one-time exception; future tasks should
+  not edit their own packet without an approved deviation.
 
 authorityReferences:
   - "I0-DEL-001.yaml scope.prohibitedFiles"
