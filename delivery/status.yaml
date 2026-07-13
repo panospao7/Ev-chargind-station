@@ -57,7 +57,7 @@ tasks:
     claimedAt: null
 
     baselineCommit: "cac0723591850e169310a906363fef0e4040cf9d"
-    candidateCommit: "eed92ec11961d63e19f01f26e535a0b7141e89f2"
+    candidateCommit: "eed92ec017560406b686c0c8d519ae133fc809c8"
     mergeCommit: null
     branch: "main"
     pullRequest: null
@@ -67,8 +67,8 @@ tasks:
       - "I0-DEL-001-SCOPE-001: scripts/delivery/** added outside allowedFiles"
     unresolvedFindings: []
 
-    handoffSequence: 1
-    latestHandoff: "delivery/handoffs/I0-DEL-001/01-debugger.md"
+    handoffSequence: 2
+    latestHandoff: "delivery/handoffs/I0-DEL-001/02-debugger.md"
 
     reviews:
       planner: "NOT_REQUIRED"
