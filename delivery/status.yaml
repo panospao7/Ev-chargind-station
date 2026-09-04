@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-07-13T11:35:00Z"
+updatedAt: "2026-09-04T15:06:42Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -52,12 +52,12 @@ tasks:
       paths: []
 
   I0-DEL-001:
-    state: "FIX_REQUIRED"
+    state: "INDEPENDENT_REVIEW"
     assignedAgent: null
     claimedAt: null
 
-    baselineCommit: "cac0723591850e169310a906363fef0e4040cf9d"
-    candidateCommit: "9edb43aa8447c909d9860a22b9245de74862b599"
+    baselineCommit: "c70f4252a4245d0a25779730350f761e4450d1fa"
+    candidateCommit: null
     mergeCommit: null
     branch: "main"
     pullRequest: null
@@ -65,16 +65,17 @@ tasks:
     blockers: []
     deviations:
       - "I0-DEL-001-SCOPE-001: scope expansion (scripts, backlog, handoffs, evidence, self-edit)"
-      - "I0-DEL-001-DIFF-001: diff-limit exceeded (874 lines in b02bae5, ~1100 cumulative)"
-    unresolvedFindings: []
+      - "I0-DEL-001-DIFF-001: diff-limit exceeded (874 in b02bae5; measured 1661 net / 2439 gross at c70f425; exceedance accepted by owner 2026-09-04; record corrected 2026-09-04)"
+    unresolvedFindings:
+      - "I0-DEL-001-D-3 (MINOR, OPEN): empty package-lock.json; validator reproducibility relies on untracked node_modules/ - follow-up task recommended, owner decision pending; excluded from fix round per owner 2026-09-04"
 
-    handoffSequence: 3
-    latestHandoff: "delivery/handoffs/I0-DEL-001/03-debugger.md"
+    handoffSequence: 7
+    latestHandoff: "delivery/handoffs/I0-DEL-001/07-orchestrator.md"
 
     reviews:
       planner: "NOT_REQUIRED"
-      tester: "NOT_STARTED"
-      generalReviewer: "NOT_STARTED"
+      tester: "PASS"
+      generalReviewer: "PASS"
       contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_APPLICABLE"
       securityReviewer: "NOT_REQUIRED"
@@ -104,8 +105,8 @@ summary:
     BLOCKED: 1
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
-    FIX_REQUIRED: 1
-    INDEPENDENT_REVIEW: 0
+    FIX_REQUIRED: 0
+    INDEPENDENT_REVIEW: 1
     CI_PENDING: 0
     HUMAN_REVIEW: 0
     MERGED: 0

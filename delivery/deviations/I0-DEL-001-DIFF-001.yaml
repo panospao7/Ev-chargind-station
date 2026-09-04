@@ -9,18 +9,42 @@ approvedBy: >
 approvedAt: "2026-07-13T11:40:00Z"
 
 description: >
-  The task packet estimates about 500 changed lines. Commit b02bae5 alone
+  The task packet estimates about 500 changed lines; the amended diff cap
+  is 1500 lines. Measured diff figures for this task: commit b02bae5
   changed 874 lines (464 insertions, 410 deletions) due to moving 6 command
   files and removing 398 lines of agent definitions from opencode.json
-  (mechanical rename/remove). Subsequent fix commits added further changes.
+  (mechanical rename/remove); the net diff at recorded candidate 9edb43a is
+  1617 lines (1163 insertions, 454 deletions); the net diff at HEAD
+  c70f4252a4245d0a25779730350f761e4450d1fa is 1661 lines (1206 insertions,
+  455 deletions); and the gross churn across all 9 task commits
+  cac0723..c70f425 is 2439 lines (1595 insertions, 844 deletions). The
+  actual task diff therefore EXCEEDS the amended 1500-line cap.
 
 resolution: >
-  The 874-line diff is accepted because the majority are mechanical
-  renames (commands to .opencode/commands/; 6 files at 100% similarity)
-  and the removal of the large agent block from opencode.json. No business
-  logic was affected. Cumulative diff across all DEL commits is
-  approximately 1100 lines; the packet's 500-line estimate is updated to
-  1500 lines to reflect the actual scope.
+  Decision of 2026-09-04: the Project Owner ACCEPTED the exceedance of the
+  1500-line cap (the cap remains 1500; no re-amendment), covering the total
+  task diff through HEAD c70f4252a4245d0a25779730350f761e4450d1fa plus the
+  marginal lines added by this record-correction fix round (bounded, measured net +27 lines: +25 in this record, 1 line each in delivery/backlog.yaml and scripts/delivery/self-test.mjs). The earlier "approximately 1100 lines" cumulative figure
+  was an arithmetic error in this record; it was corrected 2026-09-04
+  following independent tester finding I0-DEL-001-D-1.
+
+acceptanceHistory:
+  - date: "2026-07-13T11:40:00Z"
+    authority: >
+      Project Owner — review of b02bae5
+      (https://github.com/panospao7/Ev-chargind-station/commit/b02bae58f37369913b5725cad25baa1e2247e8e0)
+    decision: >
+      The 874-line b02bae5 diff is accepted because the majority are
+      mechanical renames (commands to .opencode/commands/; 6 files at 100%
+      similarity) and the removal of the large agent block from
+      opencode.json. No business logic was affected.
+  - date: "2026-09-04T14:34:24Z"
+    authority: "Project Owner decision recorded in delivery/handoffs/I0-DEL-001/06-debugger.md"
+    decision: >
+      Exceedance of the amended 1500-line diff cap accepted for the total
+      task diff through HEAD c70f425 plus the bounded marginal lines added
+      by the D-1 record-correction fix round; the cap remains 1500, no
+      re-amendment.
 
 authorityReferences:
   - "I0-DEL-001.yaml scope.maximumExpectedDiff"
