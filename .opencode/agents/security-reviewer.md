@@ -1,6 +1,8 @@
 ---
 description: Performs a read-only threat-focused review of authentication, authorization, tenant isolation, secrets, privacy, audit, and abuse controls.
 mode: subagent
+model: merge-gateway/zai/glm-5.3-flash
+variant: max
 temperature: 0.1
 steps: 55
 permission:

@@ -12,6 +12,11 @@ If `$1` is empty, ask for the task ID and perform no state change.
 
 Follow `AGENTS.md` and the orchestrator rules.
 
+This command implements ARC-016 Gate A (task readiness): validate scope,
+context manifest, dependencies, acceptance criteria, allowed files, and impact
+level. Task claiming and state transitions are coordination only; every human
+approval required by this task remains with the human.
+
 Perform only task initialization:
 
 1. Read:

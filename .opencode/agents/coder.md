@@ -1,6 +1,8 @@
 ---
 description: Implements an approved bounded task with minimal changes, synchronized tests and contracts, and reproducible self-verification.
 mode: subagent
+model: merge-gateway/zai/glm-5.3-flash
+variant: max
 temperature: 0.1
 steps: 80
 permission:
@@ -26,9 +28,9 @@ permission:
     "**/*.pem": deny
     "**/*.key": deny
     "**/secrets/**": deny
-    "AGENTS.md": deny
-    "opencode.json": deny
-    ".opencode/**": deny
+    "AGENTS.md": allow
+    "opencode.json": allow
+    ".opencode/**": allow
     "delivery/status.yaml": deny
     "delivery/tasks/**": deny
     "docs/00_governance/**": ask

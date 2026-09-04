@@ -12,6 +12,11 @@ If `$1` is empty, ask for the task ID and stop.
 
 Do not implement code directly. Delegate implementation to the `coder`.
 
+This command implements ARC-016 Gate C (implementation self-check): confirm diff
+scope, build/test evidence, no secrets, and no unrelated edits before review.
+L3/L4 scope requires the human authorization recorded in the task packet before
+the coder may edit sensitive artifacts.
+
 Procedure:
 
 1. Read `AGENTS.md`.

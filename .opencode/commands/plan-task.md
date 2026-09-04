@@ -12,6 +12,11 @@ If `$1` is empty, ask for the task ID and stop.
 
 Do not implement the task.
 
+This command implements ARC-016 Gate B (design review) for L2–L4 tasks: verify
+architecture alignment, contract impact, data ownership, security/privacy
+implications, migration strategy, and test plan before implementation. Any
+required human approval is recorded here and remains with the human.
+
 Procedure:
 
 1. Read `AGENTS.md`.

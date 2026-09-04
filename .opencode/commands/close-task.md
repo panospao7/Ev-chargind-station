@@ -18,6 +18,11 @@ If `$1`, `MERGE_SHA`, `HUMAN_APPROVAL`, or `FINAL_VERIFY=YES` is missing, ask fo
 
 This command records a human decision. It does not create the approval itself.
 
+This command implements ARC-016 Gates E (human code review) and G (promotion
+approval): both are satisfied exclusively by the human approval reference and
+immutable merge evidence supplied to this command. No agent may supply,
+fabricate, or substitute them.
+
 ## Preconditions
 
 1. Read `AGENTS.md`.

@@ -1,6 +1,8 @@
 ---
 description: Synchronizes documentation, traceability, handoffs, and evidence with verified implementation without inventing or approving normative decisions.
 mode: subagent
+model: merge-gateway/zai/glm-5.3-flash
+variant: max
 temperature: 0.1
 steps: 45
 permission:

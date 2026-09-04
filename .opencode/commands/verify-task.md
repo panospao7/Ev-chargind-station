@@ -12,6 +12,10 @@ If `$1` is empty, ask for the task ID and stop.
 
 This command verifies evidence. It does not merge, approve risk, deploy, or mark the task `VERIFIED`.
 
+This command implements ARC-016 Gate F (CI verification): required checks must
+pass for the exact candidate commit. Gate G (promotion approval) and the merge
+itself are satisfied only by a human.
+
 ## Preconditions
 
 1. Read `AGENTS.md`.

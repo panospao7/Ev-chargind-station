@@ -1,0 +1,54 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+
+  "default_agent": "orchestrator",
+
+  "model": "merge-gateway/zai/glm-5.3-flash",
+  "small_model": "merge-gateway/zai/glm-5.3-flash",
+
+  "provider": {
+    "merge-gateway": {
+      "models": {
+        "zai/glm-5.3-flash": {
+          "options": {
+            "reasoningEffort": "max"
+          }
+        }
+      }
+    }
+  },
+
+  "share": "manual",
+
+  "permission": {
+    "edit": "ask",
+    "bash": "ask"
+  },
+
+  "compaction": {
+    "auto": true,
+    "prune": true,
+    "reserved": 12000
+  },
+
+  "watcher": {
+    "ignore": [
+      ".git/**",
+      "**/build/**",
+      "**/target/**",
+      "**/dist/**",
+      "*.db",
+      "*.sqlite",
+      "repomix-output.xml",
+      "extracted_codebase/**",
+      "validation-*.txt",
+      "build_log.txt",
+      "test_output.txt"
+    ]
+  },
+
+  "instructions": [
+    "AGENTS.md",
+    "docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md"
+  ]
+}

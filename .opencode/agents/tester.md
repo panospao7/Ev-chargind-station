@@ -1,6 +1,8 @@
 ---
 description: Independently verifies acceptance criteria, adds tests only in approved test locations, and reports reproducible defects without repairing production code.
 mode: subagent
+model: merge-gateway/zai/glm-5.3-flash
+variant: max
 temperature: 0.1
 steps: 55
 permission:

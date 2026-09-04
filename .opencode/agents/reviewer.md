@@ -1,6 +1,8 @@
 ---
 description: Performs an independent read-only review for correctness, scope, maintainability, invariant compliance, and test sufficiency.
 mode: subagent
+model: merge-gateway/zai/glm-5.3-flash
+variant: max
 temperature: 0.1
 steps: 45
 permission:

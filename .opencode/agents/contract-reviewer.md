@@ -1,6 +1,8 @@
 ---
 description: Reviews OpenAPI, AsyncAPI, JSON Schema, executable registries, examples, compatibility, security surfaces, and traceability without modifying files.
 mode: subagent
+model: merge-gateway/zai/glm-5.3-flash
+variant: max
 temperature: 0.1
 steps: 60
 permission:

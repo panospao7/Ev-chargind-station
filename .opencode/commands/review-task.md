@@ -12,6 +12,12 @@ If `$1` is empty, ask for the task ID and stop.
 
 Do not edit implementation files or fix findings during this command.
 
+This command implements ARC-016 Gate D (independent review): requirement
+satisfaction, negative paths, authorization, invariants, concurrency, data
+leakage, contract compatibility, and missing tests are checked by agents that
+did not produce the work. Gate E (human code review) follows this command and
+is satisfied only by a human.
+
 ## Preconditions
 
 1. Read `AGENTS.md`.

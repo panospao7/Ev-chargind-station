@@ -1,6 +1,8 @@
 ---
 description: Reviews PostgreSQL, Flyway, persistence ownership, constraints, indexes, locking, migrations, roles, seed/reset, retention, and concurrency evidence without modifying files.
 mode: subagent
+model: merge-gateway/zai/glm-5.3-flash
+variant: max
 temperature: 0.1
 steps: 60
 permission:
