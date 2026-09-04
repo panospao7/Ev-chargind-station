@@ -52,14 +52,14 @@ tasks:
       paths: []
 
   I0-DEL-001:
-    state: "INDEPENDENT_REVIEW"
+    state: "HUMAN_REVIEW"
     assignedAgent: null
     claimedAt: null
 
     baselineCommit: "c70f4252a4245d0a25779730350f761e4450d1fa"
-    candidateCommit: null
+    candidateCommit: "ad6f18f8712a9a1340b5055d8d19a7e3f5b4302c"
     mergeCommit: null
-    branch: "main"
+    branch: "task/i0-del-001-closure"
     pullRequest: null
 
     blockers: []
@@ -69,8 +69,8 @@ tasks:
     unresolvedFindings:
       - "I0-DEL-001-D-3 (MINOR, OPEN): empty package-lock.json; validator reproducibility relies on untracked node_modules/ - follow-up task recommended, owner decision pending; excluded from fix round per owner 2026-09-04"
 
-    handoffSequence: 7
-    latestHandoff: "delivery/handoffs/I0-DEL-001/07-orchestrator.md"
+    handoffSequence: 8
+    latestHandoff: "delivery/handoffs/I0-DEL-001/08-orchestrator.md"
 
     reviews:
       planner: "NOT_REQUIRED"
@@ -106,9 +106,9 @@ summary:
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
     FIX_REQUIRED: 0
-    INDEPENDENT_REVIEW: 1
+    INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 0
+    HUMAN_REVIEW: 1
     MERGED: 0
     VERIFIED: 0
 
