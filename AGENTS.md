@@ -357,7 +357,9 @@ Agents must not:
 
 Before editing, inspect the worktree. If an allowed file contains unrelated uncommitted changes, stop and ask the human how to proceed.
 
-One implementation task should use one human-prepared branch or worktree.
+Narrow exception DEC-AGENT-01 (PROVISIONAL, Project Owner approved 2026-09-04, task I0-GOV-001; broadened same day per owner direction to autonomous commits + push): on a dedicated task branch, an agent may stage changes (`git add`), create task branches, create LOCAL commits, and push task branches to the remote — only for files in the current task packet `allowedFiles`. Pre-commit gate: `git status`, `git diff --stat` review, secret scan, allowedFiles only, stop on unrelated dirt. Sweep operations (`git add -A`/`--all`, `git commit -a`/`--all`, `git push --all`/`--mirror`/`--force`) are prohibited. Merge to `main` or protected branches, PR merge, rebase, reset, restore, clean, tag, deploy, production access, and commits or pushes containing `node_modules/`, secrets, or production data remain prohibited and human-only. Human review at merge remains mandatory.
+
+One implementation task should use one dedicated task branch or worktree (human-prepared, or agent-created under DEC-AGENT-01).
 
 ## 13. External research
 

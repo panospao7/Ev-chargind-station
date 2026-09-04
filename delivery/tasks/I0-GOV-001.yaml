@@ -1,0 +1,247 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I0-GOV-001"
+  title: "Limited agent local-commit exception (Option B)"
+  initialState: "READY"
+  iteration: "I0"
+  epic: "EPIC-01"
+  releaseWave: "W1"
+  sliceApplicability: "W1-CROSS-CUTTING"
+  impactLevel: "L4"
+  owner: "Delivery / AI Agent Architecture"
+  createdAt: "2026-09-04"
+  baselineCommit: "c70f4252a4245d0a25779730350f761e4450d1fa"
+
+objective: >
+  Record DEC-AGENT-01 as a narrow, reversible exception to the
+  AGENTS.md section 12 commit prohibition so that an agent may stage,
+  create dedicated task branches, create LOCAL commits, and push task
+  branches to the remote autonomously — only for files in the current
+  task packet allowedFiles and never on main / protected branches
+  (broadened from Option B per owner direction, 2026-09-04). Merge to
+  main, PR merge, rebase, reset, tag, deploy, production access, and
+  destructive history operations remain prohibited and human-only.
+  Human review at merge remains mandatory (Gate G). No change to
+  allocation, auth, secrets, or production controls.
+
+nonGoals:
+  - "Allow autonomous merge to main or protected branches, or PR merge."
+  - "Allow pushes to main or protected branches, or force/ mirror/ all pushes."
+  - "Allow autonomous rebase, reset, restore, clean, tag, or deploy."
+  - "Allow agent approval of architecture, risk, releases, or governance decisions."
+  - "Change service boundaries, data ownership, allocation, authentication, authorization, privacy, secrets, or production controls."
+  - "Implement business code, contracts, schemas, registries, or migrations."
+  - "Restore or pop stash@{0} containing I0-DEL-001 dirt and node_modules/."
+  - "Add node_modules/ or secrets to git."
+
+authority:
+  governance:
+    - path: "docs/00_governance/01_decision_and_open_question_register_v1.0.md"
+      section: "17 Decision review rules; 16c/16d planning decisions; new DEC-AGENT-01"
+      decisionIds: []
+
+  architecture:
+    - path: "docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md"
+      section: "2 principles; 7 allowed actions; 9 prohibited actions; 18 Gate G; 32 permission profiles; 34 ARC-AI-01/02/07/10"
+      decisionIds: []
+
+    - path: "AGENTS.md"
+      section: "6 Impact L4; 12 Git and environment safety; 16 Stop conditions"
+      decisionIds: []
+
+  contracts:
+    - path: "opencode.json"
+      identifiers:
+        - "permission.bash git commit/push/merge/rebase/reset/restore/clean/checkout/switch/stash/tag rules"
+
+ownership:
+  owningService: "Delivery / AI Agent Architecture"
+  dataOwner: "Not applicable"
+  supportingServices: []
+  prohibitedOwners:
+    - "Application business services"
+
+affectedArtifacts:
+  services: []
+  modules:
+    - "Delivery governance"
+
+  files:
+    - "AGENTS.md"
+    - "docs/00_governance/01_decision_and_open_question_register_v1.0.md"
+    - "docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md"
+    - "opencode.json"
+    - "delivery/tasks/I0-GOV-001.yaml"
+
+dependencies:
+  tasks: []
+  infrastructure: []
+  humanDecisions:
+    - "Project Owner approves Option B limited local-commit exception (granted 2026-09-04 in chat)"
+    - "Project Owner approves branch gov/agent-commit-exception and task ID I0-GOV-001 (granted 2026-09-04 in chat)"
+    - "Project Owner broadens DEC-AGENT-01 to autonomous staging, task-branch creation, local commits, and pushing task branches; merge to main stays human-only (2026-09-04 in chat)"
+    - "Project Owner selects SEC-001 resolution option (a): sweep-commit flags prohibited; now also covers sweep `git add -A`/`--all` (2026-09-04)"
+    - "Project Owner merges and marks DEC-AGENT-01 APPROVED (pending)"
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "delivery/tasks/I0-GOV-001.yaml"
+    - "AGENTS.md"
+    - "docs/00_governance/01_decision_and_open_question_register_v1.0.md"
+    - "docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md"
+    - "opencode.json"
+    - "delivery/evidence/I0-GOV-001/**"
+    - "delivery/handoffs/I0-GOV-001/**"
+    - "delivery/deviations/**"
+
+  prohibitedFiles:
+    - "contracts/**"
+    - "services/**"
+    - "apps/**"
+    - "infra/**"
+    - "scripts/*"
+    - "delivery/tasks/I0-DEL-001.yaml"
+    - "delivery/tasks/I0-ENG-001.yaml"
+    - "delivery/status.yaml"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+    - "node_modules/**"
+    - "**/.env*"
+    - "**/*.pem"
+    - "**/*.key"
+    - "**/secrets/**"
+    - "archive/**"
+
+  maximumExpectedDiff: >
+    Under 120 changed lines across AGENTS.md, GOV-001 register,
+    ARC-016, and opencode.json, plus this packet and evidence.
+    No business code, no migrations, no contract changes.
+
+  generatedFilesPolicy: "Not applicable."
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      DEC-AGENT-01 is recorded in GOV-001 with PROVISIONAL status,
+      narrow scope (local commits only on human-prepared branch, allowedFiles only),
+      explicit prohibitions retained (no push/merge to main/protected, no rebase/reset/tag/deploy/prod),
+      and human-merge requirement.
+    evidenceRequired:
+      - "grep DEC-AGENT-01 docs/00_governance/01_decision_and_open_question_register_v1.0.md"
+    testTypes:
+      - "static"
+
+  - id: "AC-02"
+    statement: >
+      AGENTS.md section 12 retains all prohibitions except a narrow
+      Option B exception with pre-commit gate (status/diff review, secret scan,
+      allowedFiles only, stop on unrelated dirt) and human-review/merge requirement.
+    evidenceRequired:
+      - "git diff AGENTS.md"
+    testTypes:
+      - "static"
+
+  - id: "AC-03"
+    statement: >
+      ARC-016 sections 7, 9, and 32 are mutually consistent with AGENTS.md
+      and opencode.json; no SPEC_CONFLICT between allowed autonomous commit
+      and prohibited push/merge/production actions.
+    evidenceRequired:
+      - "git diff docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md"
+      - "manual conflict check AGENTS.md vs ARC-016 vs opencode.json"
+    testTypes:
+      - "static"
+
+  - id: "AC-04"
+    statement: >
+      opencode.json allows edit (with .env/pem/key/secrets denies), git add,
+      git commit, git push, git branch/checkout/switch (task-branch work),
+      and read-only git inspection; it denies sweep adds (`-A`/`--all`),
+      sweep commits (`-a`/`--all`), pushes to main, force/all/mirror pushes,
+      branch deletion (-D), checkout path restore, stash drop, and retains
+      deny for merge/rebase/reset/restore/clean/tag; stash pop/apply ask.
+    evidenceRequired:
+      - "git diff opencode.json"
+      - "grep 'git commit' opencode.json"
+      - "node JSON.parse(opencode.json)"
+    testTypes:
+      - "static"
+      - "negative"
+
+  - id: "AC-05"
+    statement: >
+      No secrets, credentials, personal data, or node_modules/ in diff,
+      evidence, or stash pop; validator/static checks pass on changed YAML/JSON.
+    evidenceRequired:
+      - "git status --porcelain"
+      - "git diff --stat"
+      - "secret scan (grep for pem/key/env/secrets in diff)"
+    testTypes:
+      - "static"
+      - "security"
+
+tests:
+  focusedCommands:
+    - "git status --porcelain=v1"
+    - "git diff --stat"
+    - "git diff AGENTS.md docs/00_governance/01_decision_and_open_question_register_v1.0.md docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md opencode.json"
+
+  requiredSuites: []
+
+  positiveCases:
+    - "Task packet validates against skill rules (ID, allowed/prohibited non-overlap, AC evidence, positive case present)"
+    - "Changed JSON/YAML parse (opencode.json, task packet)"
+    - "DEC-AGENT-01 present with narrow scope"
+
+  negativeCases:
+    - "opencode.json still denies merge/rebase/reset/restore/clean/tag, push to main, force/all/mirror push, `git add -A`, `git commit -a`, `git branch -D`, stash drop"
+    - "Stash with node_modules/ is not popped; node_modules/ not added to git"
+
+  boundaryCases: []
+  concurrencyCases: []
+  securityCases:
+    - "No secrets or private keys in diff or evidence"
+  contractCases: []
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: false
+
+securityPrivacy:
+  affected: true
+  rationale: "Changes agent git permissions; requires security review to confirm no production, secret, or CI-security weakening."
+
+reviews:
+  planner: true
+  tester: false
+  generalReviewer: true
+  contractReviewer: false
+  dataReviewer: false
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I0-GOV-001/change-impact.md"
+  requiredCiChecks: []
+  requiredCommitSha: true
+  requiredRunReference: false
+
+assumptions:
+  - "Branch gov/agent-commit-exception from c70f425 is the isolated worktree for this task."
+  - "stash@{0} holds I0-DEL-001 dirt plus node_modules/ and will not be popped on this branch."
+  - "node_modules/ absence is expected; JS validator requiring it is NOT_RUN with reason."
+  - "Agent performs staging, task-branch creation, commits, and task-branch push under DEC-AGENT-01; the human performs review and the merge to main."
+  - "Prefix-based permissions cannot scope push by branch; push-to-main is guarded by explicit deny patterns plus the AGENTS.md rule, and server-side branch protection on main is recommended."
+
+openQuestions:
+  - "Should DEC-AGENT-01 remain PROVISIONAL with pilot on one L0/L1 task, or be marked APPROVED at merge?"

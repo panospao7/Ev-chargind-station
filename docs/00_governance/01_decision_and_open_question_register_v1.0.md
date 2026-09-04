@@ -530,6 +530,16 @@ Default owner: **Delivery / Platform Architect**.
 
 ---
 
+# 16e. Agent operation decisions
+
+Default owner: **Project Owner**.
+
+| ID | Decision | Status | Gate |
+|---|---|---|---|
+| DEC-AGENT-01 | Agent git autonomy (Option B, broadened 2026-09-04 per owner direction to autonomous commits + push): on a dedicated task branch an agent may stage (`git add`, no `-A`/`--all` sweep), create task branches, create LOCAL commits (no `-a`/`--all` sweep), and push task branches to the remote (no force/`--all`/`--mirror`; never `main`/protected branches) — only for files in the current task packet `allowedFiles`, with pre-commit gate (`git status`, `git diff --stat`, secret scan, stop on unrelated dirt). Merge to `main`, PR merge, rebase, reset, restore, clean, tag, deploy, and production actions remain prohibited and human-only. Human review at merge remains mandatory. Task I0-GOV-001. | PROVISIONAL | GOV-004 |
+
+---
+
 # 17. Decision review rules
 
 1. Every open question must be resolved by its gate.
