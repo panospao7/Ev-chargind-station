@@ -2,7 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
 
-const contractsDir = path.resolve(__dirname, '../../contracts');
+const ROOT = path.resolve(process.argv[2] || path.join(__dirname, '..', '..'));
+const contractsDir = path.join(ROOT, 'contracts');
 let exitCode = 0;
 
 function loadYaml(relPath) {
@@ -25,18 +26,30 @@ function checkMessageRegistry() {
     exitCode = 1;
   }
   console.log(`  ${names.length} message names are unique`);
-  const bad = reg.messages.filter(m => !m.type || !m.type.startsWith('com.evplatform.'));
+  // Registries declare either `type` or the versioned form `versionedType`;
+  // both must use the canonical namespace.
+  const bad = reg.messages.filter(m => {
+    const type = m.versionedType || m.type;
+    return !type || !type.startsWith('com.evplatform.');
+  });
   if (bad.length > 0) {
-    console.error('FAIL: Non-compliant namespaces:', bad.map(m => `${m.name}: ${m.type || 'missing'}`));
+    console.error('FAIL: Non-compliant namespaces:', bad.map(m => `${m.name}: ${m.versionedType || m.type || 'missing'}`));
     exitCode = 1;
   }
   console.log(`  ${reg.messages.length} messages use com.evplatform namespace`);
-  const missing = reg.messages.filter(m => m.schema && !fs.existsSync(path.join(contractsDir, 'schemas', m.schema)));
+  // Schema references use either `schema` or `schemaPath` (relative to
+  // contracts/schemas/); every declared target must exist on disk.
+  const missing = reg.messages
+    .map(m => ({ name: m.name, ref: m.schemaPath || m.schema }))
+    .filter(m => m.ref && !fs.existsSync(path.join(contractsDir, 'schemas', m.ref)));
   if (missing.length > 0) {
-    console.error('FAIL: Missing schemas:', missing.map(m => `${m.name}: schemas/${m.schema}`));
+    console.error(`FAIL: Missing schemas: ${missing.length} declared schema targets do not exist:`);
+    for (const m of missing) {
+      console.error(`  - ${m.name}: schemas/${m.ref}`);
+    }
     exitCode = 1;
   }
-  console.log('  All referenced schemas exist');
+  console.log(`  ${reg.messages.length - missing.length}/${reg.messages.length} declared schema targets exist`);
   const noHandler = reg.messages.filter(m => m.command && !m.handler);
   if (noHandler.length > 0) {
     console.error('FAIL: Commands without handler:', noHandler.map(m => m.name));
@@ -65,19 +78,19 @@ function checkProblemCodes() {
   const seen = {};
   reg.problemCodes.forEach(c => {
     if (seen[c.code]) {
-      console.error('FAIL: Duplicate code:', c.code);
+      console.error(`FAIL: Duplicate code: ${c.code} (a problem code maps to exactly one HTTP status)`);
       exitCode = 1;
     }
     seen[c.code] = true;
   });
   console.log(`  ${reg.problemCodes.length} problem codes are unique`);
   reg.problemCodes.forEach(c => {
-    if (!c.httpStatus) {
-      console.error(`FAIL: Code ${c.code} missing httpStatus`);
+    if (!c.httpStatus || !Number.isInteger(c.httpStatus) || c.httpStatus < 400 || c.httpStatus > 599) {
+      console.error(`FAIL: Code ${c.code} has invalid httpStatus: ${JSON.stringify(c.httpStatus)}`);
       exitCode = 1;
     }
   });
-  console.log('  All codes have HTTP status');
+  console.log('  All codes have a valid HTTP error status');
 }
 
 function checkLifecycles() {
@@ -88,7 +101,18 @@ function checkLifecycles() {
     exitCode = 1;
     return;
   }
+  const lifecycleNames = new Set();
   reg.lifecycles.forEach(a => {
+    if (!a.name) {
+      console.error('FAIL: lifecycle without name');
+      exitCode = 1;
+      return;
+    }
+    if (lifecycleNames.has(a.name)) {
+      console.error(`FAIL: Duplicate lifecycle name: ${a.name}`);
+      exitCode = 1;
+    }
+    lifecycleNames.add(a.name);
     const stateNames = new Set((a.states || []).map(s => s.name));
     (a.permittedTransitions || []).forEach(t => {
       if (!stateNames.has(t.from)) {
@@ -104,25 +128,78 @@ function checkLifecycles() {
   });
 }
 
+function checkPolicies() {
+  console.log('--- Policy Registry ---');
+  const reg = loadYaml('registries/policies-v1.yaml');
+  if (!reg.policies || !Array.isArray(reg.policies)) {
+    console.error('FAIL: policies-v1.yaml has no policies array');
+    exitCode = 1;
+    return;
+  }
+  const seen = new Set();
+  let invalid = 0;
+  for (const p of reg.policies) {
+    if (!p.policyId) {
+      console.error('FAIL: policy without policyId');
+      exitCode = 1;
+      invalid++;
+      continue;
+    }
+    if (seen.has(p.policyId)) {
+      console.error(`FAIL: Duplicate policyId: ${p.policyId}`);
+      exitCode = 1;
+      invalid++;
+    }
+    seen.add(p.policyId);
+    if (!p.description) {
+      console.error(`FAIL: Policy ${p.policyId} missing description`);
+      exitCode = 1;
+      invalid++;
+    }
+  }
+  console.log(`  ${reg.policies.length} policies checked, ${reg.policies.length - invalid} valid`);
+}
+
 function checkTraceability() {
   console.log('--- Traceability Registry ---');
   const reg = loadYaml('registries/traceability-v1.yaml');
-  if (!reg.requirements || !Array.isArray(reg.requirements)) {
+  const items = reg && (reg.requirements || reg.traceability);
+  if (!Array.isArray(items)) {
     console.error('FAIL: traceability-v1.yaml has no requirements array');
     exitCode = 1;
     return;
   }
-  const w1Open = reg.requirements.filter(r => r.releaseApplicability === 'W1' && r.status === 'OPEN');
-  if (w1Open.length > 0) {
-    console.error(`FAIL: ${w1Open.length} W1 requirements OPEN:`, w1Open.map(r => r.id));
-    exitCode = 1;
+  const seen = new Set();
+  let w1Open = 0;
+  let invalid = 0;
+  for (const item of items) {
+    const id = item && (item.requirementId || item.id);
+    if (!id) {
+      console.error('FAIL: traceability row without requirementId');
+      exitCode = 1;
+      invalid++;
+      continue;
+    }
+    if (seen.has(id)) {
+      console.error(`FAIL: Duplicate traceability requirement: ${id}`);
+      exitCode = 1;
+      invalid++;
+    }
+    seen.add(id);
+    const wave = String(item.releaseApplicability || item.releaseWave || '');
+    if (wave.startsWith('W1') && item.status === 'OPEN') {
+      console.error(`FAIL: W1 requirement still OPEN: ${id}`);
+      exitCode = 1;
+      w1Open++;
+    }
   }
-  console.log(`  ${reg.requirements.length} requirements, ${w1Open.length} W1 open`);
+  console.log(`  ${items.length} requirements checked, ${invalid} invalid, ${w1Open} W1 open`);
 }
 
 checkMessageRegistry();
 checkProblemCodes();
 checkLifecycles();
+checkPolicies();
 checkTraceability();
 
 process.exit(exitCode);

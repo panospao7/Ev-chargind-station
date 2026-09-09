@@ -1,0 +1,46 @@
+schemaVersion: "1.0"
+
+deviationId: "I0-ENG-001-DEC-001"
+taskId: "I0-ENG-001"
+type: "SPEC_CONFLICT"
+status: "DECISION_REQUESTED"
+raisedBy: "coder agent (ZCode session)"
+createdAt: "2026-09-09T21:40:00Z"
+requiresHumanDecision: true
+requiredHumanRole: "Project Owner / Contract Owner"
+
+summary: >
+  Seven internal OpenAPI documents declare a security scheme with
+  `type: mutualTLS`, which is only valid in OpenAPI 3.1. The approved
+  dialect is OpenAPI 3.0.3 (ADR-013), where the valid security-scheme
+  types are apiKey, http, oauth2, openIdConnect only. Spectral (oas3-schema,
+  error severity) correctly rejects all seven declarations.
+
+affected:
+  - "contracts/openapi/account-internal-api-v1.yaml"
+  - "contracts/openapi/booking-session-internal-api-v1.yaml"
+  - "contracts/openapi/device-integration-internal-api-v1.yaml"
+  - "contracts/openapi/discovery-insights-internal-api-v1.yaml"
+  - "contracts/openapi/governance-support-internal-api-v1.yaml"
+  - "contracts/openapi/notification-internal-api-v1.yaml"
+  - "contracts/openapi/station-operations-internal-api-v1.yaml"
+
+options:
+  - id: "A"
+    label: "Drop the securityScheme; declare serviceToken only; document mTLS in info.description"
+    assessment: >
+      Semantically the most truthful: mTLS is transport-layer and invisible
+      to the OpenAPI 3.0 contract layer; 3.1 added mutualTLS precisely for
+      this. Keeps ADR-013 dialect. Changes `security:` requirements from
+      `- mTLS: []` to `- serviceToken: []` in seven files.
+  - id: "B"
+    label: "Model as type: apiKey, in: header, name: <invented header>"
+    assessment: "Rejected as default: invents a header that does not exist."
+  - id: "C"
+    label: "Bump documents to OpenAPI 3.1.0"
+    assessment: "Violates ADR-013 (OpenAPI 3.0.3); contract-governance decision (ARC-018)."
+
+recommendation: "A"
+
+impactIfDeferred:
+  - "contracts:openapi remains red; G3 aggregate gate cannot go green; CON-175/176 cannot close."
