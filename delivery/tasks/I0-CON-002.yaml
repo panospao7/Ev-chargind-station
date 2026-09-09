@@ -1,0 +1,275 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I0-CON-002"
+  title: "Rebuild executable registries and author referenced schemas"
+  initialState: "READY"
+  iteration: "I0"
+  epic: "EPIC-06"
+  releaseWave: "W1"
+  sliceApplicability: "W1-CROSS-CUTTING"
+  impactLevel: "L2"
+  owner: "Delivery / Contract Owner"
+  createdAt: "2026-09-09"
+  baselineCommit: null
+
+objective: >
+  Rebuild the five executable registries (messages, problem-codes, lifecycles,
+  policies, traceability) so they match the approved domain model and
+  contract catalogues, author every JSON Schema they reference, and bring the
+  complete G3 contract gate to green from a clean checkout — including the
+  currently red contracts:registries check.
+
+origin: >
+  Split from I0-ENG-001 per deviation I0-ENG-001-SPLIT-001 (owner approved
+  2026-09-09). The message registry declares 78 schemaPath targets, none of
+  which exist, and carries pre-consolidation content (producer/consumer names
+  such as ChargingService/BillingService/CapacityService, event-sourcing
+  language, a 120 s hold default conflicting with the approved 5-minute hold).
+
+nonGoals:
+  - "Implement application business code or database migrations."
+  - "Introduce new service boundaries, lifecycle states, or data owners."
+  - "Change approved domain semantics; registries must mirror DOM-002/REQ-001, not invent."
+  - "Modify CI tooling beyond what registry shape corrections strictly require."
+  - "Close governance contradictions (CON-175/176 close via governance action after the first fully green main run, not in this task)."
+
+authority:
+  governance:
+    - path: "docs/00_governance/06_contradiction_and_resolution_register_v1.0.md"
+      section: "CON-175, CON-176 (G3 executable status gated on a green run)"
+
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "FR catalogue and release applicability (W1 wave tags)"
+
+  domain:
+    - path: "docs/03_domain/02_lifecycle_and_invariant_catalogue_v1.0.md"
+      section: "All lifecycle definitions (registries must match exactly per ARC-022)"
+      invariantIds: []
+
+  architecture:
+    - path: "docs/05_architecture/12_contract_governance_and_decisions_v1.0.md"
+      section: "Registry rules, schema dialect policy (JSON Schema 2020-12), namespaces"
+    - path: "docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md"
+      section: "Domain event and command catalogues (source for message registry and schemas)"
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "Executable registries work packages (registries must match DOM-002 exactly)"
+
+  contracts:
+    - path: "contracts/registries/"
+      identifiers:
+        - "messages-v1"
+        - "problem-codes-v1"
+        - "lifecycles-v1"
+        - "policies-v1"
+        - "traceability-v1"
+    - path: "contracts/schemas/"
+      identifiers:
+        - "all schema files referenced by the registries"
+    - path: "contracts/asyncapi/platform-messaging-v1.yaml"
+      identifiers:
+        - "alignment only where registry remapping touches declared messages"
+
+ownership:
+  owningService: "Delivery / Contract Tooling"
+  dataOwner: "Not applicable"
+  supportingServices: []
+  prohibitedOwners:
+    - "Application business services"
+    - "Browser runtime"
+
+affectedArtifacts:
+  services: []
+  modules:
+    - "contracts/registries"
+    - "contracts/schemas"
+
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations: []
+  commands:
+    - "Registered commands aligned to ARC-020 catalogue (structural registry entries)"
+  events:
+    - "Registered events aligned to ARC-020 catalogue (structural registry entries)"
+  schemas:
+    - "JSON Schema 2020-12 payloads for every registry-referenced event/command/telemetry schema"
+  registries:
+    - "messages-v1.yaml"
+    - "problem-codes-v1.yaml"
+    - "lifecycles-v1.yaml"
+    - "policies-v1.yaml"
+    - "traceability-v1.yaml"
+  screens: []
+  infrastructure: []
+
+dependencies:
+  tasks:
+    - "I0-ENG-001 (MERGED — toolchain and validators in place)"
+  contracts: []
+  infrastructure:
+    - "GitHub Actions G3 workflow (already runs the validators)"
+
+  humanDecisions: []
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "contracts/registries/**"
+    - "contracts/schemas/**"
+    - "contracts/asyncapi/**"
+    - "scripts/contracts/**"
+    - "delivery/handoffs/I0-CON-002/**"
+    - "delivery/evidence/I0-CON-002/**"
+    - "delivery/deviations/I0-CON-002/**"
+
+  prohibitedFiles:
+    - "docs/**"
+    - "services/**"
+    - "apps/**"
+    - "infra/**"
+    - "AGENTS.md"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+    - "package.json"
+    - "package-lock.json"
+
+  maximumExpectedDiff: >
+    Large by nature and pre-authorized: 78+ new mechanical JSON Schema files
+    plus registry remapping. The schema payloads must be derived from
+    ARC-020/ARC-018 catalogues and existing executable schemas; registry
+    remapping is the review-critical part. If registry corrections require
+    inventing semantics absent from approved documents, stop with
+    SPEC_CONFLICT and request a governance decision.
+
+  generatedFilesPolicy: >
+    Schema files are hand-authored contracts (authoritative artifacts), not
+    generated output. No manual edits to generated clients.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      Every registry-declared schema target exists under contracts/schemas/,
+      uses the JSON Schema 2020-12 dialect, and compiles with the existing
+      contracts:schemas validator.
+    authorityReferences:
+      - "ARC-018 §8"
+    evidenceRequired:
+      - "contracts:schemas output"
+      - "contracts:registries output"
+    testTypes: ["contract", "schema"]
+
+  - id: "AC-02"
+    statement: >
+      Registry lifecycles match DOM-002 exactly (state names, transitions);
+      message namespaces use com.evplatform with canonical producer/consumer
+      service names; problem codes map one-to-one to HTTP statuses and match
+      the approved problem-code catalogue.
+    authorityReferences:
+      - "ARC-022 registries work packages"
+      - "DOM-002"
+    evidenceRequired:
+      - "cross-check table in evidence"
+    testTypes: ["contract", "semantic-review"]
+
+  - id: "AC-03"
+    statement: >
+      The traceability registry covers the W1 requirements from REQ-001 with
+      correct releaseWave tags and no OPEN W1 rows.
+    authorityReferences:
+      - "REQ-001"
+    evidenceRequired:
+      - "contracts:registries and contracts:docs output"
+    testTypes: ["contract", "documentation"]
+
+  - id: "AC-04"
+    statement: >
+      npm run contracts:verify is fully green locally and the exact candidate
+      commit receives a fully green GitHub Actions run on its PR (all 9 checks
+      including Required Aggregation).
+    authorityReferences:
+      - "ARC-014 §13"
+    evidenceRequired:
+      - "npm run contracts:verify output"
+      - "GitHub Actions run reference"
+    testTypes: ["integration", "ci"]
+
+tests:
+  focusedCommands:
+    - "npm run contracts:registries"
+    - "npm run contracts:schemas"
+    - "npm run contracts:openapi"
+    - "npm run contracts:docs"
+  requiredSuites:
+    - "npm run contracts:self-test"
+    - "npm run contracts:verify"
+    - "git diff --check"
+  positiveCases:
+    - "Every registry reference resolves to an existing artifact."
+  negativeCases:
+    - "Existing self-test fixtures continue to fail on controlled invalid inputs."
+  boundaryCases: []
+  concurrencyCases: []
+  securityCases:
+    - "Secrets and privacy scans stay green over all new schema files."
+  contractCases:
+    - "Registry semantic validation across all five registries."
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: true
+  compatibilityClassification: "ADDITIVE_CORRECTION"
+  requiredUpdates:
+    - "Registry content aligned to approved documents; no approved semantics changed."
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: false
+  threatChanges: []
+  dataClassifications:
+    - "Public contract metadata"
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData:
+    - "Access tokens"
+    - "Client secrets"
+    - "Personal identifiers in Discovery-related schemas"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: true
+  dataReviewer: true
+  securityReviewer: false
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner / Contract Owner"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I0-CON-002/registry-rebuild.md"
+    - "delivery/evidence/I0-CON-002/schema-authoring.md"
+    - "delivery/evidence/I0-CON-002/ci-verification.md"
+  requiredCiChecks:
+    - "Registry Consistency Checks"
+    - "JSON Schema Validation"
+    - "Required Aggregation (fully green)"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "ARC-020 catalogues plus existing executable schemas provide enough authority to author the missing payloads; any gap stops with SPEC_CONFLICT."
+  - "The baseline commit is inserted when the task is claimed."
+
+openQuestions: []
