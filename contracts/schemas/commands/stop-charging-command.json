@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/commands/stop-charging-command.json",
+  "title": "StopChargingAtEVSE",
+  "description": "Command payload to stop charging at a specific EVSE; correlation and causation identifiers and the aggregate reference travel in the CloudEvents envelope",
+  "type": "object",
+  "properties": {
+    "commandRef": {
+      "type": "string",
+      "description": "Unique command reference used for idempotency"
+    },
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "Target EVSE reference"
+    },
+    "issuedBy": {
+      "type": "string",
+      "description": "Issuing service"
+    },
+    "issuedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Command issuance timestamp"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Expiry timestamp; expired commands must not execute"
+    }
+  },
+  "required": ["commandRef", "sessionRef", "evseRef", "issuedBy", "issuedAt", "expiresAt"]
+}

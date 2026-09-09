@@ -1,534 +1,911 @@
 # =============================================================================
 # Traceability Registry v1
 # =============================================================================
-# Maps requirement IDs to their implementation artefacts (APIs, messages,
-# commands, tests).  Sourced from REQ-001, ARC-006, ARC-018, ARC-020,
-# GAP-001, GAP-002, and the various approval documents.
+# Maps every W1 requirement from REQ-001 (Functional Requirements and
+# Traceability v1.1, APPROVED) to its provisional owner, logical interface,
+# security rules and implementation epic.
+#
+# Scope: all REQ-001 requirements whose target wave is W1-S1 or W1-S2
+# (both sub-waves form release wave W1).  W2 and W3 requirements are
+# intentionally absent until their waves are baselined.
+#
+# Field rules:
+# - requirementId uses REQ-001's exact stable IDs.
+# - applicability preserves REQ-001's per-requirement wave tag (W1-S1/W1-S2).
+# - owningService maps REQ-001's provisional logical owner onto the seven
+#   canonical services (ARC-BND-01..15); logical ownership remains
+#   provisional until final boundaries are approved.
+# - apis carry the logical interface operations from the REQ-001 forward
+#   traceability matrix; they are NOT final REST endpoints.
+# - messages reference only W1-set messages that are clearly the
+#   requirement's own events (see registries/messages-v1.yaml).
+# - tests/dbTables stay empty: REQ-001 defers exact test IDs and table
+#   ownership to later planning phases (REQ-001 section 9 and 11).
+# - status is PLANNED for every row: implementation has not started and no
+#   requirement may be VERIFIED without CI verification evidence (CON-176).
 # =============================================================================
 
+schemaVersion: "1.0"
+
 release_waves:
-  W1: &w1 "W1 — Foundation"
-  W2: &w2 "W2 — Operations"
-  W3: &w3 "W3 — Optimisation"
+  W1: "W1 — Foundation (W1-S1 + W1-S2)"
+  W2: "W2 — Operations"
+  W3: "W3 — Optimisation"
 
 traceability:
 
   # ──────────────────────────────────────────────────────────────────────────
-  # FR-BKG — Booking Functional Requirements
+  # Identity and access management (REQ-001 §4.1)
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: FR-IAM-01
+    description: >
+      The platform MUST support driver registration, email verification,
+      authentication, recovery, suspension, reactivation, deletion initiation
+      and identity-session revocation.  Only verified, active accounts may
+      create bookings or start charging sessions.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: account-service
+    apis:
+      - Register
+      - Verify
+      - Recover
+      - Suspend
+      - DeleteAccount
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-IAM-01"
+    securityRule: "OIDC, PKCE, generic errors, rate limits"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-IAM-02
+    description: >
+      All operator, administrator, platform-support and security-reviewer
+      accounts MUST use MFA.  A privileged role cannot access protected
+      functionality without satisfying MFA policy.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: account-service
+    apis:
+      - EnforceMfaPolicy
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-IAM-02"
+    securityRule: "MFA, recent authentication"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-IAM-03
+    description: >
+      Every protected operation MUST apply role, organization,
+      resource-ownership, case-scope and exceptional-access rules as
+      applicable.  Gateway authorization alone is insufficient; the
+      authoritative capability denies unauthorized access independently.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: account-service
+    apis:
+      - Authorize(action, scope)
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-SEC-01"
+    securityRule: "Default deny, ownership, least privilege"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-IAM-04
+    description: >
+      Drivers MUST be able to manage saved vehicles, connector compatibility,
+      maximum AC/DC power and a default vehicle.  Drivers MUST also be able to
+      book without saving a vehicle by manually selecting connector
+      requirements.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: account-service
+    apis:
+      - ManageVehicle
+      - ResolveCompatibility
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-PRO-01"
+    securityRule: "Owner-only access"
+    dbTables: []
+    status: "PLANNED"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Discovery (REQ-001 §4.2)
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: FR-DIS-01
+    description: >
+      Unauthenticated users MUST be able to browse, search and filter
+      published Greek charging stations through accessible map and list views.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: discovery-insights-service
+    apis:
+      - SearchStations
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-DIS-01"
+    securityRule: "Public-safe fields, location consent"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-DIS-02
+    description: >
+      Users MUST be able to inspect public station, EVSE, connector, power,
+      tariff, opening-hours, access and operational-freshness information.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: discovery-insights-service
+    apis:
+      - GetStationDetails
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-DIS-02"
+    securityRule: "Public-field allowlist"
+    dbTables: []
+    status: "PLANNED"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Availability (REQ-001 §4.3)
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: FR-AVL-01
+    description: >
+      The platform MUST derive interval availability from administrative
+      eligibility, connector and power compatibility, opening hours and
+      policy, existing allocations and buffers, charging sessions,
+      maintenance, faults and overrides, and device connectivity and
+      freshness.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
+    apis:
+      - EvaluateAvailability
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-AVL-01"
+    securityRule: "Input validation, safe reason codes"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-AVL-02
+    description: >
+      The platform MUST distinguish AVAILABLE, PLANNED_AVAILABLE, UNAVAILABLE,
+      UNKNOWN and INCOMPATIBLE.  Stale or unknown near-term status MUST never
+      appear as confidently available.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: discovery-insights-service
+    apis:
+      - GetStatusConfidence
+    messages:
+      - EVSEStatusChanged
+    commands: []
+    tests: []
+    epic: "EP-AVL-02"
+    securityRule: "No false availability"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-AVL-03
+    description: >
+      Search availability MUST be advisory.  The authoritative booking
+      transaction MUST revalidate all allocation rules before committing.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
+    apis:
+      - AllocateEvse
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-BKG-CORE"
+    securityRule: "Transaction isolation"
+    dbTables: []
+    status: "PLANNED"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Booking (REQ-001 §4.4)
   # ──────────────────────────────────────────────────────────────────────────
 
   - requirementId: FR-BKG-01
     description: >
-      The system MUST allow a driver to create a booking for a specific EVSE
-      at a specific time.
-    releaseWave: *w1
+      A driver MUST be able to create a temporary EVSE hold and confirm it
+      before expiry.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - POST /bookings
+      - CreateHold
+      - ConfirmHold
     messages:
       - BookingHeld
-    commands:
-      - null
-    tests:
-      - tests/api/bookings/create-booking-success.int.test.ts
-      - tests/api/bookings/create-booking-validation.unit.test.ts
-    status: VERIFIED
+      - BookingConfirmed
+      - BookingHoldExpired
+    commands: []
+    tests: []
+    epic: "EP-BKG-01"
+    securityRule: "Verified owner, idempotency"
+    dbTables: []
+    status: "PLANNED"
 
   - requirementId: FR-BKG-02
     description: >
-      The system MUST hold the EVSE for a configurable hold period (default
-      120 s) while the driver confirms.  If not confirmed, the hold SHALL
-      expire and the EVSE returned to AVAILABLE.
-    releaseWave: *w1
+      The platform MUST prevent overlapping EVSE allocations, including
+      buffers, under concurrent requests.  Exactly one conflicting request may
+      succeed.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - POST /bookings
-    messages:
-      - BookingHeld
-      - BookingHoldExpired
-    commands:
-      - null
-    tests:
-      - tests/api/bookings/hold-expiry.int.test.ts
-      - tests/unit/services/booking-hold-ttl.service.test.ts
-    status: VERIFIED
+      - ClaimAllocation
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-BKG-CORE"
+    securityRule: "Transactional exclusion"
+    dbTables: []
+    status: "PLANNED"
 
   - requirementId: FR-BKG-03
     description: >
-      The driver MUST confirm the booking within the hold period.  Confirmation
-      transitions the booking to CONFIRMED.
-    releaseWave: *w1
+      Rescheduling MUST atomically claim the replacement interval, update the
+      booking and release the original interval.  If replacement fails, the
+      original booking MUST remain unchanged.
+    applicability: "W1-S2"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - POST /bookings/{bookingId}/confirm
+      - RescheduleBooking
     messages:
-      - BookingConfirmed
-    commands:
-      - null
-    tests:
-      - tests/api/bookings/confirm-booking.int.test.ts
-    status: VERIFIED
+      - BookingRescheduled
+    commands: []
+    tests: []
+    epic: "EP-BKG-02"
+    securityRule: "Ownership, versioning"
+    dbTables: []
+    status: "PLANNED"
 
   - requirementId: FR-BKG-04
     description: >
-      A confirmed booking MUST be cancellable by the driver or operator.
-      Cancellation releases the EVSE and triggers billing adjustments if
-      applicable.
-    releaseWave: *w1
+      The platform MUST support confirmation, cancellation, expiration,
+      no-show classification, completion and fulfilment failure according to
+      validated transitions.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - POST /bookings/{bookingId}/cancel
+      - Cancel
+      - Expire
+      - MarkNoShow
+      - MarkFailure
     messages:
       - BookingCancelled
-    commands:
-      - null
-    tests:
-      - tests/api/bookings/cancel-booking.int.test.ts
-    status: VERIFIED
+      - BookingHoldExpired
+      - BookingNoShow
+      - BookingCompleted
+      - BookingFulfilmentFailed
+    commands: []
+    tests: []
+    epic: "EP-BKG-03"
+    securityRule: "State and actor validation"
+    dbTables: []
+    status: "PLANNED"
 
   - requirementId: FR-BKG-05
     description: >
-      Confirmed bookings that are not checked in within the check-in window
-      SHALL automatically transition to NO_SHOW.
-    releaseWave: *w1
+      A booking owner MUST be able to check in at the assigned EVSE during the
+      valid window and receive one short-lived, single-use start authorization.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - POST /bookings/{bookingId}/check-in
+      - CheckIn
+      - Issue/ConsumeAuthorization
     messages:
-      - BookingNoShow
-    commands:
-      - null
-    tests:
-      - tests/unit/services/no-show-detector.service.test.ts
-      - tests/int/booking-no-show-flow.int.test.ts
-    status: VERIFIED
+      - BookingCheckedIn
+      - StartAuthorizationIssued
+      - StartAuthorizationConsumed
+      - StartAuthorizationRevoked
+    commands: []
+    tests: []
+    epic: "EP-BKG-04"
+    securityRule: "Single-use binding, expiry"
+    dbTables: []
+    status: "PLANNED"
 
   - requirementId: FR-BKG-06
     description: >
-      The system MUST support rescheduling (modifying time/EVSE) of a
-      confirmed booking, subject to availability.
-    releaseWave: *w1
+      Confirmed bookings MUST preserve immutable tariff and effective
+      booking-policy snapshots.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - POST /bookings/{bookingId}/reschedule
-    messages:
-      - BookingRescheduled
-      - BookingReassigned
-    commands:
-      - null
-    tests:
-      - tests/api/bookings/reschedule-booking.int.test.ts
-    status: VERIFIED
+      - SnapshotTariffAndPolicy
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-BKG-05"
+    securityRule: "Write-once controls"
+    dbTables: []
+    status: "PLANNED"
 
   - requirementId: FR-BKG-07
     description: >
-      Fulfilment failures (e.g. EVSE fault after booking) MUST transition the
-      booking to FULFILMENT_FAILED and notify the driver.
-    releaseWave: *w1
+      Drivers MUST be able to view authoritative upcoming booking details,
+      state, warnings and server-derived permitted actions.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - null
-    messages:
-      - BookingFulfilmentFailed
-    commands:
-      - null
-    tests:
-      - tests/unit/services/fulfilment-failure-handler.service.test.ts
-    status: VERIFIED
+      - GetBooking
+      - GetAllowedActions
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-BKG-06"
+    securityRule: "Owner-only access"
+    dbTables: []
+    status: "PLANNED"
 
   # ──────────────────────────────────────────────────────────────────────────
-  # FR-CHG — Charging Functional Requirements
+  # Charging sessions (REQ-001 §4.5)
   # ──────────────────────────────────────────────────────────────────────────
 
   - requirementId: FR-CHG-01
     description: >
-      The system MUST allow a driver to start a charging session at an EVSE
-      after a successful check-in.
-    releaseWave: *w1
+      The platform MUST start, monitor, stop, interrupt and reconcile
+      simulated charging sessions separately from booking state.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - POST /charging-sessions/{sessionId}/start
+      - Start
+      - Stop
+      - ReconcileSession
     messages:
+      - ChargingSessionCreated
       - ChargingStartRequested
       - ChargingSessionStarted
       - ChargingStartAttemptRejected
-    commands:
-      - StartChargingAtEVSE
-    tests:
-      - tests/api/charging/start-session.int.test.ts
-      - tests/int/charging-start-flow.int.test.ts
-    status: VERIFIED
-
-  - requirementId: FR-CHG-02
-    description: >
-      The system MUST allow a driver or operator to stop an active charging
-      session.  The session SHALL be marked COMPLETED or INTERRUPTED.
-    releaseWave: *w1
-    apis:
-      - POST /charging-sessions/{sessionId}/stop
-    messages:
+      - ChargingSessionProgressed
       - ChargingStopRequested
       - ChargingSessionCompleted
       - ChargingSessionInterrupted
-    commands:
-      - StopChargingAtEVSE
-      - EmergencyStopChargingSession
-    tests:
-      - tests/api/charging/stop-session.int.test.ts
-    status: VERIFIED
+    commands: []
+    tests: []
+    epic: "EP-CHG-01"
+    securityRule: "Booking authorization, scoped intervention"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-CHG-02
+    description: >
+      Duplicate, delayed and out-of-order transaction and meter events MUST be
+      processed safely without repeating state transitions or inflating
+      energy.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
+    apis:
+      - ApplyTransactionEvent
+    messages:
+      - DeviceTransactionStarted
+      - DeviceTransactionUpdated
+      - DeviceTransactionEnded
+    commands: []
+    tests: []
+    epic: "EP-CHG-02"
+    securityRule: "Machine identity, validation"
+    dbTables: []
+    status: "PLANNED"
 
   - requirementId: FR-CHG-03
     description: >
-      Charging session progress data MUST be published at regular intervals
-      for billing and analytics.
-    releaseWave: *w1
+      The platform MUST produce a reproducible session summary containing
+      duration, energy, tariff snapshot, estimated cost, stop reason and
+      completion outcome.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - null
-    messages:
-      - ChargingSessionProgressed
-      - DeviceTransactionUpdated
-    commands:
-      - null
-    tests:
-      - tests/unit/services/session-progress-publisher.service.test.ts
-    status: VERIFIED
+      - FinalizeSummary
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-CHG-03"
+    securityRule: "Owner/operator scope"
+    dbTables: []
+    status: "PLANNED"
 
   - requirementId: FR-CHG-04
     description: >
-      The system MUST support suspend/resume of an active charging session
-      (e.g. for load balancing).
-    releaseWave: *w1
+      A timed-out or disconnected start/stop outcome MUST remain visibly
+      uncertain until reconciliation establishes the physical simulated
+      result.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - POST /charging-sessions/{sessionId}/suspend
-      - POST /charging-sessions/{sessionId}/resume
-    messages:
-      - ChargingSessionSuspended
-      - ChargingSessionResumed
-    commands:
-      - null
-    tests:
-      - tests/api/charging/suspend-resume-session.int.test.ts
-    status: VERIFIED
+      - ReconcileCommandOutcome
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-CHG-04"
+    securityRule: "No fabricated completion"
+    dbTables: []
+    status: "PLANNED"
 
   # ──────────────────────────────────────────────────────────────────────────
-  # FR-AUD — Audit & Observability Requirements
+  # Driver records and assistance (REQ-001 §4.6)
   # ──────────────────────────────────────────────────────────────────────────
 
-  - requirementId: FR-AUD-01
+  - requirementId: FR-HIS-01
     description: >
-      All state transitions on aggregate roots MUST be recorded in an event
-      log with correlationId, sequenceNumber, and timestamp.
-    releaseWave: *w1
+      Drivers MUST be able to view their authoritative booking and
+      charging-session history with filtering, pagination and clear
+      interrupted/uncertain outcomes.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - null
-    messages:
-      - All events (via event sourcing framework)
-    commands:
-      - null
-    tests:
-      - tests/unit/infrastructure/event-store.test.ts
-      - tests/int/event-sourcing-replay.int.test.ts
-    status: VERIFIED
+      - ListHistory
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-HIS-01"
+    securityRule: "Owner-only, pagination"
+    dbTables: []
+    status: "PLANNED"
 
-  - requirementId: FR-AUD-02
+  - requirementId: FR-FLT-01
     description: >
-      Dead-lettered messages MUST be persisted with original headers, error
-      details, and timestamp for operator review.
-    releaseWave: *w1
+      Authenticated drivers SHOULD be able to submit structured station or
+      EVSE fault reports and link them to a booking or session where
+      applicable.  Reports MUST NOT directly alter operational state.
+    applicability: "W1-S2"
+    releaseWave: W1
+    owningService: station-operations-service
     apis:
-      - null
-    messages:
-      - null
-    commands:
-      - null
-    tests:
-      - tests/unit/infrastructure/dead-letter-queue.test.ts
-    status: VERIFIED
-
-  - requirementId: FR-AUD-03
-    description: >
-      Charging session reconciliation events MUST be logged separately for
-      audit trail purposes.
-    releaseWave: *w2
-    apis:
-      - POST /charging-sessions/{sessionId}/reconcile
-    messages:
-      - ChargingReconciliationRequired
-      - ChargingReconciliationResolved
-    commands:
-      - null
-    tests:
-      - tests/api/charging/reconcile-session.int.test.ts
-    status: IMPLEMENTED
+      - SubmitFaultReport
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-FLT-01"
+    securityRule: "Rate limits, sanitization"
+    dbTables: []
+    status: "PLANNED"
 
   # ──────────────────────────────────────────────────────────────────────────
-  # FR-PLT — Platform / Infrastructure Requirements
+  # Operator and infrastructure management (REQ-001 §4.7)
   # ──────────────────────────────────────────────────────────────────────────
 
-  - requirementId: FR-PLT-01
+  - requirementId: FR-OPS-01
     description: >
-      All command messages MUST support idempotency via an idempotencyKey
-      header.  Duplicate requests with the same key and payload SHALL be
-      idempotent.
-    releaseWave: *w1
+      The platform MUST support operator applications, approval-dependent
+      organization activation, organization profiles, invitations, roles,
+      ownership transfer and organization audit history.
+    applicability: "W1-S2"
+    releaseWave: W1
+    owningService: station-operations-service
     apis:
-      - All POST endpoints
-    messages:
-      - All COMMAND messages
-    commands:
-      - All commands
-    tests:
-      - tests/unit/middleware/idempotency-middleware.test.ts
-      - tests/int/idempotent-command-retry.int.test.ts
-    status: VERIFIED
+      - Apply
+      - Invite
+      - ChangeRole
+      - TransferOwner
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-ORG-01"
+    securityRule: "MFA, role hierarchy"
+    dbTables: []
+    status: "PLANNED"
 
-  - requirementId: FR-PLT-02
+  - requirementId: FR-OPS-02
     description: >
-      All event messages MUST carry a correlationId for distributed tracing.
-    releaseWave: *w1
+      Authorized operators MUST be able to manage stations, EVSEs, connectors,
+      opening hours, access information, tariffs and booking policies.
+    applicability: "W1-S2"
+    releaseWave: W1
+    owningService: station-operations-service
     apis:
-      - null
-    messages:
-      - All event messages
-    commands:
-      - null
-    tests:
-      - tests/unit/middleware/correlation-middleware.test.ts
-    status: VERIFIED
+      - ManageStation/Evse/Connector/Tariff/Policy
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-INF-01"
+    securityRule: "Organization ownership, versioning"
+    dbTables: []
+    status: "PLANNED"
 
-  - requirementId: FR-PLT-03
+  - requirementId: FR-OPS-03
     description: >
-      The platform MUST enforce idempotency key uniqueness per aggregate type.
-      Reuse with a different payload SHALL result in IDEMPOTENCY_KEY_REUSED.
-    releaseWave: *w1
+      Authorized operators MUST be able to monitor device state, manage
+      maintenance, faults, expiring overrides, booking impact and fulfilment
+      resolution.
+    applicability: "W1-S2"
+    releaseWave: W1
+    owningService: station-operations-service
     apis:
-      - All POST endpoints
-    messages:
-      - null
-    commands:
-      - null
-    tests:
-      - tests/unit/middleware/idempotency-key-collision.test.ts
-    status: VERIFIED
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # W1 — Release Wave 1 (Foundation) Requirements
-  # ──────────────────────────────────────────────────────────────────────────
-
-  - requirementId: W1-CAP-01
-    description: >
-      Capacity Service MUST expose the bookable count per station and publish
-      StationBookableCountChanged when capacity changes.
-    releaseWave: *w1
-    apis:
-      - GET /stations/{stationId}/availability
-    messages:
-      - StationBookableCountChanged
-    commands:
-      - null
-    tests:
-      - tests/api/capacity/station-availability.int.test.ts
-    status: VERIFIED
-
-  - requirementId: W1-CAP-02
-    description: >
-      Operators MUST be able to freeze and block capacity via capacity
-      restrictions.
-    releaseWave: *w1
-    apis:
-      - POST /capacity-restrictions
-      - POST /capacity-restrictions/{id}/freeze
-      - POST /capacity-restrictions/{id}/block
-      - POST /capacity-restrictions/{id}/release
-    messages:
-      - CapacityRestrictionCreated
-      - CapacityFreezeCommitted
-      - CapacityFreezeRejected
-      - CapacityBlockCommitted
-      - CapacityRestrictionReleased
-    commands:
-      - CreateCapacityFreeze
-      - FinalizeCapacityBlock
-      - ReleaseCapacityRestriction
-    tests:
-      - tests/api/capacity/manage-restriction.int.test.ts
-    status: VERIFIED
-
-  - requirementId: W1-DEV-01
-    description: >
-      Device Gateway MUST handle EVSE online/offline lifecycle and report
-      device faults.
-    releaseWave: *w1
-    apis:
-      - null
-    messages:
-      - DeviceOnline
-      - DeviceOffline
-      - DeviceHeartbeatStale
-      - DeviceRecovered
-      - DeviceFaultRaised
-      - DeviceFaultCleared
-    commands:
-      - RequestDeviceSnapshot
-    tests:
-      - tests/int/device-lifecycle-flow.int.test.ts
-    status: VERIFIED
-
-  - requirementId: W1-DEV-02
-    description: >
-      Device commands MUST be dispatched with timeout tracking and outcome
-      reporting.
-    releaseWave: *w1
-    apis:
-      - null
-    messages:
-      - DeviceCommandDispatchAccepted
-      - DeviceCommandRejected
-      - DeviceCommandTimedOut
-      - DeviceCommandResult
-    commands:
-      - null
-    tests:
-      - tests/int/device-command-dispatch.int.test.ts
-    status: VERIFIED
-
-  - requirementId: W1-NOT-01
-    description: >
-      Notification Service MUST deliver inbox-style notifications and report
-      delivery status.
-    releaseWave: *w1
-    apis:
-      - GET /notifications/inbox
-    messages:
-      - NotificationInboxDelivered
-      - NotificationDispatchFailed
-    commands:
-      - null
-    tests:
-      - tests/api/notifications/inbox-delivery.int.test.ts
-    status: VERIFIED
-
-  - requirementId: W1-START-AUTH-01
-    description: >
-      StartAuthorization MUST be issued, consumed, or revoked with a defined
-      lifecycle.
-    releaseWave: *w1
-    apis:
-      - POST /authorizations/start
-      - POST /authorizations/start/{id}/revoke
-    messages:
-      - StartAuthorizationIssued
-      - StartAuthorizationConsumed
-      - StartAuthorizationRevoked
-    commands:
-      - null
-    tests:
-      - tests/api/authorizations/start-auth-lifecycle.int.test.ts
-    status: VERIFIED
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # W2 — Release Wave 2 (Operations) Requirements
-  # ──────────────────────────────────────────────────────────────────────────
-
-  - requirementId: W2-OPS-01
-    description: >
-      Operator console MUST support fault management with full lifecycle
-      (open, state change, resolve, reopen).
-    releaseWave: *w2
-    apis:
-      - POST /ops/faults
-      - PATCH /ops/faults/{id}
+      - ScheduleMaintenance
+      - ManageFault
+      - Override
     messages:
       - FaultOpened
       - FaultStateChanged
       - FaultResolved
       - FaultReopened
-    commands:
-      - null
-    tests:
-      - tests/api/ops/fault-lifecycle.int.test.ts
-    status: IMPLEMENTED
+    commands: []
+    tests: []
+    epic: "EP-OPS-01"
+    securityRule: "Technician scope, reasons"
+    dbTables: []
+    status: "PLANNED"
 
-  - requirementId: W2-OPS-02
+  - requirementId: FR-OPS-04
     description: >
-      Operator console MUST support maintenance scheduling with booking impact
-      resolution.
-    releaseWave: *w2
+      Scoped operator staff MUST be able to inspect owned-station bookings and
+      perform permitted reassignment or cancellation through the Booking
+      authority.
+    applicability: "W1-S2"
+    releaseWave: W1
+    owningService: booking-session-service
     apis:
-      - POST /maintenance
-      - POST /maintenance/{id}/schedule
-      - POST /maintenance/{id}/complete
-      - POST /maintenance/{id}/cancel
+      - ViewOwnedBookings
+      - Reassign
+      - Cancel
     messages:
-      - MaintenanceScheduled
-      - MaintenanceCompleted
-      - MaintenanceCancelled
-    commands:
-      - null
-    tests:
-      - tests/api/ops/maintenance-lifecycle.int.test.ts
-    status: IMPLEMENTED
+      - BookingReassigned
+      - BookingCancelled
+    commands: []
+    tests: []
+    epic: "EP-OPS-02"
+    securityRule: "Ownership and limited PII"
+    dbTables: []
+    status: "PLANNED"
 
-  - requirementId: W2-OPS-03
-    description: >
-      Operator console MUST support EVSE operational status overrides with
-      TTL and revocation.
-    releaseWave: *w2
-    apis:
-      - POST /ops/overrides
-      - POST /ops/overrides/{id}/revoke
-    messages:
-      - OperationalOverrideApplied
-      - OperationalOverrideExpired
-      - OperationalOverrideRevoked
-    commands:
-      - null
-    tests:
-      - tests/api/ops/evse-override.int.test.ts
-    status: IMPLEMENTED
+  # ──────────────────────────────────────────────────────────────────────────
+  # Administration (REQ-001 §4.8; FR-SUP-* are W2 and out of W1 scope)
+  # ──────────────────────────────────────────────────────────────────────────
 
-  - requirementId: W2-ACC-01
+  - requirementId: FR-ADM-01
     description: >
-      Account lifecycle events (deleted, suspended, reactivated) MUST be
-      published for downstream consumers.
-    releaseWave: *w2
+      Administrators MUST be able to approve/suspend operators, suspend users,
+      moderate stations and manage versioned platform reference data and
+      policy limits.
+    applicability: "W1-S2"
+    releaseWave: W1
+    owningService: governance-support-service
     apis:
-      - DELETE /accounts/{id}
-      - POST /accounts/{id}/suspend
-      - POST /accounts/{id}/reactivate
-    messages:
-      - AccountDeleted
-      - AccountSuspended
-      - AccountReactivated
-    commands:
-      - null
-    tests:
-      - tests/api/accounts/account-lifecycle.int.test.ts
-    status: IMPLEMENTED
+      - Approve
+      - Suspend
+      - Moderate
+      - ManageReference
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-ADM-01"
+    securityRule: "MFA, separation of duty"
+    dbTables: []
+    status: "PLANNED"
 
-  - requirementId: W2-ANA-01
+  - requirementId: FR-ADM-02
     description: >
-      Telemetry anomaly detection MUST publish DeviceTelemetryAnomalyDetected
-      events for operator review.
-    releaseWave: *w2
+      Authorized administrators MUST be able to investigate incidents and
+      perform justified, MFA-protected, audited emergency interventions
+      without fabricating device outcomes.
+    applicability: "W1-S2"
+    releaseWave: W1
+    owningService: governance-support-service
     apis:
-      - null
-    messages:
-      - DeviceTelemetryAnomalyDetected
-    commands:
-      - null
-    tests:
-      - tests/unit/analytics/anomaly-detection.test.ts
-    status: IMPLEMENTED
+      - Investigate
+      - EmergencyIntervene
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-ADM-02"
+    securityRule: "Recent MFA, reason, review"
+    dbTables: []
+    status: "PLANNED"
 
-  - requirementId: W2-DRV-01
+  # ──────────────────────────────────────────────────────────────────────────
+  # Charger simulation (REQ-001 §4.9)
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: FR-SIM-01
     description: >
-      Driver restrictions (install/release) MUST be supported for compliance
-      and eligibility management.
-    releaseWave: *w2
+      Every simulated charging station MUST use a unique, revocable machine
+      identity scoped to its assigned station and EVSEs.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: device-integration-service
     apis:
-      - POST /drivers/{id}/restrictions
-      - DELETE /drivers/{id}/restrictions/{restrictionId}
+      - Enroll
+      - Authenticate
+      - Revoke
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-SIM-01"
+    securityRule: "TLS, credential rotation"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-SIM-02
+    description: >
+      The simulator MUST support versioned boot, heartbeat, status,
+      reservation-mirror, start, stop, transaction, meter, fault and
+      reconciliation communication.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: device-integration-service
+    apis:
+      - Boot
+      - Heartbeat
+      - Start/Stop
+      - Transaction/Meter events
     messages:
-      - BookingEligibilityChanged
-    commands:
-      - InstallDriverRestriction
-      - ReleaseDriverRestriction
-    tests:
-      - tests/api/drivers/driver-restrictions.int.test.ts
-    status: IMPLEMENTED
+      - DeviceOnline
+      - DeviceHeartbeatStale
+      - DeviceOffline
+      - DeviceRecovered
+      - DeviceSnapshotReceived
+      - DeviceTransactionStarted
+      - DeviceTransactionUpdated
+      - DeviceTransactionEnded
+    commands: []
+    tests: []
+    epic: "EP-SIM-02"
+    securityRule: "Schema and assignment checks"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-SIM-03
+    description: >
+      The simulator MUST support deterministic duplicate, delayed, dropped and
+      out-of-order events, disconnections, command rejection, timeout and
+      queued offline delivery.
+    applicability: "W1-S2"
+    releaseWave: W1
+    owningService: device-integration-service
+    apis:
+      - SetProfile
+      - InjectFault
+    messages:
+      - DeviceCommandRejected
+      - DeviceCommandTimedOut
+    commands: []
+    tests: []
+    epic: "EP-SIM-03"
+    securityRule: "Operator scope"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-SIM-04
+    description: >
+      The platform MUST describe the simulator as an OCPP-inspired custom
+      protocol and MUST NOT claim OCPP compliance, certification or wire
+      compatibility.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: governance-support-service
+    apis:
+      - Protocol metadata
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-ARC-01"
+    securityRule: "No false claims"
+    dbTables: []
+    status: "PLANNED"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Distributed platform processes (REQ-001 §4.10) — cross-cutting patterns
+  # implemented by every service; owningService names the best-fit canonical
+  # reference owner, not an exclusive one.
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: FR-PLT-01
+    description: >
+      Authoritative changes requiring asynchronous propagation MUST use
+      transactional outbox delivery.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
+    apis:
+      - AppendOutbox
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-PLT-01"
+    securityRule: "Minimal payload"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-PLT-02
+    description: >
+      Asynchronous consumers MUST safely handle at-least-once delivery through
+      inbox/deduplication controls.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: discovery-insights-service
+    apis:
+      - ConsumeWithInbox
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-PLT-02"
+    securityRule: "Consumer identity"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-PLT-03
+    description: >
+      Transient failures MUST use bounded retries with backoff and jitter.
+      Exhausted or invalid messages MUST enter controlled dead-letter
+      handling.
+    applicability: "W1-S2"
+    releaseWave: W1
+    owningService: governance-support-service
+    apis:
+      - Retry
+      - Quarantine
+      - Replay
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-PLT-03"
+    securityRule: "Scoped replay"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-PLT-04
+    description: >
+      The platform MUST process hold expiry, no-shows, maintenance
+      transitions, status freshness, reminders, reconciliation and retention
+      safely across multiple workers.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
+    apis:
+      - Scheduled transitions
+    messages:
+      - BookingHoldExpired
+      - BookingNoShow
+    commands: []
+    tests: []
+    epic: "EP-PLT-04"
+    securityRule: "Database time"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-PLT-05
+    description: >
+      The platform MUST reconcile uncertain device commands, missing event
+      sequences, conflicting state and partial cross-capability workflows.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: booking-session-service
+    apis:
+      - ReconcileWorkflow
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-PLT-05"
+    securityRule: "Audited manual resolution"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-PLT-06
+    description: >
+      Search, analytics, notification and dashboard projections MUST remain
+      non-authoritative and MUST NOT block committed core operations when
+      unavailable.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: discovery-insights-service
+    apis:
+      - Build/RebuildProjection
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-PLT-06"
+    securityRule: "Non-authoritative isolation"
+    dbTables: []
+    status: "PLANNED"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Notifications (REQ-001 §4.11; FR-NOT-02 is W2 and out of W1 scope)
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: FR-NOT-01
+    description: >
+      The platform MUST send essential security, account, booking, operational
+      and privacy email asynchronously after authoritative commit.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: notification-service
+    apis:
+      - RequestNotification
+      - Dispatch
+    messages:
+      - NotificationInboxDelivered
+      - NotificationDispatchFailed
+    commands: []
+    tests: []
+    epic: "EP-NOT-01"
+    securityRule: "Minimal PII, provider secrets"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-NOT-03
+    description: >
+      Verification, recovery, invitation, email-change and privacy-download
+      links MUST be expiring, purpose-bound and single-use where applicable.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: notification-service
+    apis:
+      - CreateActionLink
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-NOT-03"
+    securityRule: "Single-use, expiry"
+    dbTables: []
+    status: "PLANNED"
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Audit (REQ-001 §4.13)
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - requirementId: FR-AUD-01
+    description: >
+      Security-sensitive and business-critical actions MUST create immutable
+      audit evidence containing actor, action, target, time, reason, outcome
+      and correlation information.
+    applicability: "W1-S1"
+    releaseWave: W1
+    owningService: governance-support-service
+    apis:
+      - RecordAuditFact
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-AUD-01"
+    securityRule: "Tamper resistance"
+    dbTables: []
+    status: "PLANNED"
+
+  - requirementId: FR-AUD-02
+    description: >
+      Data reveal, emergency intervention, dead-letter replay, privacy review
+      and break-glass actions MUST be separately auditable and reviewable.
+    applicability: "W1-S2"
+    releaseWave: W1
+    owningService: governance-support-service
+    apis:
+      - RecordPrivilegedAction
+    messages: []
+    commands: []
+    tests: []
+    epic: "EP-AUD-02"
+    securityRule: "Separation of duty"
+    dbTables: []
+    status: "PLANNED"
 
 # =============================================================================
 # End of Traceability Registry

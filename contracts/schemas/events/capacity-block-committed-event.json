@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/capacity-block-committed-event.json",
+  "title": "CapacityBlockCommittedEvent",
+  "description": "Payload for the CapacityBlockCommitted event",
+  "type": "object",
+  "properties": {
+    "workflowId": {
+      "type": "string",
+      "description": "Restriction workflow identifier"
+    },
+    "restrictionId": {
+      "type": "string",
+      "description": "Capacity restriction identifier"
+    },
+    "interval": {
+      "type": "object",
+      "description": "Half-open blocked interval in UTC",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval start (inclusive)"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval end (exclusive)"
+        }
+      },
+      "required": ["start", "end"]
+    },
+    "stationRef": {
+      "type": "string",
+      "description": "Station reference (present when the block scope is station level)"
+    }
+  },
+  "required": ["workflowId", "restrictionId", "interval"]
+}

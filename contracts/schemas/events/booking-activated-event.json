@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/booking-activated-event.json",
+  "title": "BookingActivatedEvent",
+  "description": "Payload for the BookingActivated event",
+  "type": "object",
+  "properties": {
+    "bookingRef": {
+      "type": "string",
+      "description": "Booking reference"
+    },
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference"
+    }
+  },
+  "required": ["bookingRef", "sessionRef"]
+}

@@ -4,11 +4,29 @@
 # This file documents every domain policy that governs the behaviour of the
 # EV charging platform.  Policies are the "business rules" that constrain
 # how aggregates, commands, and events may interact.
+#
+# Sources (authoritative precedence):
+#   - DOM-002 (docs/03_domain/02_lifecycle_and_invariant_catalogue_v1.0.md)
+#     §1 lifecycles and §2 Core Domain Invariants.
+#   - DOM-004 (docs/03_domain/04_booking_lifecycle_and_policy_v1.0.md)
+#     — approved Release 1 MVP booking policies (hold 5 minutes, check-in
+#     window opens 15 minutes before start, 15-minute late-arrival grace).
+#   - ARC-018 (decision register), ARC-020 (events/async contracts),
+#     ARC-003 (REST catalogue), ARC-004 (event/command catalogue),
+#     ARC-006 (double-booking prevention), ARC-022 (W1 persistence baseline),
+#     PRV-001 (privacy retention schedule).
+#
+# Service references use the canonical seven-service boundaries:
+# booking-session-service, station-operations-service, device-integration-service,
+# discovery-insights-service, notification-service, governance-support-service,
+# account-service.
 # =============================================================================
 
+schemaVersion: "1.0"
+
 release_waves:
-  W1: &w1 "W1 — Foundation (MVP)"
-  W2: &w2 "W2 — Operations & Observability"
+  W1: "W1 — Foundation (MVP)"
+  W2: "W2 — Operations & Observability"
 
 policies:
 
@@ -18,29 +36,42 @@ policies:
 
   - policyId: AUTH-CONSUMPTION-001
     description: >
-      A StartAuthorization SHALL be consumed (transitioned to CONSUMED) exactly
-      once when a charging session starts successfully.  Once consumed, it MUST
-      NOT be reused.  (DOM-002 §1.2a)
-    applicableTo: StartAuthorization aggregate, StartChargingAtEVSE command
-    releaseWave: *w1
+      A StartAuthorization SHALL transition to CONSUMED exactly once, when the
+      local start-intent transaction commits the attempt/session shell and the
+      outbox command.  Device acceptance is unrelated to authorization
+      consumption.  If the local transaction rolls back, consumption rolls
+      back.  Once consumed, an authorization MUST NOT be reused.
+    applicableTo: StartAuthorization aggregate, StartChargingAtEVSE command (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "DOM-002 §1.2a, §1.3a"
 
-  - policyId: AUTH-RETRY-GAP-002
+  - policyId: AUTH-RETRY-NEW-AUTHORIZATION-002
     description: >
-      When a start attempt is rejected, the system MAY retry using the same
-      StartAuthorization up to N times (N=3 configurable) within its TTL.
-      After N failures the authorization is EXHAUSTED.  (GAP-002)
-    applicableTo: SessionAttempt aggregate, StartAuthorization aggregate
-    releaseWave: *w2
+      A definitive rejected start attempt (terminal ATTEMPT_REJECTED) requires
+      a newly issued authorization, bound to the same booking, and a new
+      attempt number for any subsequent retry.  At most one ISSUED
+      authorization may exist per booking, and one authorization may be
+      consumed by only one SessionAttempt.  Retry eligibility and the attempt
+      ceiling are enforced via START_ATTEMPT_LIMIT_REACHED and
+      START_RETRY_NOT_ELIGIBLE.  The booking remains CHECKED_IN while
+      retry/reassignment is still available.
+    applicableTo: SessionAttempt aggregate, StartAuthorization aggregate (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "DOM-002 §1.1, §1.2, §1.2a, §1.3a; ARC-022 §6.2"
 
   - policyId: AUTH-TTL-ENFORCEMENT
     description: >
-      A StartAuthorization MUST expire after its configured TTL (default 5 min)
-      regardless of retry count.  Expired authorizations cannot be used.
-    applicableTo: StartAuthorization aggregate
-    releaseWave: *w1
+      A StartAuthorization MUST transition to EXPIRED when the check-in grace
+      period ends without the session starting, and MUST NOT be used
+      afterwards.  The expiry instant is recorded on the authorization
+      (expires_at).  A retry authorization's expiry MUST NEVER exceed the
+      original grace deadline.
+    applicableTo: StartAuthorization aggregate (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "DOM-002 §1.3a; ARC-022 §6.2; DOM-004 (Approved Release 1 MVP Policies)"
 
   # ──────────────────────────────────────────────────────────────────────────
   # Maintenance & Operational Overrides
@@ -48,33 +79,42 @@ policies:
 
   - policyId: MAINT-IMPACT-RESOLUTION-GAP-001
     description: >
-      Before a maintenance record can transition to SCHEDULED or COMPLETED,
-      all active bookings that overlap with the maintenance window MUST be
-      resolved (reassigned, cancelled, or the driver notified).  The system
-      SHALL reject the transition if MAINTENANCE_IMPACT_UNRESOLVED.
-      (GAP-001)
-    applicableTo: Maintenance lifecycle, Booking aggregate
-    releaseWave: *w2
+      Before the maintenance planning record can advance from
+      ENFORCEMENT_PENDING through IMPACT_RESOLUTION to SCHEDULED, all active
+      bookings and sessions overlapping the maintenance window MUST be
+      resolved (reassigned, cancelled, or the driver notified).  If impacts
+      cannot be resolved, the workflow transitions to FAILED and the platform
+      reports MAINTENANCE_IMPACT_UNRESOLVED.
+    applicableTo: Maintenance planning record lifecycle (station-operations-service), Booking aggregate (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "DOM-002 §1.18, §2.7"
 
   - policyId: MAINT-CAPACITY-FREEZE
     description: >
-      When maintenance is SCHEDULED, the system SHALL automatically create a
-      CapacityRestriction (FREEZE) for the affected EVSEs for the duration of
-      the maintenance window.  The freeze SHALL be released when maintenance
-      completes.
-    applicableTo: Maintenance lifecycle, CapacityRestriction aggregate
-    releaseWave: *w2
+      When maintenance is proposed (planning record transitions to PROPOSED),
+      the Booking authority MUST commit a capacity restriction in FREEZE state
+      for the affected EVSEs before impact resolution begins, preventing new
+      capacity claims.  Upon resolution the restriction transitions to BLOCKED
+      (hard block); if the plan is aborted it is RELEASED.  On completion or
+      cancellation of the maintenance, the restriction is RELEASED.
+    applicableTo: CapacityRestriction aggregate and Booking authority (booking-session-service); Maintenance planning record (station-operations-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "DOM-002 §1.18, §2.7; ARC-006 §4.6"
 
   - policyId: OVERRIDE-AUTHORIZATION
     description: >
-      An OperationalOverride MAY only be applied by an authenticated operator
-      with the 'ops.override' permission.  Overrides MUST have a reason code
-      and an optional TTL.  (ARC-020 §3)
-    applicableTo: EVSEOperationalStatus aggregate
-    releaseWave: *w2
+      An EVSE operational status override (SCHEDULED or ACTIVE) MAY only be
+      created by an authenticated operator holding the applicable privileged
+      role.  Overrides MUST carry a reason code and MAY carry an expiry
+      (automatic transition to EXPIRED) or be revoked (REVOKED).  Emergency
+      activation requires an authorized emergency audit record before the
+      state change.
+    applicableTo: EVSE operational status override lifecycle (station-operations-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "DOM-002 §1.6, §1.18 (emergency activation); ARC-020 §6 (OperationalOverrideApplied/Expired)"
 
   # ──────────────────────────────────────────────────────────────────────────
   # Privacy & Compliance
@@ -82,22 +122,31 @@ policies:
 
   - policyId: PRIVACY-ROUTING-ARC-020
     description: >
-      All PII-bearing events (driver identity, location, payment details) MUST
-      be routed through a privacy filter that redacts sensitive fields before
-      publishing to the domain exchange.  Non-redacted events MUST only travel
-      on internal service buses.  (ARC-020)
-    applicableTo: NotificationService, all event publishers
-    releaseWave: *w2
+      Personal and contact data MUST NOT travel on the general domain
+      exchange.  Contact and identity changes travel only on the restricted
+      identity stream (e.g. NotificationContactChanged,
+      EmailVerificationChanged, IdentitySessionsRevoked) consumed by the
+      notification-service.  Discovery receives no account, driver or vehicle
+      events, and discovery projections contain no account, driver or vehicle
+      identifiers.
+    applicableTo: notification-service, account-service, discovery-insights-service, all event publishers
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "ARC-020 §3, §6 (restricted identity stream); ARC-018 §4 (decisions 9, 10)"
 
   - policyId: DATA-RETENTION-W1
     description: >
-      Booking and session data MUST be retained for at least 90 days post
-      completion.  Anonymised analytics data MAY be retained indefinitely.
-      (GDPR compliance)
-    applicableTo: ChargingService, BillingService, AnalyticsService
-    releaseWave: *w1
+      Booking and session data are retained per the PRV-001 provisional
+      retention schedule: expired booking holds are deleted or aggregated
+      after 90 days; linked completed booking/session records are retained for
+      24 months, then anonymized unless retention is justified.  After
+      approved account deletion, personally identifiable information MUST be
+      purged or anonymized within the configured retention bounds.
+      Anonymized, non-re-identifiable statistics MAY be retained indefinitely.
+    applicableTo: booking-session-service (booking/session records), account-service (deletion and anonymization), discovery-insights-service (aggregates only)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "PRV-001 §17 (provisional retention schedule); DOM-002 §2.5"
 
   # ──────────────────────────────────────────────────────────────────────────
   # Capacity & Allocation
@@ -105,32 +154,43 @@ policies:
 
   - policyId: FREEZE-ENFORCEMENT-MODEL-ARC-006
     description: >
-      A CapacityRestriction in FROZEN state SHALL prevent new bookings on
-      affected EVSEs.  Existing CONFIRMED bookings are unaffected.  In BLOCKED
-      state, the system SHALL also attempt to reassign or cancel existing
-      bookings.  (ARC-006 §4.6)
-    applicableTo: CapacityRestriction aggregate, Booking aggregate
-    releaseWave: *w1
+      A capacity restriction in FREEZE state SHALL prevent new capacity
+      claims: every allocation transaction queries overlapping FREEZE/BLOCKED
+      restriction rows while holding the EVSE guard lock and rejects with
+      MAINTENANCE_CONFLICT.  Existing CONFIRMED bookings are unaffected during
+      FREEZE; affected overlapping bookings are resolved (reassigned,
+      cancelled, or notified) during impact resolution before the restriction
+      commits to BLOCKED (hard block).  RELEASED ends the restriction and
+      restores capacity.
+    applicableTo: CapacityRestriction aggregate, Booking aggregate (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "ARC-006 §4.6 (Freeze enforcement model, Phases A–E); DOM-002 §2.7"
 
   - policyId: CONFLICT-PREDICATE-ARC-006
     description: >
-      Before a CapacityRestriction can transition from PENDING_FREEZE to
-      FROZEN, the system MUST verify that no conflicting restriction exists
-      (overlapping EVSEs, time windows, or incompatible types).
-      (ARC-006 §10)
-    applicableTo: CapacityRestriction aggregate
-    releaseWave: *w1
+      A capacity restriction may only be committed for an EVSE and effective
+      interval when no conflicting, overlapping, unreleased restriction exists
+      for that EVSE.  Restriction creation is idempotent per (EVSE,
+      idempotency key); overlapping restrictions are rejected with
+      MAINTENANCE_CONFLICT rather than silently merged.  Forbidden state
+      transitions (e.g. BLOCKED → FREEZE) are rejected by aggregate transition
+      logic and optimistic version checks.
+    applicableTo: CapacityRestriction aggregate (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "ARC-006 §4.6; ARC-018 §7 (MAINTENANCE_CONFLICT)"
 
   - policyId: SAFETY-EVIDENCE-BEFORE-RELEASE
     description: >
-      A CapacityRestriction in BLOCKED state MAY only transition to RELEASED
-      if the operator provides safety evidence (maintenance completion report,
-      testing verification).  This enforces SAFETY_EVIDENCE_REQUIRED.
-    applicableTo: CapacityRestriction aggregate
-    releaseWave: *w1
+      Release of a FAILED maintenance restriction MAY only transition to
+      RELEASED if the operator provides verified safety evidence (maintenance
+      completion report, testing verification).  The platform enforces this
+      with SAFETY_EVIDENCE_REQUIRED.
+    applicableTo: CapacityRestriction aggregate (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "ARC-018 §7 (SAFETY_EVIDENCE_REQUIRED); ARC-006 §4.6 (BLOCKED → RELEASED)"
 
   # ──────────────────────────────────────────────────────────────────────────
   # Booking & Check-in
@@ -138,30 +198,39 @@ policies:
 
   - policyId: HOLD-TTL-ENFORCEMENT
     description: >
-      A Booking in PENDING_HOLD state MUST automatically expire after the
-      configured hold TTL (default 120s).  On expiry, the booking transitions
-      to HOLD_EXPIRED and the EVSE capacity is released.
-    applicableTo: Booking aggregate
-    releaseWave: *w1
+      A hold is a state of the Booking aggregate (HELD) plus a capacity claim
+      of kind BOOKING_HOLD; there is no independent hold aggregate.  A Booking
+      in HELD state MUST automatically expire after the approved hold duration
+      of 5 minutes (300 seconds).  On expiry the booking transitions to
+      EXPIRED and all held capacity claims are released.
+    applicableTo: Booking aggregate (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "DOM-002 §1.1 (HELD → EXPIRED, 5m), §2.1 (BOOKING_HOLD, 5-minute TTL); DOM-004 (Hold duration: 5 minutes)"
 
   - policyId: CHECK-IN-WINDOW
     description: >
-      A Booking in CONFIRMED state has a configurable check-in window
-      (default 15 min before to 5 min after the slot start).  If the driver
-      does not check in, the booking transitions to NO_SHOW.
-    applicableTo: Booking aggregate, StationManager
-    releaseWave: *w1
+      A Booking in CONFIRMED state has a check-in window that opens 15 minutes
+      before the scheduled start.  If the driver does not check in before the
+      late-arrival grace period (15 minutes) elapses after slot start, the
+      booking transitions to NO_SHOW, and a no-show automatically releases the
+      EVSE capacity.  Equipment failure MUST NOT classify the driver as a
+      no-show.
+    applicableTo: Booking aggregate (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "DOM-004 (Check-in opens: 15 minutes before start; Late-arrival grace period: 15 minutes; A no-show automatically releases the EVSE); DOM-002 §1.1"
 
   - policyId: WRONG-EVSE-CHECK-IN
     description: >
       When a driver attempts to check in at an EVSE that does not match the
-      assigned EVSE for the booking, the system SHALL reject with
-      WRONG_EVSE unless the station allows free EVSE selection.
-    applicableTo: Booking aggregate, StationManager
-    releaseWave: *w1
+      EVSE assigned to the booking, the system SHALL reject the check-in with
+      WRONG_EVSE.  Check-in validation always runs against the booking's
+      assigned EVSE.
+    applicableTo: Booking check-in (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "ARC-022 §16 (WRONG_EVSE); DOM-004 (CHECKED_IN — driver validated at the assigned EVSE)"
 
   # ──────────────────────────────────────────────────────────────────────────
   # Observability & Reconciliation
@@ -169,30 +238,43 @@ policies:
 
   - policyId: DEAD-LETTER-OBSERVABILITY
     description: >
-      All messages that cannot be delivered after configured retries MUST be
-      routed to a dead-letter queue.  Dead-letter entries MUST include the
-      original message headers, error details, and timestamp.
-    applicableTo: Message bus infrastructure
-    releaseWave: *w1
+      Messages that cannot be delivered or processed after configured bounded
+      retries MUST be routed to a quarantine (dead-letter) queue and operators
+      alerted.  Quarantined entries MUST retain the original message headers,
+      failure details, and timestamps so they can be replayed or inspected.
+    applicableTo: Messaging infrastructure (all services)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "ARC-020 §4 (Delivery guarantees); ARC-018 §3 (Dead-letter replay tests)"
 
   - policyId: RECONCILIATION-TRIGGER
     description: >
-      A ChargingSession SHALL enter RECONCILIATION_REQUIRED state when the
-      energy delivered reported by the device differs by more than the
-      configured threshold (default 5%) from the session's recorded energy.
-    applicableTo: ChargingSession aggregate
-    releaseWave: *w2
+      Ambiguous device outcomes MUST remain visibly uncertain until
+      reconciled.  On a connection timeout or ambiguous device response, the
+      charging session remains in its authoritative state flagged
+      uncertain=true, and the session attempt moves to RECONCILING and, where
+      evidence stays ambiguous, to UNRESOLVED_REQUIRES_ACTION.  An
+      UNRESOLVED_REQUIRES_ACTION attempt blocks capacity until an authorized
+      manual resolution (with resolved_by and resolution_evidence) resolves it
+      to TRANSACTION_STARTED or ATTEMPT_REJECTED; the escalation deadline is
+      24 hours.  Device command acceptance never proves physical charging.
+    applicableTo: ChargingSession and SessionAttempt aggregates (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "DOM-002 §1.2, §1.3; ARC-018 §4 (decisions 11, 12)"
 
   - policyId: SESSION-OUTCOME-RECONCILIATION
     description: >
-      DeviceCommandOutcomeReconciled SHALL be emitted when the StationManager
-      resolves a discrepancy between a dispatched command and the actual device
-      outcome.  This event drives session state correction.
-    applicableTo: StationManager, ChargingSession aggregate
-    releaseWave: *w2
+      DeviceCommandOutcomeReconciled SHALL be emitted by the
+      device-integration-service (including as the outcome evidence of
+      RequestDeviceSnapshot) when a previously dispatched command outcome is
+      resolved against device evidence.  The booking-session-service consumes
+      it to drive session and attempt state correction; reconciliation never
+      fabricates a successful physical outcome without transaction evidence.
+    applicableTo: device-integration-service (emitter), ChargingSession and SessionAttempt aggregates (booking-session-service)
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "ARC-004 (event/command catalogue: DeviceCommandOutcomeReconciled; RequestDeviceSnapshot outcome evidence); DOM-002 §1.2"
 
   # ──────────────────────────────────────────────────────────────────────────
   # Idempotency & Ordering
@@ -200,21 +282,29 @@ policies:
 
   - policyId: IDEMPOTENCY-KEY-ENFORCEMENT
     description: >
-      All COMMAND messages MUST carry an idempotency key.  The receiver SHALL
-      reject a command with a reused idempotency key if the payload differs
-      from the original request (IDEMPOTENCY_KEY_REUSED).
-    applicableTo: All command handlers
-    releaseWave: *w1
+      All mutating operations MUST carry an Idempotency-Key.  The receiver
+      SHALL reject a request retrying a used key with a different payload
+      (IDEMPOTENCY_KEY_REUSED).  Command and event consumers are idempotent
+      and assume at-least-once delivery: duplicate event IDs return success
+      without repeating the effect, backed by inbox/idempotency records.
+      Business changes and outbox records commit atomically.
+    applicableTo: All mutating operation handlers and command/event consumers
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "ARC-003 §15 (Idempotency); ARC-022 §8.3 (idempotency_record), §16 (IDEMPOTENCY_KEY_REUSED); ARC-020 §4"
 
-  - policyId: MESSAGE-ORDERING-GUARANTEE
+  - policyId: MESSAGE-ORDERING-HANDLING
     description: >
-      Events for a given aggregate instance SHALL be published in sequence
-      order.  Consumers SHOULD use the sequenceNumber field to detect gaps
-      and request replay if necessary.
-    applicableTo: All event publishers
-    releaseWave: *w1
+      The platform MUST NOT rely on global or aggregate ordering from the
+      broker.  Consumers detect ordering using the aggregate reference/version
+      carried in the canonical envelope, hold or retry out-of-order versions,
+      request authoritative snapshots where necessary, and rebuild projections
+      idempotently.  Critical business correctness never depends solely on
+      event arrival order.
+    applicableTo: All event publishers and consumers
+    releaseWave: W1
     status: ACTIVE
+    sourceRef: "ARC-020 §5 (Ordering clarification), §2 (Event envelope); ARC-022 §15 (Canonical envelope)"
 
 # =============================================================================
 # End of Policy Registry

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/charging-session-progressed-event.json",
+  "title": "ChargingSessionProgressedEvent",
+  "description": "Payload for the ChargingSessionProgressed event (throttled progress for UI and analytics)",
+  "type": "object",
+  "properties": {
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "progressedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Progress timestamp"
+    },
+    "meterReading": {
+      "$ref": "../telemetry/meter-reading.json",
+      "description": "Meter reading sample for the progress interval"
+    }
+  },
+  "required": ["sessionRef", "evseRef", "progressedAt", "meterReading"]
+}

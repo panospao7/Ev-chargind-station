@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/booking-check-in-abandoned-event.json",
+  "title": "BookingCheckInAbandonedEvent",
+  "description": "Payload for the BookingCheckInAbandoned event",
+  "type": "object",
+  "properties": {
+    "bookingRef": {
+      "type": "string",
+      "description": "Booking reference"
+    },
+    "abandonedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Check-in abandonment timestamp"
+    }
+  },
+  "required": ["bookingRef", "abandonedAt"]
+}

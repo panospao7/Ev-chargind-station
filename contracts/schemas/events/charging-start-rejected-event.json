@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/charging-start-rejected-event.json",
+  "title": "ChargingStartRejectedEvent",
+  "description": "Payload for the ChargingStartRejected event (final start exhaustion, booking moves to fulfilment failed)",
+  "type": "object",
+  "properties": {
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference"
+    },
+    "bookingRef": {
+      "type": "string",
+      "description": "Associated booking reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "reasonCode": {
+      "type": "string",
+      "description": "Structured rejection reason code"
+    },
+    "rejectedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Rejection timestamp"
+    }
+  },
+  "required": ["sessionRef", "bookingRef", "evseRef", "reasonCode", "rejectedAt"]
+}

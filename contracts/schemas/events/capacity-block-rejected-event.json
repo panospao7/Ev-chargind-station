@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/capacity-block-rejected-event.json",
+  "title": "CapacityBlockRejectedEvent",
+  "description": "Payload for the CapacityBlockRejected event",
+  "type": "object",
+  "properties": {
+    "workflowId": {
+      "type": "string",
+      "description": "Restriction workflow identifier"
+    },
+    "restrictionId": {
+      "type": "string",
+      "description": "Capacity restriction identifier"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Structured rejection reason"
+    }
+  },
+  "required": ["workflowId", "restrictionId", "reason"]
+}

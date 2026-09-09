@@ -115,7 +115,9 @@ function checkLifecycles() {
     lifecycleNames.add(a.name);
     const stateNames = new Set((a.states || []).map(s => s.name));
     (a.permittedTransitions || []).forEach(t => {
-      if (!stateNames.has(t.from)) {
+      // "[*]" is the UML initial pseudo-state used by DOM-002 for creation
+      // transitions; it is not a declared state but is a legal source.
+      if (t.from !== '[*]' && !stateNames.has(t.from)) {
         console.error(`FAIL: ${a.name}: unknown source state "${t.from}"`);
         exitCode = 1;
       }

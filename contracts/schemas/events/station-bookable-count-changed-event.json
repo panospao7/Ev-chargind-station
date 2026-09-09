@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/station-bookable-count-changed-event.json",
+  "title": "StationBookableCountChangedEvent",
+  "description": "Booking-owned capacity projection payload for the StationBookableCountChanged event; contains no account, driver, or vehicle identifiers",
+  "type": "object",
+  "properties": {
+    "stationRef": {
+      "type": "string",
+      "description": "Station reference"
+    },
+    "bookableCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of bookable EVSEs at the station"
+    },
+    "compatibleCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of compatibility-filtered bookable EVSEs at the station"
+    }
+  },
+  "required": ["stationRef", "bookableCount", "compatibleCount"]
+}

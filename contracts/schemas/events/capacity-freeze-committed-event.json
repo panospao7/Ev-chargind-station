@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/capacity-freeze-committed-event.json",
+  "title": "CapacityFreezeCommittedEvent",
+  "description": "Payload for the CapacityFreezeCommitted event",
+  "type": "object",
+  "properties": {
+    "workflowId": {
+      "type": "string",
+      "description": "Restriction workflow identifier"
+    },
+    "restrictionId": {
+      "type": "string",
+      "description": "Capacity restriction identifier"
+    },
+    "stationRef": {
+      "type": "string",
+      "description": "Station reference the freeze scope is based on"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference (present when the freeze scope is a single EVSE)"
+    },
+    "interval": {
+      "type": "object",
+      "description": "Half-open frozen interval in UTC",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval start (inclusive)"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval end (exclusive)"
+        }
+      },
+      "required": ["start", "end"]
+    },
+    "committedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Commit timestamp"
+    }
+  },
+  "required": ["workflowId", "restrictionId", "stationRef", "interval", "committedAt"]
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/capacity-restriction-released-event.json",
+  "title": "CapacityRestrictionReleasedEvent",
+  "description": "Payload for the CapacityRestrictionReleased event",
+  "type": "object",
+  "properties": {
+    "restrictionId": {
+      "type": "string",
+      "description": "Capacity restriction identifier"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Structured release reason"
+    },
+    "releasedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Release timestamp"
+    }
+  },
+  "required": ["restrictionId", "reason", "releasedAt"]
+}

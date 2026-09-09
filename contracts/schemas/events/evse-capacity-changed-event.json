@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/evse-capacity-changed-event.json",
+  "title": "EVSECapacityChangedEvent",
+  "description": "Booking-owned capacity projection payload for the EVSECapacityChanged event; contains no account, driver, or vehicle identifiers",
+  "type": "object",
+  "properties": {
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "interval": {
+      "type": "object",
+      "description": "Half-open interval in UTC the capacity state applies to",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval start (inclusive)"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval end (exclusive)"
+        }
+      },
+      "required": ["start", "end"]
+    },
+    "capacityState": {
+      "type": "string",
+      "description": "New bookable capacity state for the interval"
+    }
+  },
+  "required": ["evseRef", "interval", "capacityState"]
+}

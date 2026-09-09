@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/capacity-freeze-rejected-event.json",
+  "title": "CapacityFreezeRejectedEvent",
+  "description": "Payload for the CapacityFreezeRejected event",
+  "type": "object",
+  "properties": {
+    "workflowId": {
+      "type": "string",
+      "description": "Restriction workflow identifier"
+    },
+    "restrictionId": {
+      "type": "string",
+      "description": "Capacity restriction identifier"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Structured rejection reason"
+    },
+    "remainingInterval": {
+      "type": "object",
+      "description": "Half-open interval in UTC that remains usable",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval start (inclusive)"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval end (exclusive)"
+        }
+      },
+      "required": ["start", "end"]
+    }
+  },
+  "required": ["workflowId", "restrictionId", "reason", "remainingInterval"]
+}
