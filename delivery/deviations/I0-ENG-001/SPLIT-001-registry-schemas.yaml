@@ -1,0 +1,40 @@
+schemaVersion: "1.0"
+
+deviationId: "I0-ENG-001-SPLIT-001"
+taskId: "I0-ENG-001"
+type: "IMPLEMENTATION_DISCOVERY"
+status: "TASK_SPLIT_REQUESTED"
+raisedBy: "coder agent (ZCode session)"
+createdAt: "2026-09-09T21:40:00Z"
+requiresHumanDecision: true
+requiredHumanRole: "Project Owner"
+
+summary: >
+  The executable message registry (contracts/registries/messages-v1.yaml)
+  declares 78 `schemaPath` targets; none of the referenced JSON Schema files
+  exist in contracts/schemas/. The two existing schema files use a different
+  naming convention and are not referenced by the registry. The registry also
+  contains content that predates the consolidated specification (producer/
+  consumer names such as ChargingService, BillingService, CapacityService;
+  event-sourcing semantics; a 120 s hold default conflicting with the
+  approved 5-minute hold), consistent with ARC-022's pending registry
+  work packages. Enforcing "existing schema references" (AC-06) against the
+  current content therefore fails by design.
+
+disposition: >
+  Correcting this requires authoring 78 contract schemas and rewriting
+  registry mappings to the approved domain model — semantic contract work
+  with required contract/data review and owner approval, far beyond this
+  task's 800-line non-semantic budget. Per the task packet's stop clause
+  (">20 contract files or requires new business decisions, stop and request
+  task splitting"), the registry existence check is now HONESTLY enforced
+  (the check is red) and a follow-up task is requested, e.g.
+  "I0-CON-002: rebuild executable registries against DOM-002/ARC-022"
+  (registry rewrite + schema authoring, L2/L3, contract + data reviewers).
+
+interimState:
+  - "contracts:registries remains red (expected) until the follow-up task lands."
+  - "The G3 aggregate gate stays red for this class even after DEC-001 resolves."
+
+impactIfDeferred:
+  - "CON-175/176 (G3 green run) remain open; W1 implementation start remains gated."

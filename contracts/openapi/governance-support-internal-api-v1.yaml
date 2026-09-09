@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Governance & Support Internal API
   version: 1.0.0
-  description: Internal API for Governance & Support Service
+  description: "Internal API for Governance & Support Service Transport security: connections are mutually TLS-authenticated (mTLS); message-level authorization uses the serviceToken bearer scheme."
 servers:
   - url: https://internal-api.example.com
     description: Internal production server
@@ -65,9 +65,6 @@ paths:
                 $ref: '#/components/schemas/SupportTicket'
 components:
   securitySchemes:
-    mTLS:
-      type: mutualTLS
-      description: mTLS-based authentication
     serviceToken:
       type: http
       scheme: bearer
@@ -141,5 +138,5 @@ components:
         - status
         - createdAt
 security:
-  - mTLS: []
+  - serviceToken: []
   - serviceToken: []

@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Discovery & Insights Internal API
   version: 1.0.0
-  description: Internal API for Discovery & Insights Service
+  description: "Internal API for Discovery & Insights Service Transport security: connections are mutually TLS-authenticated (mTLS); message-level authorization uses the serviceToken bearer scheme."
 servers:
   - url: https://internal-api.example.com
     description: Internal production server
@@ -66,9 +66,6 @@ paths:
                   $ref: '#/components/schemas/TrendDataPoint'
 components:
   securitySchemes:
-    mTLS:
-      type: mutualTLS
-      description: mTLS-based authentication
     serviceToken:
       type: http
       scheme: bearer
@@ -127,5 +124,5 @@ components:
         - totalSessions
         - totalEnergyKwh
 security:
-  - mTLS: []
+  - serviceToken: []
   - serviceToken: []

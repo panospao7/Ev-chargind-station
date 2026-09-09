@@ -8,6 +8,10 @@ on:
       - "docs/**"
       - "scripts/**"
       - "package.json"
+      - "package-lock.json"
+      - ".nvmrc"
+      - ".spectral.yaml"
+      - ".github/workflows/g3-contract-validation.yml"
   pull_request:
     branches: [main]
     paths:
@@ -15,13 +19,15 @@ on:
       - "docs/**"
       - "scripts/**"
       - "package.json"
+      - "package-lock.json"
+      - ".nvmrc"
+      - ".spectral.yaml"
+      - ".github/workflows/g3-contract-validation.yml"
 
+# Least privilege: the gate only reads the repository. It publishes no
+# check runs, releases, or packages.
 permissions:
   contents: read
-  checks: write
-
-env:
-  NODE_VERSION: "24"
 
 defaults:
   run:
@@ -37,35 +43,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
+          cache: npm
       - name: Install dependencies
-        run: npm install --no-audit --no-fund --ignore-scripts
+        run: npm ci --no-audit --no-fund
       - name: Validate OpenAPI specs
-        run: npx --yes @stoplight/spectral-cli@6.14.3 lint contracts/openapi/*.yaml
-      - name: Check operationId uniqueness
-        run: |
-          node -e "
-            const fs = require('fs'), yaml = require('js-yaml');
-            const files = fs.readdirSync('contracts/openapi').filter(f => f.endsWith('.yaml'));
-            let exitCode = 0;
-            for (const f of files) {
-              const doc = yaml.load(fs.readFileSync('contracts/openapi/' + f, 'utf8'));
-              const ops = new Set();
-              for (const [path, methods] of Object.entries(doc.paths || {})) {
-                for (const [method, op] of Object.entries(methods)) {
-                  if (op.operationId) {
-                    if (ops.has(op.operationId)) {
-                      console.error('FAIL: Duplicate operationId ' + op.operationId + ' in ' + f);
-                      exitCode = 1;
-                    }
-                    ops.add(op.operationId);
-                  }
-                }
-              }
-              console.log('  ' + f + ': ' + ops.size + ' unique operationIds');
-            }
-            process.exit(exitCode);
-          "
+        run: npm run contracts:openapi
 
   asyncapi-validate:
     name: AsyncAPI Validation
@@ -76,11 +59,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
+          cache: npm
       - name: Install dependencies
-        run: npm install --no-audit --no-fund --ignore-scripts
+        run: npm ci --no-audit --no-fund
       - name: Validate AsyncAPI spec
-        run: npx --yes @asyncapi/cli@2.13.0 validate contracts/asyncapi/platform-messaging-v1.yaml
+        run: npm run contracts:asyncapi
 
   jsonschema-validate:
     name: JSON Schema Validation
@@ -91,14 +75,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
+          cache: npm
       - name: Install dependencies
-        run: npm install --no-audit --no-fund --ignore-scripts
+        run: npm ci --no-audit --no-fund
       - name: Validate JSON Schemas
-        run: node scripts/contracts/validate-schemas.js
-      - name: Validate with ajv
-        run: |
-          find contracts/schemas -name '*.json' -exec npx --yes ajv-cli@5.0.0 validate -s {} \;
+        run: npm run contracts:schemas
 
   registry-checks:
     name: Registry Consistency Checks
@@ -109,11 +91,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
+          cache: npm
       - name: Install dependencies
-        run: npm install --no-audit --no-fund --ignore-scripts
+        run: npm ci --no-audit --no-fund
       - name: Run registry checks
-        run: node scripts/contracts/check-registries.js
+        run: npm run contracts:registries
 
   privacy-checks:
     name: Privacy and Data Minimization Checks
@@ -124,11 +107,12 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
+          cache: npm
       - name: Install dependencies
-        run: npm install --no-audit --no-fund --ignore-scripts
+        run: npm ci --no-audit --no-fund
       - name: Run security and privacy scan
-        run: node scripts/contracts/security-scan.js
+        run: npm run contracts:privacy
 
   doc-consistency:
     name: Documentation Consistency Checks
@@ -139,14 +123,15 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
+          cache: npm
       - name: Install dependencies
-        run: npm install --no-audit --no-fund --ignore-scripts
+        run: npm ci --no-audit --no-fund
       - name: Run documentation consistency checks
-        run: node scripts/contracts/check-docs.js
+        run: npm run contracts:docs
 
   security-scan:
-    name: Security Baseline Scan
+    name: Secret Scanning (fail closed)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -154,13 +139,28 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: .nvmrc
+          cache: npm
       - name: Install dependencies
-        run: npm install --no-audit --no-fund --ignore-scripts
+        run: npm ci --no-audit --no-fund
       - name: Run secret scanning
-        run: |
-          npx --yes secretlint@8.5.0 "contracts/**/*.{yaml,json}" 2>/dev/null || true
-          echo "Secretlint check complete (non-blocking)"
+        run: npm run contracts:secrets
+
+  self-test:
+    name: Validator Self-Test (failure injection)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Node
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Prove every validator category fails closed on invalid fixtures
+        run: npm run contracts:self-test
 
   required:
     name: Required Aggregation
@@ -173,6 +173,7 @@ jobs:
       - privacy-checks
       - doc-consistency
       - security-scan
+      - self-test
     runs-on: ubuntu-latest
     steps:
       - name: Check for failures
@@ -184,13 +185,15 @@ jobs:
           echo "privacy-checks: ${{ needs.privacy-checks.result }}"
           echo "doc-consistency: ${{ needs.doc-consistency.result }}"
           echo "security-scan: ${{ needs.security-scan.result }}"
-          if [ "${{ needs.openapi-validate.result }}" = "failure" ] || \
-             [ "${{ needs.asyncapi-validate.result }}" = "failure" ] || \
-             [ "${{ needs.jsonschema-validate.result }}" = "failure" ] || \
-             [ "${{ needs.registry-checks.result }}" = "failure" ] || \
-             [ "${{ needs.privacy-checks.result }}" = "failure" ] || \
-             [ "${{ needs.doc-consistency.result }}" = "failure" ] || \
-             [ "${{ needs.security-scan.result }}" = "failure" ]; then
+          echo "self-test: ${{ needs.self-test.result }}"
+          if [ "${{ needs.openapi-validate.result }}" != "success" ] || \
+             [ "${{ needs.asyncapi-validate.result }}" != "success" ] || \
+             [ "${{ needs.jsonschema-validate.result }}" != "success" ] || \
+             [ "${{ needs.registry-checks.result }}" != "success" ] || \
+             [ "${{ needs.privacy-checks.result }}" != "success" ] || \
+             [ "${{ needs.doc-consistency.result }}" != "success" ] || \
+             [ "${{ needs.security-scan.result }}" != "success" ] || \
+             [ "${{ needs.self-test.result }}" != "success" ]; then
             echo "FAIL: One or more required checks failed"
             exit 1
           fi
