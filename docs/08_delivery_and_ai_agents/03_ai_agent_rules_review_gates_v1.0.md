@@ -446,6 +446,7 @@ Within an approved task and allowed file scope, an agent may:
 - Search source and documentation
 - Create a feature branch or isolated worktree
 - Edit source, tests and documentation
+- Stage changes, create dedicated task branches, create LOCAL commits, and push task branches under DEC-AGENT-01 (allowedFiles only, pre-commit gate: status/diff review, secret scan, stop on unrelated dirt; no sweep/force flags; never `main`/protected branches; merge to main human-only)
 - Run local builds and tests
 - Generate contract artifacts
 - Run static analysis
@@ -489,7 +490,7 @@ Approval may be given as part of an accepted story or pull-request review.
 
 # 9. Prohibited actions
 
-Agents must never:
+Agents must never (DEC-AGENT-01 exception: staging, task-branch creation, local commits, and pushing task branches are autonomous; merge to `main`/protected branches and the release/destructive actions below remain prohibited):
 
 1. Push directly to protected branches.
 2. Merge their own changes without human approval.
@@ -1171,6 +1172,8 @@ Instructions must be version-controlled and reviewed like code.
 | Platform/IaC | Feature branch | Validation only | No | No | No |
 | Promotion assistant | Promotion PR only | Yes | No | No | No |
 | Human owner | Controlled | Yes | Protected | Approved | Approved |
+
+Narrow exception DEC-AGENT-01 (illustrative here; the authoritative scope is the DEC-AGENT-01 register row in GOV-001 section 16e): agents may stage, create task branches, commit locally, and push task branches for task allowedFiles only (pre-commit gate required; no sweep/force flags). Merge to `main`, protected-branch push, rebase, reset, tag, deploy, and promotion remain human-only.
 
 No general-purpose AI agent receives production credentials.
 

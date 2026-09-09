@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Logs
+*.log
+logs/
+
+# Build and tooling output
+dist/
+build/
+coverage/
+.cache/
+tmp/
+
+# OS artifacts
+.DS_Store
+Thumbs.db

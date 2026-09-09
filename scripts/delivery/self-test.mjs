@@ -44,7 +44,7 @@ const tests = [
     fixture: 'scripts/delivery/tests/missing-task/status.yaml',
     extraArgs: 'scripts/delivery/tests/missing-task/iterations',
     expectExit: 1,
-    expectMessage: 'but',
+    expectMessage: 'I0-NONEXISTENT-TASK',
   },
   {
     name: 'Valid real status.yaml',
