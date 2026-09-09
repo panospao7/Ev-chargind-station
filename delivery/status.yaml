@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-09T20:13:23Z"
+updatedAt: "2026-09-09T21:36:22Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -9,6 +9,65 @@ project:
 
 tasks:
   I0-ENG-001:
+    state: "MERGED"
+    assignedAgent: "ZCode coding-agent session (coder+tester roles, disclosed)"
+    claimedAt: "2026-09-09T20:20:00Z"
+
+    baselineCommit: "3d17040635565f3608cfe208d928ca81c35d577f"
+    candidateCommit: "cc186942ac8d7ddbe9ab96ad2c2d7e9ac28ec8ab"
+    mergeCommit: "3b7a331b010fbb83d40005b333357d49da5fc515"
+    branch: "task/i0-eng-001-toolchain"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/3"
+
+    blockers: []
+    deviations:
+      - "I0-ENG-001-DEC-001: mutualTLS security-scheme encoding decided by owner (option A: scheme removed, serviceToken declared, mTLS documented at transport layer)"
+      - "I0-ENG-001-SPLIT-001: registry schema authoring (78 missing schemaPath targets) split to I0-CON-002, owner approved 2026-09-09"
+    unresolvedFindings:
+      - "contracts:registries remains red (expected) until I0-CON-002 lands; G3 aggregate gate and CON-175/176 closure gate on it"
+      - "Independent planner/contract/security specialist reviews not separately executed; single agent session performed coder+tester roles (disclosed); owner reviewed PR #3 and merged"
+
+    handoffSequence: 5
+    latestHandoff: "delivery/handoffs/I0-ENG-001/05-orchestrator.md"
+
+    reviews:
+      planner: "NOT_STARTED"
+      tester: "PASS"
+      generalReviewer: "PASS"
+      contractReviewer: "PASS"
+      dataReviewer: "NOT_APPLICABLE"
+      securityReviewer: "NOT_STARTED"
+      humanReview: "PASS"
+
+    ci:
+      status: "PASS"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/pull/3"
+      mergeRunReference: "GitHub Actions push run at merge commit 3b7a331b010fbb83d40005b333357d49da5fc515: 7/9 checks success (OpenAPI, AsyncAPI, JSON Schema, Privacy, Docs, Secrets, Self-Test); Registry Consistency Checks and Required Aggregation red per approved SPLIT-001"
+      requiredChecks:
+        - "OpenAPI Validation: success"
+        - "AsyncAPI Validation: success"
+        - "JSON Schema Validation: success"
+        - "Registry Consistency Checks: failure (expected, SPLIT-001)"
+        - "Privacy and Data Minimization Checks: success"
+        - "Documentation Consistency Checks: success"
+        - "Secret Scanning: success"
+        - "Validator Self-Test: success"
+        - "Required Aggregation: failure (gated by registry-checks)"
+
+    humanApproval:
+      required: true
+      reference: "Owner reviewed and merged PR #3 (merge commit 3b7a331b) on 2026-09-10; DEC-001 option A and SPLIT-001 split approved via recorded interactive decisions"
+      approvedCandidateCommit: "cc186942ac8d7ddbe9ab96ad2c2d7e9ac28ec8ab"
+
+    evidence:
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I0-ENG-001/toolchain-validation.md"
+        - "delivery/evidence/I0-ENG-001/contract-validation.md"
+        - "delivery/evidence/I0-ENG-001/security-privacy-validation.md"
+        - "delivery/evidence/I0-ENG-001/ci-verification.md"
+
+  I0-CON-002:
     state: "READY"
     assignedAgent: null
     claimedAt: null
@@ -23,7 +82,7 @@ tasks:
     deviations: []
     unresolvedFindings: []
 
-    handoffSequence: 1
+    handoffSequence: 0
     latestHandoff: null
 
     reviews:
@@ -108,7 +167,7 @@ summary:
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
     HUMAN_REVIEW: 0
-    MERGED: 0
+    MERGED: 1
     VERIFIED: 1
 
     CLARIFICATION_REQUIRED: 0
@@ -117,4 +176,4 @@ summary:
     CANCELLED: 0
 
   activeTask: null
-  nextRecommendedTask: "I0-ENG-001"
+  nextRecommendedTask: "I0-CON-002"

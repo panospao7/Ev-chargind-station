@@ -29,8 +29,10 @@ authorityReferences:
 gates:
   - "I0-ENG-001: G3 contract validation is reproducible and green from clean checkout"
   - "I0-DEL-001: Delivery control plane is executable"
+  - "I0-CON-002: executable registries reference only existing schemas and the full G3 aggregate is green"
 status: "ACTIVE"
 startedAt: "2026-07-12"
 tasks:
   - "I0-ENG-001"
   - "I0-DEL-001"
+  - "I0-CON-002"

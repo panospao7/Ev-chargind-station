@@ -48,4 +48,19 @@ items:
       - ci
       - reproducibility
 
-nextRecommendedTask: "I0-DEL-001"
+  - id: "I0-CON-002"
+    order: 30
+    priority: "P0"
+    iteration: "I0"
+    epic: "EPIC-06"
+    title: "Rebuild executable registries and author referenced schemas"
+    packet: "delivery/tasks/I0-CON-002.yaml"
+    dependsOn:
+      - "I0-ENG-001"
+    tags:
+      - foundation
+      - contracts
+      - registries
+      - schemas
+
+nextRecommendedTask: "I0-CON-002"
