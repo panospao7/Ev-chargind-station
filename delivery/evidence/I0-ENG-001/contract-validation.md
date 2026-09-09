@@ -10,10 +10,10 @@
 
 | Script | Result | Notes |
 |---|---|---|
-| `contracts:openapi` | FAIL (expected, blocked on owner decision) | 7 errors remain, all `components.securitySchemes.mTLS.type: mutualTLS` — a valid type only in OpenAPI 3.1, not the approved 3.0.3 dialect (ADR-013). Correction requires a security-scheme semantic decision: see `delivery/deviations/I0-ENG-001/DEC-001-mtls-encoding.yaml`. Fixed separately: duplicate path key `/notifications/preferences/{accountRef}` in notification-internal-api-v1.yaml (GET/PUT merged under one key). Warnings (71) do not fail the gate (`--fail-severity=error`). |
+| `contracts:openapi` | PASS | DEC-001 decided (owner, 2026-09-09, option A): invalid `mutualTLS` securityScheme removed from all seven internal APIs; `serviceToken` declared; transport mTLS documented in `info.description`. 0 errors, 71 non-failing warnings. Also fixed: duplicate path key `/notifications/preferences/{accountRef}` in notification-internal-api-v1.yaml (GET/PUT merged under one key). |
 | `contracts:asyncapi` | PASS | @asyncapi/cli 2.13.0, warnings only |
 | `contracts:schemas` | PASS | 7 schemas compile against the draft-2020-12 meta-schema (ajv/dist/2020); $schema dialect, $id uniqueness, relative $ref resolution enforced |
-| `contracts:registries` | FAIL (expected, task split requested) | Message registry declares 78 `schemaPath` targets; none exist (see `delivery/deviations/I0-ENG-001/SPLIT-001-registry-schemas.yaml`). Structural checks now read the real registry fields (`versionedType`, `schemaPath`), enforce uniqueness, canonical namespaces, valid lifecycle transitions, one HTTP status per problem code, policy-ID uniqueness, and traceability uniqueness. |
+| `contracts:registries` | FAIL (expected, task split approved) | Message registry declares 78 `schemaPath` targets; none exist (see `delivery/deviations/I0-ENG-001/SPLIT-001-registry-schemas.yaml`; owner approved creating the follow-up task on 2026-09-09). Structural checks now read the real registry fields (`versionedType`, `schemaPath`), enforce uniqueness, canonical namespaces, valid lifecycle transitions, one HTTP status per problem code, policy-ID uniqueness, and traceability uniqueness. |
 | `contracts:privacy` | PASS | Per-line fail-closed scan; `type:`/`scheme:` declaration lines exempted as spec vocabulary (e.g. AsyncAPI `type: userPassword`), field keys and free text still scanned |
 | `contracts:docs` | PASS | AC-08-literal scoping: fails on OPEN W1-critical rows; reports register meta-rows (CON-175/176, whose recorded resolution is the green CI run itself) without failing; traceability check reads the real `traceability:` schema (29 requirements, 22 W1, 0 OPEN) |
 | `contracts:secrets` | PASS (fail closed) | secretlint 8.5.0 with committed config `scripts/contracts/secretlintrc.json`, invoked with `--secretlintrc` |
@@ -29,11 +29,15 @@ sensitive field, clean docs, OPEN W1-critical contradiction, OPEN W1-critical re
 invalid OpenAPI, valid/invalid AsyncAPI, clean secretlint file, embedded AWS access key.
 (AC-05, AC-06, AC-07, AC-08, AC-09)
 
-## Corrections made to contract artifacts (all structural, non-semantic)
+## Corrections made to contract artifacts (all structural or owner-decided)
 
 1. `contracts/openapi/notification-internal-api-v1.yaml`: removed duplicate path key
    `/notifications/preferences/{accountRef}`; the `put` operation now sits under the single
    existing path key alongside `get`. No operation, schema, or semantics changed.
+2. Seven internal API files (DEC-001, owner option A): removed the invalid `mTLS`
+   securityScheme, switched root `security:` requirement to `- serviceToken: []`, and added
+   a quoted `info.description` transport-security note. No endpoint, schema, or operation
+   changed.
 
-Result: PASS for every validator whose blocking findings are within this task's authority;
-the two expected FAILs are decision/scope items recorded as deviations, not tooling defects.
+Result: PASS for every validator except `contracts:registries`, which is red by owner
+decision pending the approved follow-up task (SPLIT-001).

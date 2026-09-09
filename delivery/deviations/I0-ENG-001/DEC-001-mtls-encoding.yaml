@@ -3,11 +3,19 @@ schemaVersion: "1.0"
 deviationId: "I0-ENG-001-DEC-001"
 taskId: "I0-ENG-001"
 type: "SPEC_CONFLICT"
-status: "DECISION_REQUESTED"
+status: "DECIDED"
 raisedBy: "coder agent (ZCode session)"
 createdAt: "2026-09-09T21:40:00Z"
-requiresHumanDecision: true
-requiredHumanRole: "Project Owner / Contract Owner"
+decidedBy: "Project Owner / Contract Owner"
+decidedAt: "2026-09-09"
+decision: "Option A"
+decisionSummary: >
+  Drop the invalid `mTLS` securityScheme from all seven internal OpenAPI
+  documents; declare `serviceToken` (http bearer) as the security scheme;
+  document transport-layer mutual TLS in `info.description`. OpenAPI 3.0.3
+  (ADR-013) is retained.
+
+implementedIn: "this task branch (see 04-orchestrator.md)"
 
 summary: >
   Seven internal OpenAPI documents declare a security scheme with
@@ -33,14 +41,10 @@ options:
       to the OpenAPI 3.0 contract layer; 3.1 added mutualTLS precisely for
       this. Keeps ADR-013 dialect. Changes `security:` requirements from
       `- mTLS: []` to `- serviceToken: []` in seven files.
+    selected: true
   - id: "B"
     label: "Model as type: apiKey, in: header, name: <invented header>"
     assessment: "Rejected as default: invents a header that does not exist."
   - id: "C"
     label: "Bump documents to OpenAPI 3.1.0"
     assessment: "Violates ADR-013 (OpenAPI 3.0.3); contract-governance decision (ARC-018)."
-
-recommendation: "A"
-
-impactIfDeferred:
-  - "contracts:openapi remains red; G3 aggregate gate cannot go green; CON-175/176 cannot close."

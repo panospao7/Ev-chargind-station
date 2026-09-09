@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Device Integration Internal API
   version: 1.0.0
-  description: Internal API for Device Integration Service
+  description: "Internal API for Device Integration Service Transport security: connections are mutually TLS-authenticated (mTLS); message-level authorization uses the serviceToken bearer scheme."
 servers:
   - url: https://internal-api.example.com
     description: Internal production server
@@ -61,9 +61,6 @@ paths:
                 $ref: ../schemas/common/problem-details.json
 components:
   securitySchemes:
-    mTLS:
-      type: mutualTLS
-      description: mTLS-based authentication
     serviceToken:
       type: http
       scheme: bearer
@@ -130,5 +127,5 @@ components:
         - status
         - queuedAt
 security:
-  - mTLS: []
+  - serviceToken: []
   - serviceToken: []

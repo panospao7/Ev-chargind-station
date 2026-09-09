@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Station Operations Internal API
   version: 1.0.0
-  description: Internal API for Station Operations Service
+  description: "Internal API for Station Operations Service Transport security: connections are mutually TLS-authenticated (mTLS); message-level authorization uses the serviceToken bearer scheme."
 servers:
   - url: https://internal-api.example.com
     description: Internal production server
@@ -66,9 +66,6 @@ paths:
                 $ref: '#/components/schemas/ReconciliationRequest'
 components:
   securitySchemes:
-    mTLS:
-      type: mutualTLS
-      description: mTLS-based authentication
     serviceToken:
       type: http
       scheme: bearer
@@ -181,5 +178,5 @@ components:
         - status
         - requestedAt
 security:
-  - mTLS: []
+  - serviceToken: []
   - serviceToken: []
