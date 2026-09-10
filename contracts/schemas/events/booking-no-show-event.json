@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/booking-no-show-event.json",
+  "title": "BookingNoShowEvent",
+  "description": "Payload for the BookingNoShow event",
+  "type": "object",
+  "properties": {
+    "bookingRef": {
+      "type": "string",
+      "description": "Booking reference"
+    },
+    "deadline": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Check-in deadline that was missed"
+    },
+    "responsibility": {
+      "type": "string",
+      "description": "Responsibility classification"
+    }
+  },
+  "required": ["bookingRef", "deadline", "responsibility"]
+}

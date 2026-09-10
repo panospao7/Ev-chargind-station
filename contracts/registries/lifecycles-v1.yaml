@@ -1,604 +1,1073 @@
 # =============================================================================
 # Lifecycle State Machine Registry v1
 # =============================================================================
-# This file defines every lifecycle state machine used in the EV charging
-# platform.  Each aggregate has its own set of states, transitions, guards,
-# and emitted facts.
+# Executable registry of all lifecycle state machines defined in DOM-002
+# (docs/03_domain/02_lifecycle_and_invariant_catalogue_v1.0.md), sections
+# 1.1-1.19 incl. 1.3a.  Supersedes the prior registry content, which violated
+# ARC-022 s16 (legacy combined-service naming, legacy hold states, and a
+# forbidden cancellation transition from the in-progress booking state).
+# None of those patterns appear in this file.
 # =============================================================================
 
+schemaVersion: "1.0"
 release_waves:
-  W1: &w1 "W1 — Foundation (MVP)"
-  W2: &w2 "W2 — Operations & Observability"
+  W1: "W1 — Foundation (MVP)"
+  W2: "W2 — Operations & Observability"
+  W3: "W3 — Ecosystem & Optimisation"
 
 lifecycles:
 
-  # ──────────────────────────────────────────────────────────────────────────
-  # Booking Lifecycle
-  # ──────────────────────────────────────────────────────────────────────────
-  - name: Booking
-    owningService: ChargingService
+  # ── DOM-002 §1.1 ───────────────────────────────────────────────────────────
+  - name: BOOKING
+    owningService: booking-session-service
+    owningModule: booking
+    releaseWave: "W1"
     states:
-      - name: PENDING_HOLD
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: |
-          Temporary hold placed on EVSE while driver confirms.  Hold has a TTL.
       - name: HELD
         persistent: true
         terminal: false
         quasiTerminal: false
-        description: Driver has been given the hold confirmation; awaiting explicit confirm.
+        description: Temporary exclusive capacity claim; hold times out after 5 minutes.
       - name: CONFIRMED
         persistent: true
         terminal: false
         quasiTerminal: false
-        description: Booking is confirmed and assigned to a specific EVSE.
+      - name: CHECKED_IN
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Persists across start attempts; each retry creates a new SessionAttempt record.
       - name: ACTIVE
         persistent: true
         terminal: false
         quasiTerminal: false
-        description: Driver has checked in and charging has started.
-      - name: COMPLETED
+        description: Failures during energy transfer end in COMPLETED with interrupted outcome, never FULFILMENT_FAILED.
+      - name: EXPIRED
         persistent: true
         terminal: true
         quasiTerminal: false
-        description: Charging session completed successfully.
       - name: CANCELLED
         persistent: true
         terminal: true
         quasiTerminal: false
-        description: Booking cancelled by driver or system.
       - name: NO_SHOW
         persistent: true
         terminal: true
         quasiTerminal: false
-        description: Driver did not check in within the check-in window.
-      - name: HOLD_EXPIRED
+      - name: DRIVER_ABANDONED
         persistent: true
         terminal: true
         quasiTerminal: false
-        description: Hold TTL elapsed without confirmation.
-      - name: FULFILMENT_FAILED
-        persistent: true
-        terminal: true
-        quasiTerminal: false
-        description: Unable to fulfil the booking (e.g. EVSE fault, allocation error).
-
-    permittedTransitions:
-      - [null, PENDING_HOLD]
-      - [PENDING_HOLD, HELD]
-      - [PENDING_HOLD, HOLD_EXPIRED]
-      - [HELD, CONFIRMED]
-      - [HELD, HOLD_EXPIRED]
-      - [HELD, CANCELLED]
-      - [CONFIRMED, ACTIVE]
-      - [CONFIRMED, CANCELLED]
-      - [CONFIRMED, NO_SHOW]
-      - [CONFIRMED, FULFILMENT_FAILED]
-      - [ACTIVE, COMPLETED]
-      - [ACTIVE, CANCELLED]
-
-    guards:
-      - transition: [null, PENDING_HOLD]
-        condition: EVSE must be bookable and available in requested interval
-      - transition: [PENDING_HOLD, HELD]
-        condition: Hold must be within TTL and driver notified
-      - transition: [HELD, CONFIRMED]
-        condition: Driver confirmed within hold TTL
-      - transition: [HELD, HOLD_EXPIRED]
-        condition: TTL elapsed without confirmation
-      - transition: [CONFIRMED, ACTIVE]
-        condition: Check-in successful, charging session started
-      - transition: [CONFIRMED, NO_SHOW]
-        condition: Check-in window closed without driver arrival
-
-    emittedFacts:
-      - transition: [null, PENDING_HOLD]
-        event: BookingHeld
-      - transition: [PENDING_HOLD, HELD]
-        event: BookingHeld
-      - transition: [HELD, CONFIRMED]
-        event: BookingConfirmed
-      - transition: [HELD, HOLD_EXPIRED]
-        event: BookingHoldExpired
-      - transition: [HELD, CANCELLED]
-        event: BookingCancelled
-      - transition: [CONFIRMED, ACTIVE]
-        event: BookingActivated
-      - transition: [CONFIRMED, CANCELLED]
-        event: BookingCancelled
-      - transition: [CONFIRMED, NO_SHOW]
-        event: BookingNoShow
-      - transition: [CONFIRMED, FULFILMENT_FAILED]
-        event: BookingFulfilmentFailed
-      - transition: [ACTIVE, COMPLETED]
-        event: BookingCompleted
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # SessionAttempt Lifecycle
-  # ──────────────────────────────────────────────────────────────────────────
-  - name: SessionAttempt
-    owningService: ChargingService
-    states:
-      - name: PENDING_DISPATCH
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: Start command dispatched to EVSE; awaiting outcome.
-      - name: ACCEPTED
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: EVSE accepted the start command; awaiting transaction start.
-      - name: REJECTED
-        persistent: true
-        terminal: true
-        quasiTerminal: false
-        description: EVSE rejected the start command.
-      - name: TIMED_OUT
-        persistent: true
-        terminal: true
-        quasiTerminal: false
-        description: No response from EVSE within timeout window.
-      - name: SUCCEEDED
-        persistent: true
-        terminal: true
-        quasiTerminal: false
-        description: Charging transaction started successfully.
-
-    permittedTransitions:
-      - [null, PENDING_DISPATCH]
-      - [PENDING_DISPATCH, ACCEPTED]
-      - [PENDING_DISPATCH, REJECTED]
-      - [PENDING_DISPATCH, TIMED_OUT]
-      - [ACCEPTED, SUCCEEDED]
-      - [ACCEPTED, REJECTED]
-
-    guards:
-      - transition: [null, PENDING_DISPATCH]
-        condition: Valid authorization, EVSE online, no conflicting session
-      - transition: [PENDING_DISPATCH, ACCEPTED]
-        condition: DeviceCommandDispatchAccepted received
-      - transition: [PENDING_DISPATCH, REJECTED]
-        condition: DeviceCommandRejected received
-      - transition: [PENDING_DISPATCH, TIMED_OUT]
-        condition: No response within command timeout (30s)
-      - transition: [ACCEPTED, SUCCEEDED]
-        condition: DeviceTransactionStarted received
-
-    emittedFacts:
-      - transition: [null, PENDING_DISPATCH]
-        event: ChargingStartRequested
-      - transition: [PENDING_DISPATCH, ACCEPTED]
-        event: DeviceCommandDispatchAccepted
-      - transition: [PENDING_DISPATCH, REJECTED]
-        event: ChargingStartAttemptRejected
-      - transition: [ACCEPTED, SUCCEEDED]
-        event: ChargingSessionStarted
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # ChargingSession Lifecycle
-  # ──────────────────────────────────────────────────────────────────────────
-  - name: ChargingSession
-    owningService: ChargingService
-    states:
-      - name: CREATED
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: Session record created in the system.
-      - name: STARTED
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: Charging is in progress.
-      - name: SUSPENDED
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: Charging temporarily suspended (e.g. load balancing).
+        description: Driver checked in but decided not to charge; cannot be reopened.
       - name: COMPLETED
         persistent: true
         terminal: true
         quasiTerminal: false
-        description: Charging completed normally.
+      - name: FULFILMENT_FAILED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+    processingPhases: []
+    permittedTransitions:
+      - from: HELD
+        to: CONFIRMED
+      - from: HELD
+        to: EXPIRED
+      - from: HELD
+        to: CANCELLED
+      - from: CONFIRMED
+        to: CHECKED_IN
+      - from: CONFIRMED
+        to: CANCELLED
+      - from: CONFIRMED
+        to: NO_SHOW
+      - from: CONFIRMED
+        to: FULFILMENT_FAILED
+      - from: CHECKED_IN
+        to: ACTIVE
+      - from: CHECKED_IN
+        to: CONFIRMED
+      - from: CHECKED_IN
+        to: CANCELLED
+      - from: CHECKED_IN
+        to: DRIVER_ABANDONED
+      - from: CHECKED_IN
+        to: FULFILMENT_FAILED
+      - from: ACTIVE
+        to: COMPLETED
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.2 ───────────────────────────────────────────────────────────
+  - name: SESSION_ATTEMPT
+    owningService: booking-session-service
+    owningModule: charging
+    releaseWave: "W1"
+    states:
+      - name: AUTHORIZING
+        persistent: false
+        terminal: false
+        quasiTerminal: false
+      - name: STARTING
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: DEVICE_ACCEPTED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Charger acknowledged the command; not proof of energy transfer.
+      - name: ATTEMPT_REJECTED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Charger explicitly rejected the command or authorization was invalid.
+      - name: TIMED_OUT
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: No response received from device within the timeout period.
+      - name: RECONCILING
+        persistent: false
+        terminal: false
+        quasiTerminal: false
+      - name: TRANSACTION_STARTED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Charging physically began (DeviceTransactionStarted received).
+      - name: UNRESOLVED_REQUIRES_ACTION
+        persistent: true
+        terminal: false
+        quasiTerminal: true
+        description: Quasi-terminal; operational_occupation stays blocking; 24h escalation; authorized manual resolution required.
+    processingPhases:
+      - AUTHORIZING
+      - RECONCILING
+    permittedTransitions:
+      - from: AUTHORIZING
+        to: STARTING
+      - from: AUTHORIZING
+        to: ATTEMPT_REJECTED
+      - from: STARTING
+        to: DEVICE_ACCEPTED
+      - from: STARTING
+        to: ATTEMPT_REJECTED
+      - from: STARTING
+        to: TIMED_OUT
+      - from: DEVICE_ACCEPTED
+        to: TRANSACTION_STARTED
+      - from: DEVICE_ACCEPTED
+        to: TIMED_OUT
+      - from: TIMED_OUT
+        to: RECONCILING
+      - from: RECONCILING
+        to: TRANSACTION_STARTED
+      - from: RECONCILING
+        to: ATTEMPT_REJECTED
+      - from: RECONCILING
+        to: UNRESOLVED_REQUIRES_ACTION
+      - from: UNRESOLVED_REQUIRES_ACTION
+        to: TRANSACTION_STARTED
+      - from: UNRESOLVED_REQUIRES_ACTION
+        to: ATTEMPT_REJECTED
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.3 ───────────────────────────────────────────────────────────
+  - name: CHARGING_SESSION
+    owningService: booking-session-service
+    owningModule: charging
+    releaseWave: "W1"
+    states:
+      - name: STARTING
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Persists across multiple SessionAttempts; may carry uncertain=true until resolved.
+      - name: CHARGING
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: SUSPENDED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: STOPPING
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: FINALIZING
+        persistent: false
+        terminal: false
+        quasiTerminal: false
+        description: Internal processing substep recorded for observability; not a persistent blocking state.
+      - name: COMPLETED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
       - name: INTERRUPTED
         persistent: true
         terminal: true
         quasiTerminal: false
-        description: Charging interrupted by fault, emergency stop, or error.
-      - name: RECONCILIATION_REQUIRED
+      - name: START_REJECTED
         persistent: true
-        terminal: false
-        quasiTerminal: true
-        description: Session outcome differs from device-reported state; manual reconciliation needed.
-
+        terminal: true
+        quasiTerminal: false
+        description: All retry attempts exhausted; charging never started.
+    processingPhases:
+      - FINALIZING
     permittedTransitions:
-      - [null, CREATED]
-      - [CREATED, STARTED]
-      - [STARTED, SUSPENDED]
-      - [SUSPENDED, STARTED]
-      - [STARTED, COMPLETED]
-      - [STARTED, INTERRUPTED]
-      - [COMPLETED, RECONCILIATION_REQUIRED]
-      - [INTERRUPTED, RECONCILIATION_REQUIRED]
-      - [RECONCILIATION_REQUIRED, COMPLETED]
+      - from: STARTING
+        to: CHARGING
+      - from: STARTING
+        to: SUSPENDED
+      - from: STARTING
+        to: INTERRUPTED
+      - from: STARTING
+        to: START_REJECTED
+      - from: CHARGING
+        to: SUSPENDED
+      - from: CHARGING
+        to: STOPPING
+      - from: CHARGING
+        to: INTERRUPTED
+      - from: SUSPENDED
+        to: CHARGING
+      - from: SUSPENDED
+        to: STOPPING
+      - from: SUSPENDED
+        to: INTERRUPTED
+      - from: STOPPING
+        to: FINALIZING
+      - from: STOPPING
+        to: COMPLETED
+      - from: STOPPING
+        to: INTERRUPTED
+      - from: STOPPING
+        to: CHARGING
+      - from: STOPPING
+        to: SUSPENDED
+      - from: FINALIZING
+        to: COMPLETED
+      - from: FINALIZING
+        to: INTERRUPTED
+    guards: []
+    integrationFacts: []
 
-    guards:
-      - transition: [null, CREATED]
-        condition: Booking must be ACTIVE or no booking required
-      - transition: [CREATED, STARTED]
-        condition: DeviceTransactionStarted received
-      - transition: [STARTED, SUSPENDED]
-        condition: ChargingSessionSuspended received
-      - transition: [SUSPENDED, STARTED]
-        condition: ChargingSessionResumed received
-      - transition: [STARTED, COMPLETED]
-        condition: DeviceTransactionEnded with normal stop reason
-      - transition: [COMPLETED, RECONCILIATION_REQUIRED]
-        condition: Energy totals mismatch with device report
-
-    emittedFacts:
-      - transition: [null, CREATED]
-        event: ChargingSessionCreated
-      - transition: [CREATED, STARTED]
-        event: ChargingSessionStarted
-      - transition: [STARTED, SUSPENDED]
-        event: ChargingSessionSuspended
-      - transition: [SUSPENDED, STARTED]
-        event: ChargingSessionResumed
-      - transition: [STARTED, COMPLETED]
-        event: ChargingSessionCompleted
-      - transition: [STARTED, INTERRUPTED]
-        event: ChargingSessionInterrupted
-      - transition: [COMPLETED, RECONCILIATION_REQUIRED]
-        event: ChargingReconciliationRequired
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # StartAuthorization Lifecycle
-  # ──────────────────────────────────────────────────────────────────────────
-  - name: StartAuthorization
-    owningService: AuthorizationService
+  # ── DOM-002 §1.3a ──────────────────────────────────────────────────────────
+  - name: START_AUTHORIZATION
+    owningService: booking-session-service
+    owningModule: charging
+    releaseWave: "W1"
     states:
       - name: ISSUED
         persistent: true
         terminal: false
         quasiTerminal: false
-        description: Authorization token issued for a specific EVSE and time window.
+        description: Token generated upon successful check-in.
       - name: CONSUMED
         persistent: true
         terminal: true
         quasiTerminal: false
-        description: Authorization has been used to successfully start a session.
-      - name: REVOKED
-        persistent: true
-        terminal: true
-        quasiTerminal: false
-        description: Authorization revoked by operator or system.
+        description: Start-intent transaction committed (DOM-002 §1.2a); unrelated to device acceptance.
       - name: EXPIRED
         persistent: true
         terminal: true
         quasiTerminal: false
-        description: Authorization TTL elapsed without consumption.
-      - name: EXHAUSTED
+        description: Check-in grace period ended without session starting.
+      - name: REVOKED
         persistent: true
         terminal: true
         quasiTerminal: false
-        description: All retry attempts consumed without success.
-
+        description: Booking cancelled or check-in abandoned before start.
+    processingPhases: []
     permittedTransitions:
-      - [null, ISSUED]
-      - [ISSUED, CONSUMED]
-      - [ISSUED, REVOKED]
-      - [ISSUED, EXPIRED]
-      - [ISSUED, EXHAUSTED]
+      - from: ISSUED
+        to: CONSUMED
+      - from: ISSUED
+        to: EXPIRED
+      - from: ISSUED
+        to: REVOKED
+    guards: []
+    integrationFacts: []
 
-    guards:
-      - transition: [null, ISSUED]
-        condition: Driver eligible, valid payment method, station bookable
-      - transition: [ISSUED, CONSUMED]
-        condition: Session started successfully via this authorization
-      - transition: [ISSUED, EXHAUSTED]
-        condition: All retry attempts (max 3) failed
-
-    emittedFacts:
-      - transition: [null, ISSUED]
-        event: StartAuthorizationIssued
-      - transition: [ISSUED, CONSUMED]
-        event: StartAuthorizationConsumed
-      - transition: [ISSUED, REVOKED]
-        event: StartAuthorizationRevoked
-      - transition: [ISSUED, EXPIRED]
-        event: StartAuthorizationRevoked
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # Station Lifecycle
-  # ──────────────────────────────────────────────────────────────────────────
-  - name: Station
-    owningService: StationManager
-    states:
-      - name: ACTIVE
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: Station is operational and accepting bookings.
-      - name: LIMITED
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: Station is operational but some EVSEs are unavailable.
-      - name: OFFLINE
-        persistent: true
-        terminal: false
-        quasiTerminal: true
-        description: Station is offline; no EVSEs are reachable.
-      - name: RETIRED
-        persistent: true
-        terminal: true
-        quasiTerminal: false
-        description: Station permanently removed from service.
-
-    permittedTransitions:
-      - [null, ACTIVE]
-      - [ACTIVE, LIMITED]
-      - [ACTIVE, OFFLINE]
-      - [LIMITED, ACTIVE]
-      - [LIMITED, OFFLINE]
-      - [LIMITED, RETIRED]
-      - [OFFLINE, ACTIVE]
-      - [OFFLINE, LIMITED]
-      - [OFFLINE, RETIRED]
-
-    guards:
-      - transition: [ACTIVE, LIMITED]
-        condition: At least one EVSE offline or restricted
-      - transition: [ACTIVE, OFFLINE]
-        condition: All EVSEs offline for > configured threshold
-      - transition: [OFFLINE, ACTIVE]
-        condition: All EVSEs back online and healthy
-
-    emittedFacts:
-      - transition: [ACTIVE, LIMITED]
-        event: StationBookableCountChanged
-      - transition: [ACTIVE, OFFLINE]
-        event: StationBookableCountChanged
-      - transition: [OFFLINE, ACTIVE]
-        event: StationBookableCountChanged
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # EVSE Administration Lifecycle
-  # ──────────────────────────────────────────────────────────────────────────
-  - name: EVSE
-    owningService: StationManager
-    states:
-      - name: AVAILABLE
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: EVSE is online and ready for bookings.
-      - name: RESERVED
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: EVSE is held for a booking.
-      - name: CHARGING
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: EVSE is actively charging.
-      - name: OFFLINE
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: EVSE is not reachable from the backend.
-      - name: FAULTED
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: EVSE has reported a fault.
-      - name: RETIRED
-        persistent: true
-        terminal: true
-        quasiTerminal: false
-        description: EVSE permanently removed from service.
-
-    permittedTransitions:
-      - [null, AVAILABLE]
-      - [AVAILABLE, RESERVED]
-      - [AVAILABLE, OFFLINE]
-      - [AVAILABLE, FAULTED]
-      - [RESERVED, AVAILABLE]
-      - [RESERVED, CHARGING]
-      - [CHARGING, AVAILABLE]
-      - [CHARGING, FAULTED]
-      - [CHARGING, OFFLINE]
-      - [FAULTED, AVAILABLE]
-      - [FAULTED, OFFLINE]
-      - [OFFLINE, AVAILABLE]
-      - [OFFLINE, FAULTED]
-
-    guards:
-      - transition: [AVAILABLE, RESERVED]
-        condition: Booking hold placed successfully
-      - transition: [RESERVED, CHARGING]
-        condition: Transaction started on this EVSE
-      - transition: [CHARGING, AVAILABLE]
-        condition: Transaction ended normally
-
-    emittedFacts:
-      - transition: [AVAILABLE, RESERVED]
-        event: EVSEStatusChanged
-      - transition: [RESERVED, CHARGING]
-        event: EVSEStatusChanged
-      - transition: [CHARGING, AVAILABLE]
-        event: EVSEStatusChanged
-      - transition: [AVAILABLE, OFFLINE]
-        event: DeviceOffline
-      - transition: [OFFLINE, AVAILABLE]
-        event: DeviceOnline
-      - transition: [*, FAULTED]
-        event: DeviceFaultRaised
-      - transition: [FAULTED, *]
-        event: DeviceFaultCleared
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # EVSE Operational Status Override Lifecycle
-  # ──────────────────────────────────────────────────────────────────────────
-  - name: EVSEOperationalStatus
-    owningService: OpsConsole
-    states:
-      - name: NONE
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: No override active; EVSE status reflects device-reported state.
-      - name: OVERRIDDEN
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: Operator has applied a manual override to the EVSE status.
-
-    permittedTransitions:
-      - [null, NONE]
-      - [NONE, OVERRIDDEN]
-      - [OVERRIDDEN, NONE]
-
-    guards:
-      - transition: [NONE, OVERRIDDEN]
-        condition: Authorized operator, valid reason code, impact assessment completed
-      - transition: [OVERRIDDEN, NONE]
-        condition: Override expired or operator revoked it
-
-    emittedFacts:
-      - transition: [NONE, OVERRIDDEN]
-        event: OperationalOverrideApplied
-      - transition: [OVERRIDDEN, NONE]
-        event: [OperationalOverrideExpired, OperationalOverrideRevoked]
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # Maintenance Lifecycle
-  # ──────────────────────────────────────────────────────────────────────────
-  - name: Maintenance
-    owningService: OpsConsole
+  # ── DOM-002 §1.4 ───────────────────────────────────────────────────────────
+  - name: STATION
+    owningService: station-operations-service
+    releaseWave: "W1"
     states:
       - name: DRAFT
         persistent: true
         terminal: false
         quasiTerminal: false
-        description: Maintenance record created; not yet scheduled.
+      - name: PUBLISHED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Visible to drivers, accepting bookings.
+      - name: TEMPORARILY_CLOSED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: DEACTIVATED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Retired station kept for historical records; reactivation to DRAFT requires full verification.
+    processingPhases: []
+    permittedTransitions:
+      - from: DRAFT
+        to: PUBLISHED
+      - from: PUBLISHED
+        to: TEMPORARILY_CLOSED
+      - from: TEMPORARILY_CLOSED
+        to: PUBLISHED
+      - from: PUBLISHED
+        to: DEACTIVATED
+      - from: TEMPORARILY_CLOSED
+        to: DEACTIVATED
+      - from: DEACTIVATED
+        to: DRAFT
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.5 ───────────────────────────────────────────────────────────
+  - name: EVSE_ADMINISTRATION
+    owningService: station-operations-service
+    releaseWave: "W1"
+    states:
+      - name: ACTIVE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: DISABLED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: DEACTIVATED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Retired equipment (replaced or removed).
+    processingPhases: []
+    permittedTransitions:
+      - from: ACTIVE
+        to: DISABLED
+      - from: DISABLED
+        to: ACTIVE
+      - from: ACTIVE
+        to: DEACTIVATED
+      - from: DISABLED
+        to: DEACTIVATED
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.6 ───────────────────────────────────────────────────────────
+  - name: EVSE_OPERATIONAL_STATUS_OVERRIDE
+    owningService: station-operations-service
+    releaseWave: "W1"
+    states:
       - name: SCHEDULED
         persistent: true
         terminal: false
         quasiTerminal: false
-        description: Maintenance scheduled with a defined time window.
+        description: Override created to start at a future date/time.
+      - name: ACTIVE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Override currently active, masking standard telemetry.
+      - name: EXPIRED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Override duration elapsed (automatic cleanup); terminal record.
+      - name: REVOKED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Override manually cancelled or cleared; terminal record.
+    processingPhases: []
+    permittedTransitions:
+      - from: "[*]"
+        to: SCHEDULED
+      - from: "[*]"
+        to: ACTIVE
+      - from: SCHEDULED
+        to: ACTIVE
+      - from: SCHEDULED
+        to: REVOKED
+      - from: ACTIVE
+        to: EXPIRED
+      - from: ACTIVE
+        to: REVOKED
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.7 ───────────────────────────────────────────────────────────
+  - name: MACHINE_IDENTITY
+    owningService: device-integration-service
+    releaseWave: "W1"
+    states:
+      - name: PENDING_ENROLLMENT
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: ACTIVE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: SUSPENDED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Temporarily blocked due to security or firmware mismatch.
+      - name: REVOKED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Permanently disabled, credentials invalidated.
+    processingPhases: []
+    permittedTransitions:
+      - from: PENDING_ENROLLMENT
+        to: ACTIVE
+      - from: ACTIVE
+        to: SUSPENDED
+      - from: SUSPENDED
+        to: ACTIVE
+      - from: ACTIVE
+        to: REVOKED
+      - from: SUSPENDED
+        to: REVOKED
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.8 (ownership per CON-071) ───────────────────────────────────
+  - name: DEVICE_COMMAND
+    owningService: device-integration-service
+    releaseWave: "W1"
+    states:
+      - name: RECEIVED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: DISPATCH_PENDING
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: SENT_TO_DEVICE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: DEVICE_ACCEPTED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Charger acknowledged the command; does not prove physical energy transfer.
+      - name: DEVICE_REJECTED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: CANCELLED_BEFORE_DISPATCH
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: TIMED_OUT
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Non-terminal; no response within the timeout window; transitions to RECONCILING.
+      - name: RECONCILING
+        persistent: false
+        terminal: false
+        quasiTerminal: false
+        description: Non-terminal; waiting for telemetry validation.
+    processingPhases:
+      - RECONCILING
+    permittedTransitions:
+      - from: RECEIVED
+        to: DISPATCH_PENDING
+      - from: RECEIVED
+        to: CANCELLED_BEFORE_DISPATCH
+      - from: DISPATCH_PENDING
+        to: SENT_TO_DEVICE
+      - from: DISPATCH_PENDING
+        to: CANCELLED_BEFORE_DISPATCH
+      - from: SENT_TO_DEVICE
+        to: DEVICE_ACCEPTED
+      - from: SENT_TO_DEVICE
+        to: DEVICE_REJECTED
+      - from: SENT_TO_DEVICE
+        to: TIMED_OUT
+      - from: TIMED_OUT
+        to: RECONCILING
+      - from: RECONCILING
+        to: DEVICE_ACCEPTED
+      - from: RECONCILING
+        to: DEVICE_REJECTED
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.9 ───────────────────────────────────────────────────────────
+  - name: NOTIFICATION_DELIVERY
+    owningService: notification-service
+    releaseWave: "W1"
+    states:
+      - name: REQUESTED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Notification-owned record created after the triggering business transaction commits; separate from the outbox integration event.
+      - name: QUEUED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: DISPATCHING
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: PROVIDER_ACCEPTED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: CANCELLED_BEFORE_SEND
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: OBSOLETE
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Superseded by a newer notification before dispatch.
+      - name: PRE_DISPATCH_SUPPRESSED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Recipient address is on the local suppression list; dispatch prevented.
+      - name: DISPATCH_FAILED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: INBOX_DELIVERED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: BOUNCED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: COMPLAINT
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: PERMANENTLY_FAILED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Terminal state after retry exhaustion.
+    processingPhases: []
+    permittedTransitions:
+      - from: REQUESTED
+        to: QUEUED
+      - from: REQUESTED
+        to: CANCELLED_BEFORE_SEND
+      - from: REQUESTED
+        to: PRE_DISPATCH_SUPPRESSED
+      - from: QUEUED
+        to: DISPATCHING
+      - from: QUEUED
+        to: OBSOLETE
+      - from: DISPATCHING
+        to: PROVIDER_ACCEPTED
+      - from: DISPATCHING
+        to: DISPATCH_FAILED
+      - from: PROVIDER_ACCEPTED
+        to: INBOX_DELIVERED
+      - from: PROVIDER_ACCEPTED
+        to: BOUNCED
+      - from: PROVIDER_ACCEPTED
+        to: COMPLAINT
+      - from: DISPATCH_FAILED
+        to: DISPATCHING
+      - from: DISPATCH_FAILED
+        to: PERMANENTLY_FAILED
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.10 ──────────────────────────────────────────────────────────
+  - name: SUPPORT_CASE
+    owningService: governance-support-service
+    releaseWave: "W1"
+    states:
+      - name: OPEN
+        persistent: true
+        terminal: false
+        quasiTerminal: false
       - name: IN_PROGRESS
         persistent: true
         terminal: false
         quasiTerminal: false
-        description: Maintenance work is underway.
+      - name: WAITING_FOR_USER
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: WAITING_FOR_OPERATOR
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: RESOLVED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: CLOSED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+    processingPhases: []
+    permittedTransitions:
+      - from: OPEN
+        to: IN_PROGRESS
+      - from: IN_PROGRESS
+        to: WAITING_FOR_USER
+      - from: WAITING_FOR_USER
+        to: IN_PROGRESS
+      - from: IN_PROGRESS
+        to: WAITING_FOR_OPERATOR
+      - from: WAITING_FOR_OPERATOR
+        to: IN_PROGRESS
+      - from: IN_PROGRESS
+        to: RESOLVED
+      - from: RESOLVED
+        to: CLOSED
+      - from: RESOLVED
+        to: IN_PROGRESS
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.11 (summary only; PRV-001 is authoritative for all privacy
+  #    workflow lifecycles — PRV-001 §9/§11/§12/§14/§15. States and the chain
+  #    below reproduce the DOM-002 deletion summary; alternative-state
+  #    transitions are defined in PRV-001, not DOM-002.) ──────────────────────
+  - name: PRIVACY_WORKFLOW
+    owningService: account-service
+    releaseWave: "W1"
+    states:
+      - name: REQUESTED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: VALIDATING
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: COOLING_OFF
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: APPROVED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: PROCESSING
+        persistent: true
+        terminal: false
+        quasiTerminal: false
       - name: COMPLETED
         persistent: true
         terminal: true
         quasiTerminal: false
-        description: Maintenance completed successfully.
-      - name: CANCELLED
-        persistent: true
-        terminal: true
-        quasiTerminal: false
-        description: Maintenance cancelled before completion.
-
-    permittedTransitions:
-      - [null, DRAFT]
-      - [DRAFT, SCHEDULED]
-      - [DRAFT, CANCELLED]
-      - [SCHEDULED, IN_PROGRESS]
-      - [SCHEDULED, CANCELLED]
-      - [IN_PROGRESS, COMPLETED]
-      - [IN_PROGRESS, CANCELLED]
-
-    guards:
-      - transition: [DRAFT, SCHEDULED]
-        condition: Conflict check passed, impacted bookings notified
-      - transition: [SCHEDULED, IN_PROGRESS]
-        condition: Maintenance window start has been reached
-      - transition: [IN_PROGRESS, COMPLETED]
-        condition: Work completed, EVSEs tested and back online
-
-    emittedFacts:
-      - transition: [DRAFT, SCHEDULED]
-        event: MaintenanceScheduled
-      - transition: [SCHEDULED, IN_PROGRESS]
-        event: EVSEStatusChanged
-      - transition: [IN_PROGRESS, COMPLETED]
-        event: MaintenanceCompleted
-      - transition: [*, CANCELLED]
-        event: MaintenanceCancelled
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # Capacity Restriction Lifecycle
-  # ──────────────────────────────────────────────────────────────────────────
-  - name: CapacityRestriction
-    owningService: CapacityService
-    states:
-      - name: PENDING_FREEZE
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: Freeze requested; awaiting validation and commitment.
-      - name: FROZEN
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: Capacity frozen; no new bookings in affected EVSEs.
-      - name: PENDING_BLOCK
-        persistent: true
-        terminal: false
-        quasiTerminal: false
-        description: Block requested but not yet committed.
+        description: Successful terminal state of the deletion flow; ANONYMIZED is an action/result, not a terminal state.
       - name: BLOCKED
         persistent: true
         terminal: false
         quasiTerminal: false
-        description: Capacity blocked; existing bookings may be impacted.
-      - name: RELEASED
+      - name: PARTIALLY_COMPLETED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: REQUIRES_REVIEW
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: CANCELLED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+    processingPhases: []
+    permittedTransitions:
+      - from: REQUESTED
+        to: VALIDATING
+      - from: VALIDATING
+        to: COOLING_OFF
+      - from: COOLING_OFF
+        to: APPROVED
+      - from: APPROVED
+        to: PROCESSING
+      - from: PROCESSING
+        to: COMPLETED
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.12 ──────────────────────────────────────────────────────────
+  - name: INVITATION
+    owningService: station-operations-service
+    releaseWave: "W1"
+    states:
+      - name: SENT
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: ACCEPTED
         persistent: true
         terminal: true
         quasiTerminal: false
-        description: Restriction released; capacity restored.
-
+      - name: EXPIRED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: REVOKED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+    processingPhases: []
     permittedTransitions:
-      - [null, PENDING_FREEZE]
-      - [PENDING_FREEZE, FROZEN]
-      - [PENDING_FREEZE, RELEASED]
-      - [FROZEN, PENDING_BLOCK]
-      - [FROZEN, RELEASED]
-      - [PENDING_BLOCK, BLOCKED]
-      - [PENDING_BLOCK, RELEASED]
-      - [BLOCKED, RELEASED]
+      - from: SENT
+        to: ACCEPTED
+      - from: SENT
+        to: EXPIRED
+      - from: SENT
+        to: REVOKED
+    guards: []
+    integrationFacts: []
 
-    guards:
-      - transition: [null, PENDING_FREEZE]
-        condition: Valid operator credentials, non-conflicting restriction exists
-      - transition: [PENDING_FREEZE, FROZEN]
-        condition: Freeze committed; affected bookings notified
-      - transition: [FROZEN, PENDING_BLOCK]
-        condition: Block requested with confinement scope
-      - transition: [BLOCKED, RELEASED]
-        condition: Safety evidence provided, operator authorized
+  # ── DOM-002 §1.13 ──────────────────────────────────────────────────────────
+  - name: OWNERSHIP_TRANSFER
+    owningService: station-operations-service
+    releaseWave: "W1"
+    states:
+      - name: INITIATED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: ACCEPTED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: EXPIRED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: REJECTED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: CANCELLED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+    processingPhases: []
+    permittedTransitions:
+      - from: INITIATED
+        to: ACCEPTED
+      - from: INITIATED
+        to: EXPIRED
+      - from: INITIATED
+        to: REJECTED
+      - from: INITIATED
+        to: CANCELLED
+    guards: []
+    integrationFacts: []
 
-    emittedFacts:
-      - transition: [null, PENDING_FREEZE]
-        event: CapacityRestrictionCreated
-      - transition: [PENDING_FREEZE, FROZEN]
-        event: CapacityFreezeCommitted
-      - transition: [PENDING_FREEZE, RELEASED]
-        event: CapacityFreezeRejected
-      - transition: [PENDING_BLOCK, BLOCKED]
-        event: CapacityBlockCommitted
-      - transition: [*, RELEASED]
-        event: CapacityRestrictionReleased
+  # ── DOM-002 §1.14 ──────────────────────────────────────────────────────────
+  - name: DRIVER_FAULT_REPORT
+    owningService: station-operations-service
+    releaseWave: "W1"
+    states:
+      - name: SUBMITTED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: REVIEWED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: LINKED_TO_FAULT
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Linked to an active fault incident record.
+      - name: ARCHIVED_DUPLICATE
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Logged as a duplicate of an existing known issue.
+    processingPhases: []
+    permittedTransitions:
+      - from: SUBMITTED
+        to: REVIEWED
+      - from: REVIEWED
+        to: LINKED_TO_FAULT
+      - from: REVIEWED
+        to: ARCHIVED_DUPLICATE
+    guards: []
+    integrationFacts: []
 
-# =============================================================================
-# End of Lifecycle Registry
-# =============================================================================
+  # ── DOM-002 §1.15 ──────────────────────────────────────────────────────────
+  - name: OPERATOR_APPLICATION
+    owningService: station-operations-service
+    releaseWave: "W1"
+    states:
+      - name: DRAFT
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: SUBMITTED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: UNDER_REVIEW
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: CLARIFICATION_REQUESTED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: WITHDRAWN
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: APPROVED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Atomically creates active operator organization and owner membership.
+      - name: REJECTED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+    processingPhases: []
+    permittedTransitions:
+      - from: DRAFT
+        to: SUBMITTED
+      - from: DRAFT
+        to: WITHDRAWN
+      - from: SUBMITTED
+        to: UNDER_REVIEW
+      - from: SUBMITTED
+        to: WITHDRAWN
+      - from: UNDER_REVIEW
+        to: CLARIFICATION_REQUESTED
+      - from: CLARIFICATION_REQUESTED
+        to: UNDER_REVIEW
+      - from: UNDER_REVIEW
+        to: APPROVED
+      - from: UNDER_REVIEW
+        to: REJECTED
+      - from: UNDER_REVIEW
+        to: WITHDRAWN
+      - from: CLARIFICATION_REQUESTED
+        to: WITHDRAWN
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.16 ──────────────────────────────────────────────────────────
+  - name: OPERATOR_ORGANIZATION
+    owningService: station-operations-service
+    releaseWave: "W1"
+    states:
+      - name: ACTIVE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: SUSPENDED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Cannot manage stations or take bookings.
+      - name: CLOSED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+        description: Permanent retirement; all bookings resolved.
+    processingPhases: []
+    permittedTransitions:
+      - from: ACTIVE
+        to: SUSPENDED
+      - from: SUSPENDED
+        to: ACTIVE
+      - from: ACTIVE
+        to: CLOSED
+      - from: SUSPENDED
+        to: CLOSED
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.17 ──────────────────────────────────────────────────────────
+  - name: DRIVER_ACCOUNT
+    owningService: account-service
+    releaseWave: "W1"
+    states:
+      - name: PENDING_VERIFICATION
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: ACTIVE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: SUSPENDED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: DELETION_PENDING
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Cancellation back to ACTIVE is permitted during the 7-day cooling off period.
+      - name: DELETED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+    processingPhases: []
+    permittedTransitions:
+      - from: PENDING_VERIFICATION
+        to: ACTIVE
+      - from: PENDING_VERIFICATION
+        to: DELETED
+      - from: ACTIVE
+        to: SUSPENDED
+      - from: ACTIVE
+        to: DELETION_PENDING
+      - from: SUSPENDED
+        to: ACTIVE
+      - from: SUSPENDED
+        to: DELETION_PENDING
+      - from: DELETION_PENDING
+        to: DELETED
+      - from: DELETION_PENDING
+        to: ACTIVE
+    guards: []
+    integrationFacts: []
+
+  # ── DOM-002 §1.18 (planning record; Booking-owned FREEZE/BLOCKED/RELEASED
+  #    capacity restriction handshake is §2.7, deliberately not a state here) ──
+  - name: MAINTENANCE_PLANNING_RECORD
+    owningService: station-operations-service
+    releaseWave: "W1"
+    states:
+      - name: DRAFT
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Emergency activation to ACTIVE requires an authorized audit record and immediate EMERGENCY_BLOCK commitment before the state change.
+      - name: PROPOSED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: ENFORCEMENT_PENDING
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Capacity restriction request (FREEZE) submitted to Booking.
+      - name: IMPACT_RESOLUTION
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Handling affected overlapping bookings via reassignment/alerts.
+      - name: SCHEDULED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: ACTIVE
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Task in progress; EVSE operational status marked MAINTENANCE.
+      - name: COMPLETED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: CANCELLED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+      - name: FAILED
+        persistent: true
+        terminal: true
+        quasiTerminal: false
+    processingPhases: []
+    permittedTransitions:
+      - from: DRAFT
+        to: PROPOSED
+      - from: DRAFT
+        to: CANCELLED
+      - from: DRAFT
+        to: ACTIVE
+      - from: PROPOSED
+        to: ENFORCEMENT_PENDING
+      - from: PROPOSED
+        to: CANCELLED
+      - from: ENFORCEMENT_PENDING
+        to: IMPACT_RESOLUTION
+      - from: ENFORCEMENT_PENDING
+        to: FAILED
+      - from: IMPACT_RESOLUTION
+        to: SCHEDULED
+      - from: IMPACT_RESOLUTION
+        to: FAILED
+      - from: SCHEDULED
+        to: ACTIVE
+      - from: SCHEDULED
+        to: CANCELLED
+      - from: ACTIVE
+        to: COMPLETED
+      - from: ACTIVE
+        to: FAILED
+    guards: []
+    integrationFacts:
+      - MaintenanceProposed
+      - MaintenanceScheduled
+      - MaintenanceActivated
+      - MaintenanceCompleted
+      - MaintenanceCancelled
+      - MaintenanceFailed
+
+  # ── DOM-002 §1.19 ──────────────────────────────────────────────────────────
+  - name: FAULT_INCIDENT
+    owningService: station-operations-service
+    releaseWave: "W1"
+    states:
+      - name: OPEN
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Fault detected via simulator telemetry or driver report.
+      - name: ACKNOWLEDGED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: IN_PROGRESS
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+      - name: RESOLVED
+        persistent: true
+        terminal: false
+        quasiTerminal: false
+        description: Equipment repaired; equipment state returns to UNKNOWN; reopens if the issue reoccurs.
+    processingPhases: []
+    permittedTransitions:
+      - from: OPEN
+        to: ACKNOWLEDGED
+      - from: ACKNOWLEDGED
+        to: IN_PROGRESS
+      - from: IN_PROGRESS
+        to: ACKNOWLEDGED
+      - from: IN_PROGRESS
+        to: RESOLVED
+      - from: RESOLVED
+        to: OPEN
+    guards: []
+    integrationFacts: []

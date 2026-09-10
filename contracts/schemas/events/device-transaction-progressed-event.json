@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/device-transaction-progressed-event.json",
+  "title": "DeviceTransactionProgressedEvent",
+  "description": "Payload for the DeviceTransactionProgressed event",
+  "type": "object",
+  "properties": {
+    "transactionRef": {
+      "type": "string",
+      "description": "Device-side transaction identifier"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "progressedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Progress sample timestamp"
+    },
+    "energyActiveImportKwh": {
+      "type": "number",
+      "description": "Total active energy imported in kWh at sample time"
+    },
+    "powerActiveW": {
+      "type": "number",
+      "description": "Instantaneous active power in watts at sample time"
+    }
+  },
+  "required": ["transactionRef", "progressedAt", "energyActiveImportKwh", "powerActiveW"]
+}

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/device-transaction-ended-event.json",
+  "title": "DeviceTransactionEndedEvent",
+  "description": "Payload for the DeviceTransactionEnded event",
+  "type": "object",
+  "properties": {
+    "transactionRef": {
+      "type": "string",
+      "description": "Device-side transaction identifier"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference (present when already bound)"
+    },
+    "endedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Transaction end timestamp"
+    },
+    "reasonCode": {
+      "type": "string",
+      "description": "Structured reason the transaction ended"
+    }
+  },
+  "required": ["transactionRef", "evseRef", "endedAt"]
+}

@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/booking-checked-in-event.json",
+  "title": "BookingCheckedInEvent",
+  "description": "Payload for the BookingCheckedIn event",
+  "type": "object",
+  "properties": {
+    "bookingRef": {
+      "type": "string",
+      "description": "Booking reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "checkedInAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Check-in timestamp"
+    }
+  },
+  "required": ["bookingRef", "evseRef", "checkedInAt"]
+}

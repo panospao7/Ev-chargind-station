@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/booking-fulfilment-failed-event.json",
+  "title": "BookingFulfilmentFailedEvent",
+  "description": "Payload for the BookingFulfilmentFailed event",
+  "type": "object",
+  "properties": {
+    "bookingRef": {
+      "type": "string",
+      "description": "Booking reference"
+    },
+    "failureCategory": {
+      "type": "string",
+      "description": "Structured failure category"
+    },
+    "responsibleParty": {
+      "type": "string",
+      "description": "Party classified as responsible for the failure"
+    }
+  },
+  "required": ["bookingRef", "failureCategory", "responsibleParty"]
+}

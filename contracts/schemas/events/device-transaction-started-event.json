@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/device-transaction-started-event.json",
+  "title": "DeviceTransactionStartedEvent",
+  "description": "Payload for the DeviceTransactionStarted event",
+  "type": "object",
+  "properties": {
+    "transactionRef": {
+      "type": "string",
+      "description": "Device-side transaction identifier"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference (present when already bound)"
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Transaction start timestamp"
+    }
+  },
+  "required": ["transactionRef", "evseRef", "startedAt"]
+}

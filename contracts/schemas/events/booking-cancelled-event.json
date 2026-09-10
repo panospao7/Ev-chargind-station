@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/booking-cancelled-event.json",
+  "title": "BookingCancelledEvent",
+  "description": "Payload for the BookingCancelled event",
+  "type": "object",
+  "properties": {
+    "bookingRef": {
+      "type": "string",
+      "description": "Booking reference"
+    },
+    "actorType": {
+      "type": "string",
+      "enum": ["DRIVER", "OPERATOR", "SYSTEM"],
+      "description": "Type of actor that requested the cancellation"
+    },
+    "reasonCode": {
+      "type": "string",
+      "description": "Structured cancellation reason code"
+    }
+  },
+  "required": ["bookingRef", "actorType", "reasonCode"]
+}

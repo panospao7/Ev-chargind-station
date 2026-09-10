@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/device-heartbeat-received-event.json",
+  "title": "DeviceHeartbeatReceivedEvent",
+  "description": "Payload for the DeviceHeartbeatReceived event",
+  "type": "object",
+  "properties": {
+    "deviceRef": {
+      "type": "string",
+      "description": "Device reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference (present when the device is bound to an EVSE)"
+    },
+    "receivedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Heartbeat receipt timestamp"
+    }
+  },
+  "required": ["deviceRef", "receivedAt"]
+}

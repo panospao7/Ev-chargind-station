@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/charging-session-interrupted-event.json",
+  "title": "ChargingSessionInterruptedEvent",
+  "description": "Payload for the ChargingSessionInterrupted event",
+  "type": "object",
+  "properties": {
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference"
+    },
+    "bookingRef": {
+      "type": "string",
+      "description": "Associated booking reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "interruptedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Interruption timestamp"
+    },
+    "reasonCode": {
+      "type": "string",
+      "description": "Structured interruption reason code"
+    }
+  },
+  "required": ["sessionRef", "bookingRef", "evseRef", "interruptedAt"]
+}

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/commands/finalize-capacity-block-command.json",
+  "title": "FinalizeCapacityBlock",
+  "description": "Command payload for Station Operations to ask the Booking module to finalize a capacity block; correlation and causation identifiers and the aggregate reference travel in the CloudEvents envelope",
+  "type": "object",
+  "properties": {
+    "commandRef": {
+      "type": "string",
+      "description": "Unique command reference used for idempotency"
+    },
+    "restrictionId": {
+      "type": "string",
+      "description": "Capacity restriction identifier to finalize"
+    },
+    "interval": {
+      "type": "object",
+      "description": "Half-open blocked interval in UTC",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval start (inclusive)"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval end (exclusive)"
+        }
+      },
+      "required": ["start", "end"]
+    },
+    "issuedBy": {
+      "type": "string",
+      "description": "Issuing service"
+    },
+    "issuedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Command issuance timestamp"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Expiry timestamp; expired commands must not execute"
+    }
+  },
+  "required": ["commandRef", "restrictionId", "interval", "issuedBy", "issuedAt", "expiresAt"]
+}

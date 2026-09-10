@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/device-command-result-event.json",
+  "title": "DeviceCommandResultEvent",
+  "description": "Payload for the DeviceCommandResult event; command acceptance does not prove physical charging",
+  "type": "object",
+  "properties": {
+    "commandRef": {
+      "type": "string",
+      "description": "Reference of the command the result belongs to"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "Target EVSE reference"
+    },
+    "deviceRef": {
+      "type": "string",
+      "description": "Target device reference"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": ["ACCEPTED", "REJECTED", "TIMED_OUT", "UNRESOLVED"],
+      "description": "Command outcome; UNRESOLVED stays uncertain until reconciled"
+    },
+    "reasonCode": {
+      "type": "string",
+      "description": "Structured reason code for rejection, timeout, or unresolved outcomes"
+    }
+  },
+  "required": ["commandRef", "evseRef", "outcome"]
+}

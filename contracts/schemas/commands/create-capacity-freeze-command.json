@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/commands/create-capacity-freeze-command.json",
+  "title": "CreateCapacityFreeze",
+  "description": "Command payload for Station Operations to ask the Booking module to commit a capacity freeze; correlation and causation identifiers and the aggregate reference travel in the CloudEvents envelope",
+  "type": "object",
+  "properties": {
+    "commandRef": {
+      "type": "string",
+      "description": "Unique command reference used for idempotency"
+    },
+    "stationRef": {
+      "type": "string",
+      "description": "Station reference the freeze scope is based on"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference (present when the freeze scope is a single EVSE)"
+    },
+    "interval": {
+      "type": "object",
+      "description": "Half-open interval in UTC to freeze",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval start (inclusive)"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval end (exclusive)"
+        }
+      },
+      "required": ["start", "end"]
+    },
+    "reason": {
+      "type": "string",
+      "description": "Structured reason for the freeze request"
+    },
+    "issuedBy": {
+      "type": "string",
+      "description": "Issuing service"
+    },
+    "issuedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Command issuance timestamp"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Expiry timestamp; expired commands must not execute"
+    }
+  },
+  "required": ["commandRef", "stationRef", "interval", "issuedBy", "issuedAt", "expiresAt"]
+}

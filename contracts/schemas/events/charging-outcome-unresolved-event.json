@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/charging-outcome-unresolved-event.json",
+  "title": "ChargingOutcomeUnresolvedEvent",
+  "description": "Payload for the ChargingOutcomeUnresolved event (ambiguous physical outcome until reconciled)",
+  "type": "object",
+  "properties": {
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference"
+    },
+    "bookingRef": {
+      "type": "string",
+      "description": "Associated booking reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "reasonCode": {
+      "type": "string",
+      "description": "Structured reason the outcome is unresolved"
+    },
+    "detectedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Detection timestamp"
+    }
+  },
+  "required": ["sessionRef", "bookingRef", "evseRef", "reasonCode", "detectedAt"]
+}

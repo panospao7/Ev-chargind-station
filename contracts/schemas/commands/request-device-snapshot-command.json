@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/commands/request-device-snapshot-command.json",
+  "title": "RequestDeviceSnapshot",
+  "description": "Command payload to request a normalized device snapshot; correlation and causation identifiers and the aggregate reference travel in the CloudEvents envelope",
+  "type": "object",
+  "properties": {
+    "commandRef": {
+      "type": "string",
+      "description": "Unique command reference used for idempotency"
+    },
+    "deviceRef": {
+      "type": "string",
+      "description": "Target device reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference (present when the snapshot is EVSE scoped)"
+    },
+    "issuedBy": {
+      "type": "string",
+      "description": "Issuing service"
+    },
+    "issuedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Command issuance timestamp"
+    },
+    "expiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Expiry timestamp; expired commands must not execute"
+    }
+  },
+  "required": ["commandRef", "deviceRef", "issuedBy", "issuedAt", "expiresAt"]
+}

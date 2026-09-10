@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/booking-hold-expired-event.json",
+  "title": "BookingHoldExpiredEvent",
+  "description": "Payload for the BookingHoldExpired event",
+  "type": "object",
+  "properties": {
+    "bookingRef": {
+      "type": "string",
+      "description": "Booking reference"
+    },
+    "releasedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Release timestamp"
+    }
+  },
+  "required": ["bookingRef", "releasedAt"]
+}

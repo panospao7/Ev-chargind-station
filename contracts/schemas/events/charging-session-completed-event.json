@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/charging-session-completed-event.json",
+  "title": "ChargingSessionCompletedEvent",
+  "description": "Payload for the ChargingSessionCompleted event",
+  "type": "object",
+  "properties": {
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference"
+    },
+    "bookingRef": {
+      "type": "string",
+      "description": "Associated booking reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "completedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Session completion timestamp"
+    },
+    "energyChargedKwh": {
+      "type": "number",
+      "description": "Total energy charged during the session in kWh"
+    }
+  },
+  "required": ["sessionRef", "bookingRef", "evseRef", "completedAt"]
+}

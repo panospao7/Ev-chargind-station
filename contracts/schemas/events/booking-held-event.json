@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/booking-held-event.json",
+  "title": "BookingHeldEvent",
+  "description": "Payload for the BookingHeld event",
+  "type": "object",
+  "properties": {
+    "bookingRef": {
+      "type": "string",
+      "description": "Booking reference"
+    },
+    "driverRef": {
+      "type": "string",
+      "description": "Pseudonymous driver subject reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "interval": {
+      "type": "object",
+      "description": "Half-open booking interval in UTC",
+      "properties": {
+        "start": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval start (inclusive)"
+        },
+        "end": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Interval end (exclusive)"
+        }
+      },
+      "required": ["start", "end"]
+    },
+    "holdExpiresAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Hold expiry timestamp"
+    }
+  },
+  "required": ["bookingRef", "driverRef", "evseRef", "interval", "holdExpiresAt"]
+}

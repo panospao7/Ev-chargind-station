@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/booking-completed-event.json",
+  "title": "BookingCompletedEvent",
+  "description": "Payload for the BookingCompleted event",
+  "type": "object",
+  "properties": {
+    "bookingRef": {
+      "type": "string",
+      "description": "Booking reference"
+    },
+    "sessionRef": {
+      "type": "string",
+      "description": "Charging session reference"
+    },
+    "outcome": {
+      "type": "string",
+      "description": "Structured session outcome"
+    },
+    "releasedAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Release timestamp"
+    }
+  },
+  "required": ["bookingRef", "sessionRef", "outcome", "releasedAt"]
+}

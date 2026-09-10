@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/availability-projection-invalidated-event.json",
+  "title": "AvailabilityProjectionInvalidatedEvent",
+  "description": "Booking-owned capacity projection payload for the AvailabilityProjectionInvalidated event; contains no account, driver, or vehicle identifiers",
+  "type": "object",
+  "properties": {
+    "stationRef": {
+      "type": "string",
+      "description": "Station reference (present for station-scoped invalidation)"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference (present for EVSE-scoped invalidation)"
+    },
+    "affectedIntervals": {
+      "type": "array",
+      "description": "Half-open intervals in UTC whose projections are invalidated",
+      "items": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Interval start (inclusive)"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Interval end (exclusive)"
+          }
+        },
+        "required": ["start", "end"]
+      }
+    },
+    "reason": {
+      "type": "string",
+      "description": "Structured invalidation reason"
+    }
+  },
+  "required": ["affectedIntervals", "reason"],
+  "anyOf": [
+    { "required": ["stationRef"] },
+    { "required": ["evseRef"] }
+  ]
+}
