@@ -31,6 +31,27 @@ public final class LocalDependencies {
                         .asCompatibleSubstituteFor("rabbitmq"));
     }
 
+    /**
+     * PostgreSQL container initialized exactly like the local compose stack:
+     * the real provisioning script directory is COPIED into
+     * /docker-entrypoint-initdb.d (copy, not bind-mount, so behavior is
+     * identical across Windows/CI file-sharing setups), and databases/
+     * roles/grants are created by the very same code path as
+     * infra/local/postgres/01-provision.sh.
+     */
+    public static PostgreSQLContainer newPostgresWithProvisioning(java.nio.file.Path initDir) {
+        return new PostgreSQLContainer(DockerImageName.parse(
+                        "postgres:18@sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280")
+                        .asCompatibleSubstituteFor("postgres"))
+                .withUsername("evplatform_admin")
+                .withPassword("evplatform_dev_only")
+                .withDatabaseName("evplatform_bootstrap")
+                .withEnv("PLATFORM_ROLE_PASSWORD", "evplatform_dev_only")
+                .withCopyFileToContainer(
+                        org.testcontainers.utility.MountableFile.forHostPath(initDir.toAbsolutePath().normalize()),
+                        "/docker-entrypoint-initdb.d");
+    }
+
     private LocalDependencies() {
     }
 }

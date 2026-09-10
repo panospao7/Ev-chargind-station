@@ -218,7 +218,7 @@ tasks:
         - "delivery/evidence/I1-ENG-001/runway-validation.md"
 
   I1-DAT-001:
-    state: "CLAIMED"
+    state: "HUMAN_REVIEW"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-10T21:45:00Z"
 
@@ -233,10 +233,12 @@ tasks:
     deviations: []
     unresolvedFindings: []
 
+    handoffSequence: 4
+    latestHandoff: "delivery/handoffs/I1-DAT-001/04-tester.md"
     reviews:
       planner: "PASS"
-      tester: "NOT_STARTED"
-      generalReviewer: "NOT_STARTED"
+      tester: "PASS"
+      generalReviewer: "PENDING_INDEPENDENT_REVIEW"
       contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_STARTED"
       securityReviewer: "NOT_STARTED"
@@ -244,7 +246,7 @@ tasks:
 
     ci:
       status: "NOT_REQUIRED"
-      candidateRunReference: null
+      candidateRunReference: "local G3 exit 0; db-migrations.yml runs on PR (JDK 25 temurin)"
       mergeRunReference: null
       requiredChecks: []
 
@@ -287,7 +289,7 @@ tasks:
 
     ci:
       status: "NOT_REQUIRED"
-      candidateRunReference: null
+      candidateRunReference: "local G3 exit 0; db-migrations.yml runs on PR (JDK 25 temurin)"
       mergeRunReference: null
       requiredChecks: []
 
@@ -304,14 +306,14 @@ summary:
   counts:
     BACKLOG: 0
     READY: 0
-    CLAIMED: 1
+    CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 0
+    HUMAN_REVIEW: 1
     MERGED: 0
     VERIFIED: 5
 
