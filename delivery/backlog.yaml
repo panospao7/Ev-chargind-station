@@ -63,4 +63,4 @@ items:
       - registries
       - schemas
 
-nextRecommendedTask: "I0-CON-002"
+nextRecommendedTask: null

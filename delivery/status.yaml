@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-09T21:36:22Z"
+updatedAt: "2026-09-10T16:33:11Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -9,7 +9,7 @@ project:
 
 tasks:
   I0-ENG-001:
-    state: "MERGED"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (coder+tester roles, disclosed)"
     claimedAt: "2026-09-09T20:20:00Z"
 
@@ -24,7 +24,7 @@ tasks:
       - "I0-ENG-001-DEC-001: mutualTLS security-scheme encoding decided by owner (option A: scheme removed, serviceToken declared, mTLS documented at transport layer)"
       - "I0-ENG-001-SPLIT-001: registry schema authoring (78 missing schemaPath targets) split to I0-CON-002, owner approved 2026-09-09"
     unresolvedFindings:
-      - "contracts:registries remains red (expected) until I0-CON-002 lands; G3 aggregate gate and CON-175/176 closure gate on it"
+      - "Resolved 2026-09-10: contracts:registries green after I0-CON-002 (PR #5, fully green main run 0be0cfde)"
       - "Independent planner/contract/security specialist reviews not separately executed; single agent session performed coder+tester roles (disclosed); owner reviewed PR #3 and merged"
 
     handoffSequence: 5
@@ -68,46 +68,61 @@ tasks:
         - "delivery/evidence/I0-ENG-001/ci-verification.md"
 
   I0-CON-002:
-    state: "READY"
-    assignedAgent: null
-    claimedAt: null
+    state: "VERIFIED"
+    assignedAgent: "ZCode coding-agent session (coder via parallel extraction sub-agents, reviewed)"
+    claimedAt: "2026-09-09T22:00:00Z"
 
-    baselineCommit: null
-    candidateCommit: null
-    mergeCommit: null
-    branch: "main"
-    pullRequest: null
+    baselineCommit: "c86af67ff996fd7329518cff4fb6141fb12f38e4"
+    candidateCommit: "a340f411245bd647d69e68cfecedf0c03fc551bf"
+    mergeCommit: "0be0cfdef8acc5cc452c70eaa07508c19c9ac5ae"
+    branch: "task/i0-con-002-registries"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/5"
 
     blockers: []
     deviations: []
-    unresolvedFindings: []
+    unresolvedFindings:
+      - "commands/start-charging-command.json lacks ARC-020 §7 issuedBy/expiresAt metadata (owner decision, non-blocking)"
+      - "Capacity-command exchange naming uses com.evplatform.command (ARC-020 defines no inter-service command exchange) — confirm in a future contract revision"
+      - "Independent specialist reviews not separately executed; single agent session with extraction sub-agents (disclosed); owner reviewed PR #5 and merged"
 
-    handoffSequence: 0
-    latestHandoff: null
+    handoffSequence: 3
+    latestHandoff: "delivery/handoffs/I0-CON-002/03-orchestrator.md"
 
     reviews:
       planner: "NOT_STARTED"
-      tester: "NOT_STARTED"
-      generalReviewer: "NOT_STARTED"
-      contractReviewer: "NOT_STARTED"
+      tester: "PASS"
+      generalReviewer: "PASS"
+      contractReviewer: "PASS"
       dataReviewer: "NOT_APPLICABLE"
       securityReviewer: "NOT_STARTED"
-      humanReview: "NOT_STARTED"
+      humanReview: "PASS"
 
     ci:
-      status: "NOT_STARTED"
-      candidateRunReference: null
-      mergeRunReference: null
-      requiredChecks: []
+      status: "PASS"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/pull/5"
+      mergeRunReference: "GitHub Actions push run at merge commit 0be0cfdef8acc5cc452c70eaa07508c19c9ac5ae: 9/9 checks success (first fully green G3 run on main)"
+      requiredChecks:
+        - "OpenAPI Validation: success"
+        - "AsyncAPI Validation: success"
+        - "JSON Schema Validation: success"
+        - "Registry Consistency Checks: success"
+        - "Privacy and Data Minimization Checks: success"
+        - "Documentation Consistency Checks: success"
+        - "Secret Scanning: success"
+        - "Validator Self-Test: success"
+        - "Required Aggregation: success"
 
     humanApproval:
       required: true
-      reference: null
-      approvedCandidateCommit: null
+      reference: "Owner reviewed and merged PR #5 (merge commit 0be0cfde) on 2026-09-10; first fully green G3 run on main"
+      approvedCandidateCommit: "a340f411245bd647d69e68cfecedf0c03fc551bf"
 
     evidence:
-      status: "NOT_STARTED"
-      paths: []
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I0-CON-002/registry-rebuild.md"
+        - "delivery/evidence/I0-CON-002/schema-authoring.md"
+        - "delivery/evidence/I0-CON-002/ci-verification.md"
 
   I0-DEL-001:
     state: "VERIFIED"
@@ -158,7 +173,7 @@ tasks:
 summary:
   counts:
     BACKLOG: 0
-    READY: 1
+    READY: 0
     CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
@@ -167,8 +182,8 @@ summary:
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
     HUMAN_REVIEW: 0
-    MERGED: 1
-    VERIFIED: 1
+    MERGED: 0
+    VERIFIED: 3
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
@@ -176,4 +191,4 @@ summary:
     CANCELLED: 0
 
   activeTask: null
-  nextRecommendedTask: "I0-CON-002"
+  nextRecommendedTask: null
