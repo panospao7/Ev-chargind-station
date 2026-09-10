@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-10T19:45:00Z"
+updatedAt: "2026-09-10T21:30:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -258,13 +258,14 @@ tasks:
       paths: []
 
   I1-ENG-002:
-    state: "HUMAN_REVIEW"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-10T19:45:00Z"
 
     baselineCommit: "58b7eae5426389858037ee85d554656662264508"
     branch: "task/i1-eng-002-kernel"
     candidateCommit: "0035478b82fe5c70cafb9d1592859268e659459f"
+    mergeCommit: "c4d29dc3a647164163421fc0cc236c72e41df11b"
     pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/new/task/i1-eng-002-kernel"
 
     blockers:
@@ -292,8 +293,8 @@ tasks:
 
     humanApproval:
       required: true
-      reference: "Planning branch awaiting owner review; L2 impact, owner gate at merge"
-      approvedCandidateCommit: null
+      reference: "Owner reviewed and merged PR #11 (merge commit c4d29dc3) on 2026-09-10; main CI run at 548f314c (post gov-closure merge) 9/9 success covers the kernel tree"
+      approvedCandidateCommit: "0035478b82fe5c70cafb9d1592859268e659459f"
 
     evidence:
       status: "NOT_STARTED"
@@ -310,9 +311,9 @@ summary:
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 1
+    HUMAN_REVIEW: 0
     MERGED: 0
-    VERIFIED: 4
+    VERIFIED: 5
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
