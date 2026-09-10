@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-10T19:20:00Z"
+updatedAt: "2026-09-10T19:45:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -171,13 +171,14 @@ tasks:
         - "delivery/evidence/I0-DEL-001/control-plane-integrity.md"
 
   I1-ENG-001:
-    state: "HUMAN_REVIEW"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-10T17:40:19Z"
 
     baselineCommit: "2e8844355e309fbfd28cba9a80acf27482a66169"
     branch: "task/i1-eng-001-runway"
     candidateCommit: "b7ffa2422cff12de9344c3bcf398053f38d161cc"
+    mergeCommit: "58b7eae5426389858037ee85d554656662264508"
     pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/new/task/i1-eng-001-runway"
 
     blockers: []
@@ -201,19 +202,20 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
-      candidateRunReference: null
-      mergeRunReference: null
+      status: "PASS"
+      candidateRunReference: "G3 on PR #9 (scripts/** path match); local contracts:verify exit 0"
+      mergeRunReference: "GitHub Actions push run at merge commit 58b7eae5: 9/9 checks success"
       requiredChecks: []
 
     humanApproval:
       required: true
-      reference: "Planning branch awaiting owner review; L1 impact, owner gate at merge"
-      approvedCandidateCommit: null
+      reference: "Owner reviewed and merged PR #9 (merge commit 58b7eae5) on 2026-09-10; G3 9/9 green on main"
+      approvedCandidateCommit: "b7ffa2422cff12de9344c3bcf398053f38d161cc"
 
     evidence:
-      status: "NOT_STARTED"
-      paths: []
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I1-ENG-001/runway-validation.md"
 
   I1-DAT-001:
     state: "BACKLOG"
@@ -256,16 +258,16 @@ tasks:
       paths: []
 
   I1-ENG-002:
-    state: "BACKLOG"
-    assignedAgent: null
-    claimedAt: null
+    state: "CLAIMED"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-10T19:45:00Z"
 
-    baselineCommit: null
-    branch: null
+    baselineCommit: "58b7eae5426389858037ee85d554656662264508"
+    branch: "task/i1-eng-002-kernel"
     pullRequest: null
 
     blockers:
-      - "Depends on I1-ENG-001 (merged or explicitly available)"
+      - "none"
 
     deviations: []
     unresolvedFindings: []
@@ -296,18 +298,18 @@ tasks:
 
 summary:
   counts:
-    BACKLOG: 2
+    BACKLOG: 1
     READY: 0
-    CLAIMED: 0
+    CLAIMED: 1
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 1
+    HUMAN_REVIEW: 0
     MERGED: 0
-    VERIFIED: 3
+    VERIFIED: 4
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
