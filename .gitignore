@@ -22,3 +22,20 @@ tmp/
 # OS artifacts
 .DS_Store
 Thumbs.db
+
+# Java / Maven
+target/
+.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+*.class
+*.jar
+
+# Angular / Node workspaces
+apps/web/node_modules/
+apps/web/.angular/
+apps/web/dist/
+.nx/
+
+# Local infrastructure state
+infra/local/.env
+infra/local/data/

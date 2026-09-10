@@ -1,0 +1,16 @@
+schemaVersion: "1.0"
+deviationId: "I1-ENG-001-SCOPE-001"
+type: "SCOPE_CHANGE"
+taskId: "I1-ENG-001"
+date: "2026-09-10"
+status: "DISCLOSED_PENDING_OWNER"
+title: ".gitignore extension outside packet allowedFiles"
+description: >
+  The task packet's allowedFiles do not list .gitignore. The implementation
+  appended Java/Angular build-output ignore rules (target/, *.class, apps/web
+  build caches, infra local data) to prevent build artifacts from polluting
+  git status and to protect against accidental staging of generated output.
+precedent: >
+  Same pattern as I0-DEL-001 commit 6b6673ee (disclosed deviation, accepted
+  by owner). Purely protective; no semantic content. Owner may reject by
+  reverting the .gitignore change on the task branch.

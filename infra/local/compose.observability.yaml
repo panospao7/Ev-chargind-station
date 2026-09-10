@@ -1,0 +1,3 @@
+# PROVISIONAL observability profile stub — see infra/local/observability/README.md.
+# Delivered by the observability task; empty by design on the runway.
+services: {}
