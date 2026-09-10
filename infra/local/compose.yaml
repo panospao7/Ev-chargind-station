@@ -1,0 +1,96 @@
+# =============================================================================
+# Local core profile — developer dependencies only (ENG-001 doc §6).
+#
+# Loopback-only host bindings; no infrastructure service is exposed to the
+# public network (§6.2). Images are pinned by digest — mutable tags are
+# prohibited (§3). Business databases/roles initialization is owned by
+# task I1-DAT-001 (infra/local/postgres/init*), not by this runway.
+#
+# Usage: docker compose -f infra/local/compose.yaml up -d --wait
+# =============================================================================
+
+name: evplatform-local
+
+services:
+  postgres:
+    image: postgres:18@sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280
+    container_name: evplatform-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_SUPER_USER:-evplatform_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPER_PASSWORD:-evplatform_dev_only}
+      # Startup bootstrap database only; per-service databases are created by
+      # I1-DAT-001 initialization scripts.
+      POSTGRES_DB: ${POSTGRES_BOOTSTRAP_DB:-evplatform_bootstrap}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      # postgres:18 image layout: single mount at /var/lib/postgresql
+      - postgres-data:/var/lib/postgresql
+      - ./postgres:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_SUPER_USER:-evplatform_admin} -d ${POSTGRES_BOOTSTRAP_DB:-evplatform_bootstrap}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  rabbitmq:
+    image: rabbitmq:4.3-management@sha256:57bddb6fbc3498b5d8b5a14dc6f4506073ebcf94c66ba2a7678c335faa8dd631
+    container_name: evplatform-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-evplatform_dev}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-evplatform_dev_only}
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  keycloak:
+    image: keycloak/keycloak:26.6@sha256:0aae0de7fca85525f727d3354df17896092de8bb26ae4c12d89c77e5df8cbce4
+    container_name: evplatform-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-evplatform_admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-evplatform_dev_only}
+      KC_HEALTH_ENABLED: "true"
+      # Dev-file (H2) storage is Keycloak's local default; the production-like
+      # keycloak_db wiring is part of the identity delivery task.
+      KC_DB: dev-file
+    ports:
+      - "127.0.0.1:8180:8080"
+      - "127.0.0.1:9001:9000"
+    volumes:
+      - ./keycloak/realms:/opt/keycloak/data/import:ro
+    healthcheck:
+      # The image has bash but no curl/wget. The printf format uses doubled
+      # backslashes in the YAML double-quoted scalar so bash receives \015
+      # (CR) / \012 (LF) octal escapes — no NUL-byte ambiguity.
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9000 && printf 'GET /health/ready HTTP/1.1\\015\\012Host: localhost\\015\\012Connection: close\\015\\012\\015\\012' >&3 && cat <&3 | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 24
+      start_period: 60s
+
+  mailpit:
+    image: axllent/mailpit@sha256:98b916bd3c8d61f7633a52d3ea2f58d00620cb01ca57ab59edde68c347a95365
+    container_name: evplatform-mailpit
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "1"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "1"
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8025/"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres-data:
+  rabbitmq-data:

@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: booking-session-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true

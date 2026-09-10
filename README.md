@@ -81,3 +81,37 @@ Specifies boundaries, communications, contracts, database models, and concurrenc
 - **[ARC-015] Implementation Dependency Roadmap:** [02_implementation_epics_dependency_roadmap_v1.0.md](docs/08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md) — Release epics and Gantt timeline.
 - **[ARC-016] AI-Agent Review Gates & Rules:** [03_ai_agent_rules_review_gates_v1.0.md](docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md) — Governance rules and mandatory check gates.
 - **[ENG-001] Local Engineering Foundation:** [04_local_engineering_foundation_v1.0.md](docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md) — Developer runway, monorepo structure, coding standards, and foundation acceptance criteria.
+
+---
+
+## 🚀 Developer Runway (iteration I1)
+
+The canonical implementation structure lives alongside the documentation
+(ENG-001 doc §4): `services/` (seven canonical services), `apps/` (web + bff),
+`libraries/` (shared technical primitives), `simulator/`, `infra/local/`.
+
+### Quickstart
+
+Requirements: Docker Desktop, JDK 25 (approved baseline), Node 24 LTS
+(via `.nvmrc`).
+
+```bash
+# 1. local dependencies (PostgreSQL 18, RabbitMQ 4.3, Keycloak 26.6, Mailpit)
+scripts/dev/bootstrap-dev.sh
+
+# 2. build + test all Java modules (wrapper pins Maven 3.9.16)
+./mvnw test
+
+# 3. frontend workspace
+cd apps/web && npm ci && npm test -- --watch=false && cd ..
+
+# 4. contract gate (G3)
+npm run contracts:verify
+
+# 5. stop the stack
+scripts/dev/teardown-dev.sh
+```
+
+No global Maven/npm packages, absolute paths, shared databases, or
+production credentials are required. Images are digest-pinned; see
+[release-manifests/local-images.md](release-manifests/local-images.md).

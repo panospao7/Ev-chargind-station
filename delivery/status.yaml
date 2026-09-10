@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-10T17:40:19Z"
+updatedAt: "2026-09-10T19:20:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -171,25 +171,30 @@ tasks:
         - "delivery/evidence/I0-DEL-001/control-plane-integrity.md"
 
   I1-ENG-001:
-    state: "CLAIMED"
+    state: "HUMAN_REVIEW"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-10T17:40:19Z"
 
     baselineCommit: "2e8844355e309fbfd28cba9a80acf27482a66169"
     branch: "task/i1-eng-001-runway"
-    pullRequest: null
+    candidateCommit: "b7ffa2422cff12de9344c3bcf398053f38d161cc"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/new/task/i1-eng-001-runway"
 
     blockers: []
     deviations: []
-    unresolvedFindings: []
+    unresolvedFindings:
+      - "Java-25 build NOT_RUN locally (JDK 21 only); diagnostic release-21 build green; owner or EPIC-02 CI to close"
+      - "AC-03 Testcontainers smoke PARTIAL until I1-ENG-002 (compose-native containers proven instead)"
+      - "SCOPE-001 disclosed deviation: .gitignore extension outside allowedFiles (protective, I0 precedent)"
+      - "Single-session orchestrator+coder+tester (disclosed); independent review + human merge pending"
 
-    handoffSequence: 1
-    latestHandoff: "delivery/handoffs/I1-ENG-001/01-orchestrator.md"
+    handoffSequence: 5
+    latestHandoff: "delivery/handoffs/I1-ENG-001/05-orchestrator.md"
 
     reviews:
       planner: "PASS"
-      tester: "NOT_STARTED"
-      generalReviewer: "NOT_STARTED"
+      tester: "PASS"
+      generalReviewer: "PENDING_INDEPENDENT_REVIEW"
       contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_APPLICABLE"
       securityReviewer: "NOT_STARTED"
@@ -293,14 +298,14 @@ summary:
   counts:
     BACKLOG: 2
     READY: 0
-    CLAIMED: 1
+    CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 0
+    HUMAN_REVIEW: 1
     MERGED: 0
     VERIFIED: 3
 

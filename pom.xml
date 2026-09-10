@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.evplatform</groupId>
+  <artifactId>ev-charging-platform</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>EV Charging Booking Platform</name>
+
+  <description>
+    Monorepo aggregator. Spring Boot modules inherit spring-boot-starter-parent
+    directly; shared libraries inherit this aggregator. Approved baselines per
+    docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md §3.
+  </description>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <!-- Approved baseline: Java 25 LTS (ENG-001 doc §3). Do not lower without
+         an approved governance decision. Boot modules set java.version in
+         their own poms (they parent spring-boot-starter-parent directly);
+         this property governs the plain library modules below. -->
+    <java.version>25</java.version>
+    <maven.compiler.release>25</maven.compiler.release>
+    <spring-boot.version>4.1.1</spring-boot.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <modules>
+    <module>services/account-service</module>
+    <module>services/station-operations-service</module>
+    <module>services/booking-session-service</module>
+    <module>services/device-integration-service</module>
+    <module>services/discovery-insights-service</module>
+    <module>services/notification-service</module>
+    <module>services/governance-support-service</module>
+    <module>apps/bff</module>
+    <module>simulator/charger-simulator</module>
+    <module>libraries/correlation</module>
+    <module>libraries/secure-logging</module>
+    <module>libraries/event-envelope</module>
+    <module>libraries/test-support</module>
+  </modules>
+</project>
