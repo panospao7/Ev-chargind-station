@@ -258,13 +258,14 @@ tasks:
       paths: []
 
   I1-ENG-002:
-    state: "CLAIMED"
+    state: "HUMAN_REVIEW"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-10T19:45:00Z"
 
     baselineCommit: "58b7eae5426389858037ee85d554656662264508"
     branch: "task/i1-eng-002-kernel"
-    pullRequest: null
+    candidateCommit: "0035478b82fe5c70cafb9d1592859268e659459f"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/new/task/i1-eng-002-kernel"
 
     blockers:
       - "none"
@@ -272,9 +273,11 @@ tasks:
     deviations: []
     unresolvedFindings: []
 
+    handoffSequence: 4
+    latestHandoff: "delivery/handoffs/I1-ENG-002/04-tester.md"
     reviews:
       planner: "PASS"
-      tester: "NOT_STARTED"
+      tester: "PASS"
       generalReviewer: "NOT_STARTED"
       contractReviewer: "NOT_STARTED"
       dataReviewer: "NOT_APPLICABLE"
@@ -307,7 +310,7 @@ summary:
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 0
+    HUMAN_REVIEW: 1
     MERGED: 0
     VERIFIED: 4
 
