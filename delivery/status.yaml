@@ -303,7 +303,7 @@ summary:
   counts:
     BACKLOG: 1
     READY: 0
-    CLAIMED: 1
+    CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
