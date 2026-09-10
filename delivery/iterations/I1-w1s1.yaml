@@ -1,0 +1,91 @@
+schemaVersion: "1.0"
+iterationId: "I1"
+title: "W1-S1 first vertical slice"
+goal: >
+  Deliver the GOV-007 §3 first vertical slice end to end with local
+  reproducibility: repeatable infrastructure seed, public station discovery,
+  interval availability, driver authentication, EVSE hold, booking
+  confirm/view/cancel, check-in, simulated charging with monitoring and stop,
+  and a reproducible session summary — on the approved seven-service topology.
+owner: "Project Owner / Delivery Lead"
+releaseWave: "W1"
+sliceApplicability: "W1-S1"
+nonGoals:
+  - "All W1-S2 completion scope (GOV-007 §4): rescheduling, operator
+    station/EVSE/connector/tariff/policy management, maintenance and fault
+    workflows, operator booking intervention, analytics, administrator
+    suspension controls, rich notification templates, full retry/quarantine/
+    replay operations, privileged-action audit, backup/restore drills."
+  - "W2 and W3 deferrals (GOV-007 §5): operator application approval, staff
+    invitations, support cases, notification preferences, device reservation
+    mirror, privacy export/deletion/retention coordination."
+  - "Payments, real charger hardware, OCPP compliance claims, native mobile
+    applications, routing, direct browser-to-simulator communication,
+    multi-region production HA."
+  - "New service boundaries, database ownership models, or consistency models
+    (GOV-007 §2)."
+  - "Production deployment or production credentials; the cloud demonstrator
+    is provisional and later in the slice."
+entryCriteria:
+  - "I0 exit criteria met: G3 contract validation reproducibly green on main
+    (first fully green run 0be0cfde, 2026-09-10); delivery control plane
+    executable; I0 tasks VERIFIED."
+  - "GOV-007 W1-S1 scope approved; REQ-001 wave tags present."
+  - "W1 persistence and executable contract baseline (ARC-022 §19) approved
+    by the Project Owner — the persistence/API contract gate."
+  - "No unresolved W1-critical OPEN decision per GOV-007 §7."
+exitCriteria:
+  - "The S1 journey (GOV-007 §3) runs end to end from a clean local checkout:
+    docker compose up, seed/reset, discovery, authentication, hold, booking,
+    cancellation, check-in, simulated charging, session summary."
+  - "ARC-015 §4 milestone exit criteria met for M1 (engineering runway),
+    M2 (secure platform core), M3 (discovery slice), M4 (booking correctness
+    slice incl. the allocation race suite), M5 (charging fulfilment slice)."
+  - "S1-01 through S1-11 capabilities demonstrable per GOV-007 §3, including
+    the mandatory failure demonstrations of S1-08 and the messaging
+    guarantees of S1-09."
+  - "Traceability registry rows for implemented W1-S1 requirements move from
+    PLANNED only with CI verification evidence; no requirement is marked
+    VERIFIED without a green run."
+risks:
+  - "EPIC-10 allocation correctness is the project critical path; the
+    PostgreSQL exclusion-constraint race suite must pass before booking UX
+    expansion (ARC-015 §7)."
+  - "Keycloak/BFF token exchange (POC-01) must be proven before protected
+    frontend workflows."
+  - "Provisional decisions (polling, local mail catcher, device credential
+    profile, map provider) must stay replaceable and must not harden into
+    architecture by accident."
+authorityReferences:
+  - "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md §2–§8"
+  - "docs/08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md §4–§9 (M1–M5, EPIC-01/03/04/05/06/07/08/09/10/12/13/14/16/19/20, critical path)"
+  - "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md §4–§19"
+  - "docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md §2–§10"
+  - "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md (W1-S1 wave tags)"
+  - "contracts/registries/traceability-v1.yaml (42 W1 rows, status PLANNED)"
+useCases:
+  - "UC-DR-001..008 (driver journey — the S1 spine)"
+  - "UC-OP-001, UC-OP-002, UC-AD-001, UC-AD-002 (out of S1 except where S1-01
+    seed requires operator organization data)"
+gates:
+  - "I1-ENG-001: M1 engineering runway — canonical monorepo structure, local
+    Docker Compose core profile, Testcontainers PostgreSQL/RabbitMQ smoke,
+    reproducible developer checks (ARC-015 M1; ENG-001 doc §2)."
+  - "I1-DAT-001: EPIC-05 persistence foundation — nine service databases,
+    owner/migrator/runtime role separation, per-service Flyway structure,
+    migration tests against real PostgreSQL 18 (ARC-022 §4, §12–13;
+    ARC-015 M2)."
+  - "I1-ENG-002: EPIC-03 shared technical kernel libraries — correlation,
+    secure logging, event envelope, test support; technical primitives only
+    (ENG doc §4, §4.1; FR-PLT-01..03)."
+  - "Later I1 packets (to be drafted after wave 1 lands): POC-01 Keycloak+BFF,
+    POC-03 allocation constraint/lock protocol, POC-04 outbox/inbox broker
+    behaviour, Driver BFF API completion (ARC-022 API-001), S1-01 seed
+    (DATA-006), then EPIC-07/08/09/10/12/13/14/16/19/20 per the critical
+    path."
+status: "PLANNING"
+startedAt: null
+tasks:
+  - "I1-ENG-001"
+  - "I1-DAT-001"
+  - "I1-ENG-002"

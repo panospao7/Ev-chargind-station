@@ -1,0 +1,294 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-ENG-002"
+  title: "Shared technical kernel — canonical libraries (correlation, secure-logging, event-envelope, test-support)"
+  initialState: "BACKLOG"
+  iteration: "I1"
+  epic: "EPIC-03"
+  releaseWave: "W1"
+  sliceApplicability: "W1-CROSS-CUTTING"
+  impactLevel: "L2"
+  owner: "Delivery Lead / Contract Owner"
+  createdAt: "2026-09-10"
+  baselineCommit: null
+
+objective: >
+  Implement the four canonical shared libraries from ENG-001 §4 as technical
+  primitives only: libraries/correlation (correlation and causation
+  identifier generation and propagation), libraries/secure-logging
+  (structured logging with redaction by construction), libraries/event-
+  envelope (message envelope model validated against the canonical
+  executable schema contracts/schemas/common/cloud-event.json), and
+  libraries/test-support (Testcontainers helpers, deterministic clock,
+  technical fixture builders). Architecture-boundary tests must prove the
+  libraries contain no business authority.
+
+origin: >
+  Owner direction 2026-09-10 to begin W1-S1. Wave-1 foundation packet per
+  ARC-015 EPIC-03 ("approved technical primitives without creating a shared
+  business domain"), sequenced after the monorepo structure exists.
+
+requirements:
+  - "FR-PLT-01 — authoritative changes propagate asynchronously via the
+    transactional outbox pattern; this task delivers the envelope and
+    correlation primitives such propagation is built on (implementation of
+    the outbox pattern itself arrives with owning services)."
+  - "FR-PLT-02 — asynchronous consumers safely handle at-least-once delivery;
+    the idempotency primitives this task provides (schema and key handling
+    against contracts/schemas/common/idempotency-key.json) are the technical
+    basis (inbox table implementations arrive with owning services)."
+  - "FR-PLT-03 — bounded retries with backoff/jitter and dead-letter routing;
+    this task delivers the reusable technical primitives, not the broker
+    topology."
+
+useCases:
+  - "None directly; enables all W1-S1 use cases."
+
+authority:
+  governance:
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§3 S1-09 (transactional outbox, idempotent inbox, at-least-once), §6 status ledger"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "FR-PLT-01..03 (async reliability requirements)"
+  domain: []
+  architecture:
+    - path: "docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md"
+      section: "§4 canonical library locations, §4.1 ownership rules 3–4 (technical primitives only; prohibited content), §9 logging and telemetry policy"
+    - path: "docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md"
+      section: "Envelope and payload rules for the event-envelope library"
+    - path: "docs/05_architecture/13_service_interactions_and_sync_apis_v1.0.md"
+      section: "RFC 9457 problem-details model reference (contracts/schemas/common/problem-details.json is canonical)"
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "§8 common integration persistence field conventions (envelope correlation fields)"
+    - path: "docs/08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md"
+      section: "EPIC-03 deliverables, constraints and acceptance"
+  contracts:
+    - path: "contracts/schemas/common/"
+      identifiers:
+        - "cloud-event.json"
+        - "idempotency-key.json"
+        - "problem-details.json"
+
+invariants:
+  - "Shared libraries may contain technical primitives, not shared business
+    authority (AGENTS.md §4)."
+  - "Libraries must not contain domain aggregates, booking rules, persistence
+    entities, authorization policy or lifecycle decisions (ENG-001 doc §4.1)."
+  - "Sensitive values must be redacted by construction, not after logging
+    (AGENTS.md §10)."
+  - "Consumers are idempotent and assume at-least-once delivery (AGENTS.md §4)."
+
+ownership:
+  owningService: "Delivery / Engineering Foundation (shared technical kernel)"
+  dataOwner: "Not applicable (no business data)"
+  supportingServices: []
+  prohibitedOwners:
+    - "Application business services"
+    - "Browser runtime"
+
+affectedArtifacts:
+  services: []
+  modules:
+    - "libraries/correlation"
+    - "libraries/secure-logging"
+    - "libraries/event-envelope"
+    - "libraries/test-support"
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations: []
+  commands: []
+  events: []
+  schemas: []
+  registries: []
+  screens: []
+  infrastructure: []
+
+dependencies:
+  tasks:
+    - "I1-ENG-001 (monorepo structure and Maven baseline)"
+  contracts:
+    - "contracts/schemas/common/cloud-event.json (validation target — read-only)"
+  infrastructure: []
+  humanDecisions: []
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "libraries/correlation/**"
+    - "libraries/secure-logging/**"
+    - "libraries/event-envelope/**"
+    - "libraries/test-support/**"
+    - "pom.xml"
+    - "release-manifests/**"
+    - "delivery/handoffs/I1-ENG-002/**"
+    - "delivery/evidence/I1-ENG-002/**"
+    - "delivery/deviations/I1-ENG-002/**"
+
+  prohibitedFiles:
+    - "contracts/**"
+    - "docs/**"
+    - "services/**"
+    - "apps/**"
+    - "infra/**"
+    - "scripts/contracts/**"
+    - "scripts/delivery/**"
+    - ".github/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+
+  maximumExpectedDiff: >
+    Four Java modules with focused unit/property tests. Any growth into
+    business logic, persistence entities, or new canonical locations must be
+    refused. Remaining EPIC-03 primitives (Problem Details mapping, clock/
+    database-time abstraction, aggregate-version handling, outbox/inbox
+    persistence primitives) have no canonical library location in ENG-001
+    §4: if a home is needed before owning services require them, stop with
+    CLARIFICATION_REQUIRED and propose placement — do not invent a new
+    top-level directory.
+
+  generatedFilesPolicy: >
+    Hand-authored sources only; generated contract clients must not be
+    introduced.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      The four libraries build with ./mvnw and contain only technical
+      primitives; architecture-boundary tests (using the approved
+      static-analysis/test toolset of ENG-001 §5) fail if a library imports
+      domain aggregates, business rules, persistence entities, or
+      authorization policy.
+    authorityReferences:
+      - "ENG-001 doc §4.1; ARC-015 EPIC-03 acceptance"
+    evidenceRequired:
+      - "boundary-test output"
+    testTypes: ["unit", "architecture"]
+
+  - id: "AC-02"
+    statement: >
+      correlation: generates and propagates correlation/causation identifiers
+      across in-process and client contexts with deterministic tests.
+    authorityReferences:
+      - "ARC-015 EPIC-03 deliverables; ARC-022 §8 field conventions"
+    evidenceRequired:
+      - "unit test output"
+    testTypes: ["unit"]
+
+  - id: "AC-03"
+    statement: >
+      secure-logging: structured logging with correlation-ID support and
+      redaction by construction; tests prove sensitive fields cannot reach
+      log output even when passed mistakenly.
+    authorityReferences:
+      - "AGENTS.md §10; ENG-001 doc §9"
+    evidenceRequired:
+      - "redaction negative-fixture test output"
+    testTypes: ["unit", "security"]
+
+  - id: "AC-04"
+    statement: >
+      event-envelope: validates envelopes against contracts/schemas/common/
+      cloud-event.json; malformed envelopes (missing required fields, wrong
+      types, unknown envelope shape) are rejected with precise errors —
+      positive and negative fixtures both automated.
+    authorityReferences:
+      - "ARC-020 payload rules; contracts/schemas/common/cloud-event.json"
+    evidenceRequired:
+      - "positive/negative fixture test output"
+    testTypes: ["unit", "contract"]
+
+  - id: "AC-05"
+    statement: >
+      test-support: Testcontainers helpers and a deterministic clock usable
+      by later service tasks; no production code depends on test-support
+      (enforced by boundary test).
+    authorityReferences:
+      - "ENG-001 doc §4.1 rule 9"
+    evidenceRequired:
+      - "test output"
+    testTypes: ["unit", "architecture"]
+
+tests:
+  focusedCommands:
+    - "./mvnw -pl libraries/correlation,libraries/secure-logging,libraries/event-envelope,libraries/test-support test"
+  requiredSuites:
+    - "./mvnw test"
+    - "npm run contracts:verify"
+    - "npm run contracts:secrets"
+    - "git diff --check"
+  positiveCases:
+    - "Valid envelopes validate; correlation IDs round-trip."
+  negativeCases:
+    - "Malformed envelopes rejected; redaction traps sensitive fields; boundary tests reject business imports."
+  boundaryCases: []
+  concurrencyCases:
+    - "Correlation context propagation is thread-safe (test under concurrent access)."
+  securityCases:
+    - "Secrets scan green; no credentials in fixtures; redaction by construction proven."
+  contractCases:
+    - "Envelope validation matches the executable schema exactly."
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "Redaction-by-constructian logging reduces accidental secret/personal-data leakage."
+  dataClassifications:
+    - "Technical identifiers (correlation/causation IDs) only"
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData:
+    - "Personal data, tokens, or credentials in library fixtures"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: true
+  dataReviewer: false
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-ENG-002/kernel-libraries.md"
+  requiredCiChecks:
+    - "G3 contract workflow remains green on the PR"
+  requiredCommitSha: true
+  requiredRunReference: false
+
+assumptions:
+  - "I1-ENG-001 lands first (Maven module skeleton exists)."
+  - "The canonical schemas in contracts/schemas/common/ are the validation
+    authority; the libraries never duplicate them."
+  - "The baseline commit is inserted when the task is claimed."
+
+openQuestions:
+  - "Canonical locations for the remaining EPIC-03 primitives (Problem
+    Details mapper, clock/database-time abstraction, aggregate-version
+    handling, outbox/inbox persistence primitives) are not named in ENG-001
+    §4; raise CLARIFICATION_REQUIRED when an owning service first needs one,
+    with a placement proposal."
