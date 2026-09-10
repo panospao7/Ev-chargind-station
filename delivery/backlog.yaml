@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-04T14:34:24Z"
+updatedAt: "2026-09-10T18:40:00Z"
 
 authority:
   taskDefinition: "delivery/tasks/<TASK-ID>.yaml"
@@ -63,4 +63,51 @@ items:
       - registries
       - schemas
 
-nextRecommendedTask: null
+  - id: "I1-ENG-001"
+    order: 10
+    priority: "P0"
+    iteration: "I1"
+    epic: "EPIC-01"
+    title: "Repository and developer runway — canonical monorepo structure and local environment"
+    packet: "delivery/tasks/I1-ENG-001.yaml"
+    dependsOn: []
+    tags:
+      - foundation
+      - monorepo
+      - docker-compose
+      - testcontainers
+      - w1-s1
+
+  - id: "I1-DAT-001"
+    order: 20
+    priority: "P0"
+    iteration: "I1"
+    epic: "EPIC-05"
+    title: "Persistence and migration foundation — service-owned databases, roles and Flyway structure"
+    packet: "delivery/tasks/I1-DAT-001.yaml"
+    dependsOn:
+      - "I1-ENG-001"
+    tags:
+      - foundation
+      - persistence
+      - flyway
+      - migrations
+      - w1-s1
+      - l3
+
+  - id: "I1-ENG-002"
+    order: 30
+    priority: "P0"
+    iteration: "I1"
+    epic: "EPIC-03"
+    title: "Shared technical kernel — canonical libraries (correlation, secure-logging, event-envelope, test-support)"
+    packet: "delivery/tasks/I1-ENG-002.yaml"
+    dependsOn:
+      - "I1-ENG-001"
+    tags:
+      - foundation
+      - kernel
+      - libraries
+      - w1-s1
+
+nextRecommendedTask: "I1-ENG-001"

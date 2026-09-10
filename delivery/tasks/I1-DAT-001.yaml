@@ -1,0 +1,293 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-DAT-001"
+  title: "Persistence and migration foundation — service-owned databases, roles and Flyway structure"
+  initialState: "BACKLOG"
+  iteration: "I1"
+  epic: "EPIC-05"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L3"
+  owner: "Backend/Data Architect and Project Owner"
+  createdAt: "2026-09-10"
+  baselineCommit: null
+
+objective: >
+  Establish service-owned PostgreSQL persistence per ARC-022 §4 and ENG-001
+  §6.3: the nine logical databases; per-database owner/migrator/runtime role
+  separation with automated proof that the runtime role cannot execute DDL or
+  reach another service's database; per-service SQL-first Flyway structures
+  with a V1 baseline migration per service (schema/catalogue setup only — no
+  business tables); the migration pipeline and developer commands; a
+  retention-job framework skeleton; backup-compatible local configuration;
+  and migration test fixtures proving fresh-install success, upgrade-path
+  success, checksum integrity, unique numbering and immutability — all
+  against real PostgreSQL 18 via Testcontainers, never an embedded substitute.
+
+origin: >
+  Owner direction 2026-09-10 to begin W1-S1. Wave-1 foundation packet;
+  business-table migrations (ARC-022 §5–§9, work packages DATA-002/003)
+  arrive with the owning services' later tasks.
+
+requirements:
+  - "None implemented directly — foundation enabling all W1 FRs; persistence
+    behaviour FRs are delivered by the owning services' later tasks."
+
+useCases:
+  - "None directly."
+
+authority:
+  governance:
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§2 (no new ownership model), §3 S1-01 (repeatable reset without cross-service writes), §6 status ledger (PostgreSQL/Flyway APPROVED)"
+  requirements: []
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "§4 W1 persistence ownership (database list), §8 common integration persistence (conventions only here), §12/§13 migration rules (independent per-service Flyway; applied migrations immutable; corrections via new migrations; no automatic production down; real-PostgreSQL tests; empty and upgrade paths; checksum verification), §19 definition of done items 2–6"
+    - path: "docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md"
+      section: "§3 baseline decisions (PostgreSQL 18, Flyway SQL-first), §6.3 PostgreSQL local topology, §8.2 database commands"
+    - path: "docs/08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md"
+      section: "§4 M2 exit criteria (migrations work), EPIC-05 deliverables and acceptance"
+  contracts: []
+
+invariants:
+  - "Each service owns its database and migrations; cross-service database
+    reads, writes, joins and foreign keys are prohibited (AGENTS.md §4)."
+  - "Applied migrations are immutable; numbering is unique; every new schema
+    change takes a forward migration (AGENTS.md §10)."
+  - "SQL correctness involving locks, ranges, exclusions or indexes must be
+    tested against real PostgreSQL (AGENTS.md §10)."
+  - "The local PostgreSQL container is shared infrastructure, not shared
+    ownership; initialization must not insert business aggregates into
+    another service's database (ENG-001 doc §6.3)."
+
+ownership:
+  owningService: "Delivery / Engineering Foundation (cross-service persistence topology); per-service schemas become property of the owning service"
+  dataOwner: "Per-service data owners per ARC-022 §4"
+  supportingServices:
+    - "All seven canonical services (database provisioning only)"
+  prohibitedOwners:
+    - "Browser runtime"
+
+affectedArtifacts:
+  services: []
+  modules:
+    - "services/*/src/main/resources/db/migration (Flyway locations, V1 baselines)"
+    - "scripts/db (migration pipeline and developer commands)"
+    - "libraries/test-support (migration test fixtures)"
+  tables: []
+  projections: []
+  migrations:
+    - "One V1 baseline migration per service database: schema creation and
+      extension setup only. NO business tables, NO ARC-022 §5–§9 tables —
+      those belong to owning-service tasks."
+  apiOperations: []
+  commands: []
+  events: []
+  schemas: []
+  registries: []
+  screens: []
+  infrastructure:
+    - "infra/local PostgreSQL init: databases and roles per ARC-022 §4 and
+      ENG-001 §6.3 (account_db, station_operations_db, booking_session_db,
+      device_integration_db, discovery_insights_db, notification_db,
+      governance_support_db, bff_session_db; Keycloak uses its own
+      keycloak_db)"
+    - "Per-database roles: owner, migrator, runtime, optional restricted
+      operations role"
+
+dependencies:
+  tasks:
+    - "I1-ENG-001 (monorepo structure, compose core profile, Testcontainers smoke)"
+  contracts: []
+  infrastructure:
+    - "Docker engine locally"
+  humanDecisions:
+    - "L3 authorization: owner approval of this packet (and of the migration
+      artifact edits at claim time) is required before implementation begins,
+      per AGENTS.md §6 L3."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "pom.xml"
+    - "services/**/pom.xml"
+    - "services/*/src/main/resources/db/**"
+    - "infra/local/**"
+    - "scripts/db/**"
+    - "scripts/ci/**"
+    - "libraries/test-support/**"
+    - ".github/workflows/db-migrations.yml"
+    - "release-manifests/**"
+    - "delivery/handoffs/I1-DAT-001/**"
+    - "delivery/evidence/I1-DAT-001/**"
+    - "delivery/deviations/I1-DAT-001/**"
+
+  prohibitedFiles:
+    - "contracts/**"
+    - "docs/**"
+    - "scripts/contracts/**"
+    - "scripts/delivery/**"
+    - "AGENTS.md"
+    - ".github/workflows/g3-contract-validation.yml"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+
+  maximumExpectedDiff: >
+    Moderate: nine V1 baseline migrations (small), role/init SQL for the
+    local topology, migration test fixtures, scripts, one new CI workflow.
+    Any pressure to include business tables (booking, guard, claim,
+    session, outbox/inbox) is out of scope and must be refused — those are
+    owning-service tasks against approved ARC-022 physical models.
+
+  generatedFilesPolicy: >
+    All SQL and configuration hand-authored. Flyway metadata tables are
+    tool-managed at runtime and never hand-edited.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      The local topology provisions the nine databases with the exact names
+      of ARC-022 §4 / ENG-001 §6.3, each with owner, migrator and runtime
+      roles; no database or role is shared between services.
+    authorityReferences:
+      - "ARC-022 §4; ENG-001 doc §6.3"
+    evidenceRequired:
+      - "psql catalogue listing (databases, roles, grants)"
+    testTypes: ["integration"]
+
+  - id: "AC-02"
+    statement: >
+      An automated test proves the runtime role cannot execute DDL (CREATE/
+      ALTER/DROP) and cannot read or write another service's database, while
+      the migrator role can run migrations and the runtime role can perform
+      DML on its own database.
+    authorityReferences:
+      - "ARC-015 EPIC-05 acceptance (runtime roles cannot execute DDL); ARC-022 §19 items 2, 5"
+    evidenceRequired:
+      - "role-separation test output"
+    testTypes: ["integration", "security"]
+
+  - id: "AC-03"
+    statement: >
+      Per-service Flyway structures exist with SQL-first migrations; V1
+      baselines apply cleanly to empty databases; a second migration fixture
+      proves the upgrade path from V1 works; checksum verification is active.
+    authorityReferences:
+      - "ARC-022 §13 (empty and upgrade migrations succeed; checksums verified in CI); §19 items 3–4"
+    evidenceRequired:
+      - "fresh and upgrade migration test runs"
+    testTypes: ["migration", "integration"]
+
+  - id: "AC-04"
+    statement: >
+      Migration tests run against real PostgreSQL 18 via Testcontainers (no
+      H2/embedded substitute); a deliberately corrupted migration checksum or
+      duplicate version number fails the pipeline with a non-zero exit.
+    authorityReferences:
+      - "AGENTS.md §10 (real PostgreSQL testing); ARC-022 §13"
+    evidenceRequired:
+      - "negative-fixture test output"
+    testTypes: ["migration", "negative"]
+
+  - id: "AC-05"
+    statement: >
+      A retention-job framework skeleton exists (job registration, execution
+      contract) without any data-deletion behavior; no destructive job is
+      scheduled (retention enforcement is W3).
+    authorityReferences:
+      - "ARC-015 EPIC-05 deliverables; GOV-007 §5 (retention enforcement W3)"
+    evidenceRequired:
+      - "skeleton test output"
+    testTypes: ["unit"]
+
+  - id: "AC-06"
+    statement: >
+      The G3 gate and delivery control plane remain green from the candidate
+      commit; the new db-migrations workflow passes on the PR.
+    authorityReferences:
+      - "ARC-022 §13 (CI green from clean checkout)"
+    evidenceRequired:
+      - "npm run contracts:verify output; GitHub Actions run reference"
+    testTypes: ["ci", "contract"]
+
+tests:
+  focusedCommands:
+    - "./mvnw -pl libraries/test-support test"
+  requiredSuites:
+    - "./mvnw test"
+    - "npm run contracts:verify"
+    - "node scripts/delivery/validate.mjs"
+    - "npm run contracts:secrets"
+    - "git diff --check"
+  positiveCases:
+    - "Fresh empty database → V1 baseline applies; upgrade fixture applies."
+  negativeCases:
+    - "Runtime role DDL attempt rejected."
+    - "Cross-service database access rejected."
+    - "Tampered checksum and duplicate migration version both fail the run."
+  boundaryCases: []
+  concurrencyCases: []
+  securityCases:
+    - "Role separation negative tests; no credentials beyond documented dev-only values."
+  contractCases: []
+  migrationCases:
+    - "Fresh install, upgrade path, checksum integrity, unique numbering."
+  accessibilityCases: []
+
+persistence:
+  affected: true
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "Role separation reduces blast radius of a compromised runtime credential; DDL restricted to migrator role."
+  dataClassifications:
+    - "Development-only configuration and role definitions"
+  authorizationPolicies:
+    - "Database role grants (owner/migrator/runtime) per database"
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData:
+    - "Real credentials in init scripts or fixtures; production data anywhere"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: false
+  dataReviewer: true
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L3 authorization)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-DAT-001/migration-foundation.md"
+  requiredCiChecks:
+    - "Database Migrations workflow (new) green on the PR"
+    - "G3 contract workflow remains green"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "I1-ENG-001 lands first and provides the compose core profile and
+    Testcontainers smoke this task extends."
+  - "Business-table migrations and the outbox/inbox/idempotency/audit tables
+    (ARC-022 §8) are NOT in scope; they arrive with owning-service tasks."
+  - "The baseline commit is inserted when the task is claimed."
+
+openQuestions: []

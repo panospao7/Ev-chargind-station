@@ -1,9 +1,9 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-10T16:33:11Z"
+updatedAt: "2026-09-10T18:40:00Z"
 
 project:
   name: "EV Charging Booking Platform"
-  currentIteration: "I0"
+  currentIteration: "I1"
   observedRemoteBaseline: "27091c7915d5b787aabe077f85de4eac2506325e"
   controlPlaneVersion: "1.0"
 
@@ -170,10 +170,129 @@ tasks:
       paths:
         - "delivery/evidence/I0-DEL-001/control-plane-integrity.md"
 
+  I1-ENG-001:
+    state: "READY"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    pullRequest: null
+
+    blockers: []
+    deviations: []
+    unresolvedFindings: []
+
+    handoffSequence: 1
+    latestHandoff: "delivery/handoffs/I1-ENG-001/01-orchestrator.md"
+
+    reviews:
+      planner: "PASS"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_REQUIRED"
+      dataReviewer: "NOT_APPLICABLE"
+      securityReviewer: "NOT_STARTED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "Planning branch awaiting owner review; L1 impact, owner gate at merge"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
+
+  I1-DAT-001:
+    state: "BACKLOG"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    pullRequest: null
+
+    blockers:
+      - "Depends on I1-ENG-001 (merged or explicitly available)"
+      - "L3: owner authorization to edit persistence artifacts required at claim time"
+
+    deviations: []
+    unresolvedFindings: []
+
+    reviews:
+      planner: "PASS"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_REQUIRED"
+      dataReviewer: "NOT_STARTED"
+      securityReviewer: "NOT_STARTED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "L3 packet — owner approval of the packet recorded via planning-branch merge; claim-time artifact authorization still required"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
+
+  I1-ENG-002:
+    state: "BACKLOG"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    pullRequest: null
+
+    blockers:
+      - "Depends on I1-ENG-001 (merged or explicitly available)"
+
+    deviations: []
+    unresolvedFindings: []
+
+    reviews:
+      planner: "PASS"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_STARTED"
+      dataReviewer: "NOT_APPLICABLE"
+      securityReviewer: "NOT_STARTED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "Planning branch awaiting owner review; L2 impact, owner gate at merge"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
+
 summary:
   counts:
-    BACKLOG: 0
-    READY: 0
+    BACKLOG: 2
+    READY: 1
     CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
@@ -191,4 +310,4 @@ summary:
     CANCELLED: 0
 
   activeTask: null
-  nextRecommendedTask: null
+  nextRecommendedTask: "I1-ENG-001"

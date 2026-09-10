@@ -1,0 +1,281 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-ENG-001"
+  title: "Repository and developer runway — canonical monorepo structure and local environment"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-01"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L1"
+  owner: "Delivery Lead / Project Owner"
+  createdAt: "2026-09-10"
+  baselineCommit: null
+
+objective: >
+  Create the canonical monorepo implementation structure (ENG-001 §4) with the
+  approved technology baselines (ENG-001 §3), the local Docker Compose core
+  profile (ENG-001 §6), a Testcontainers smoke proof for PostgreSQL 18 and
+  RabbitMQ 4.3, and the developer-facing commands and troubleshooting
+  documentation — so that a fresh clone can run checks, start local
+  dependencies, validate contracts, and run tests without global packages,
+  absolute paths, shared databases, or secrets. No business behavior, no
+  contracts, no migrations.
+
+origin: >
+  Owner direction 2026-09-10 ("let's begin w1-s1") following the orchestrator
+  proposal to start the W1-S1 planning pass. This packet completes the
+  ARC-015 M1 milestone remainder left open by iteration I0.
+
+requirements:
+  - "None implemented directly — this task is enabling infrastructure. It
+    unblocks every FR-PLT-* platform requirement and all W1-S1 functional
+    requirements; no functional behavior changes."
+
+useCases:
+  - "None directly; enables UC-DR-001..008 downstream."
+
+authority:
+  governance:
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§3 S1-11 operational foundation; §7 W1 blocking rule"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "W1 platform requirements (enabling context)"
+  domain: []
+  architecture:
+    - path: "docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md"
+      section: "§2 completion target, §3 baseline decisions, §4 canonical structure and ownership rules, §5 coding standards, §6 local Docker Compose environment, §7 profiles, §8 canonical developer commands, §9 logging and telemetry policy"
+    - path: "docs/08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md"
+      section: "§4 M1 exit criteria, EPIC-01 deliverables and acceptance"
+  contracts:
+    - path: "contracts/"
+      identifiers:
+        - "read-only: existing G3 gate must remain green"
+
+ownership:
+  owningService: "Delivery / Engineering Foundation (cross-cutting repository infrastructure)"
+  dataOwner: "Not applicable (no business data)"
+  supportingServices: []
+  prohibitedOwners:
+    - "Application business services"
+
+affectedArtifacts:
+  services: []
+  modules:
+    - "root build files (pom.xml, mvnw, .mvn/, .editorconfig, .gitattributes)"
+    - "services/<seven canonical services> — skeleton modules only"
+    - "apps/web, apps/bff — skeleton workspaces only"
+    - "libraries/correlation, libraries/secure-logging, libraries/event-envelope, libraries/test-support — module skeletons only"
+    - "simulator/charger-simulator — skeleton only"
+    - "infra/local (compose files, service config dirs, .env.example)"
+    - "scripts/dev, scripts/db (skeleton)"
+    - "tests/ directory skeleton"
+    - "release-manifests/ (image digest record)"
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations: []
+  commands: []
+  events: []
+  schemas: []
+  registries: []
+  screens: []
+  infrastructure:
+    - "infra/local/compose.yaml — core profile: PostgreSQL 18, RabbitMQ 4.3, Keycloak 26.6, Mailpit-compatible catcher; loopback-only host bindings per ENG-001 §6.2"
+    - "infra/local/compose.observability.yaml — stub only (PROVISIONAL profile, not required for acceptance)"
+
+dependencies:
+  tasks:
+    - "I0-DEL-001, I0-ENG-001, I0-CON-002 (all VERIFIED on main 32cac0d0)"
+  contracts: []
+  infrastructure:
+    - "Docker engine available locally"
+    - "Node 24 LTS (existing .nvmrc/engines)"
+    - "JDK 25 and Maven via wrapper (no global install)"
+  humanDecisions: []
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "pom.xml"
+    - "mvnw"
+    - "mvnw.cmd"
+    - ".mvn/**"
+    - ".editorconfig"
+    - ".gitattributes"
+    - "README.md"
+    - "package.json"
+    - "package-lock.json"
+    - "services/**"
+    - "apps/**"
+    - "libraries/**"
+    - "simulator/**"
+    - "infra/local/**"
+    - "scripts/dev/**"
+    - "scripts/db/**"
+    - "tests/**"
+    - "release-manifests/**"
+    - "delivery/handoffs/I1-ENG-001/**"
+    - "delivery/evidence/I1-ENG-001/**"
+    - "delivery/deviations/I1-ENG-001/**"
+
+  prohibitedFiles:
+    - "contracts/**"
+    - "docs/**"
+    - "scripts/contracts/**"
+    - "scripts/delivery/**"
+    - ".github/**"
+    - "AGENTS.md"
+    - ".nvmrc"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+
+  maximumExpectedDiff: >
+    Large in file count (module skeletons across seven services, two apps,
+    four libraries, simulator, infra) but shallow per file: build files,
+    health/readiness endpoint stubs where compose checks require them,
+    configuration, compose definitions, one Testcontainers smoke test class,
+    documentation. No business logic, no contract edits, no migrations.
+    Skeleton service modules must not contain domain code.
+
+  generatedFilesPolicy: >
+    Maven wrapper binaries are generated tooling committed per convention;
+    everything else is hand-authored. Generated contract clients do not yet
+    exist and must not be introduced here.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      The canonical repository structure exists exactly as ENG-001 §4 defines
+      it (directory names and ownership rules §4.1); a fresh clone builds the
+      Java modules with ./mvnw and installs workspace npm dependencies with
+      npm ci, without global packages or absolute paths.
+    authorityReferences:
+      - "ENG-001 doc §2, §4"
+    evidenceRequired:
+      - "clean-clone build transcript"
+    testTypes: ["build"]
+
+  - id: "AC-02"
+    statement: >
+      The compose core profile starts PostgreSQL 18, RabbitMQ 4.3, Keycloak
+      26.6 and a Mailpit-compatible catcher on loopback-only bindings, with
+      every image pinned by digest (no mutable latest tags) and healthchecks
+      green; recorded image versions/digests appear in the implementation
+      commit (release-manifests).
+    authorityReferences:
+      - "ENG-001 doc §3, §6.1–6.6"
+    evidenceRequired:
+      - "docker compose ps and healthcheck output"
+      - "release-manifests digest record"
+    testTypes: ["integration"]
+
+  - id: "AC-03"
+    statement: >
+      A Testcontainers smoke test in libraries/test-support starts real
+      PostgreSQL 18 and RabbitMQ 4.3 containers and passes locally,
+      demonstrating the M1 Testcontainers criterion.
+    authorityReferences:
+      - "ARC-015 §4 M1 exit criteria"
+    evidenceRequired:
+      - "test run output"
+    testTypes: ["integration"]
+
+  - id: "AC-04"
+    statement: >
+      The existing G3 gate and delivery control plane are unaffected:
+      npm run contracts:verify fully green, delivery validators green, from
+      the candidate commit.
+    authorityReferences:
+      - "ARC-022 §13 CI is green from a clean checkout"
+    evidenceRequired:
+      - "npm run contracts:verify output"
+      - "node scripts/delivery/validate.mjs output"
+    testTypes: ["contract", "ci"]
+
+  - id: "AC-05"
+    statement: >
+      No secrets: infra/local/.env.example contains placeholders only; local
+      Keycloak realm/dev credentials are documented dev-only values, not
+      production secrets; secret and privacy scans green.
+    authorityReferences:
+      - "AGENTS.md §4 (secrets invariant); ENG-001 doc §6"
+    evidenceRequired:
+      - "npm run contracts:secrets output"
+    testTypes: ["security"]
+
+tests:
+  focusedCommands:
+    - "./mvnw -q -DskipTests package"
+    - "docker compose -f infra/local/compose.yaml up -d && docker compose -f infra/local/compose.yaml ps"
+  requiredSuites:
+    - "./mvnw test (skeleton + smoke)"
+    - "npm run contracts:verify"
+    - "node scripts/delivery/self-test.mjs"
+    - "npm run contracts:secrets"
+    - "git diff --check"
+  positiveCases:
+    - "Fresh clone → build → compose up → smoke test passes."
+  negativeCases:
+    - "compose up on a machine without Docker fails with an actionable message (documented, not silently swallowed)."
+  boundaryCases: []
+  concurrencyCases: []
+  securityCases:
+    - "Secret scan green; no credential material in compose/env/realm files beyond documented dev-only values."
+  contractCases: []
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: false
+  threatChanges: []
+  dataClassifications:
+    - "Development-only configuration data"
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData:
+    - "Any real credential, token, or personal data in .env.example, realm files, or compose files"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: false
+  dataReviewer: false
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-ENG-001/runway-validation.md"
+  requiredCiChecks:
+    - "G3 contract workflow remains green on the PR"
+  requiredCommitSha: true
+  requiredRunReference: false
+
+assumptions:
+  - "Docker Desktop is available on the developer machine; CI integration of
+    service builds and compose is EPIC-02 work in a later task."
+  - "The Angular and BFF skeletons are workspace placeholders; real frontend
+    foundation is EPIC-19, later in I1."
+  - "The baseline commit is inserted when the task is claimed."
+
+openQuestions: []
