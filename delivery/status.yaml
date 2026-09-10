@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-10T18:40:00Z"
+updatedAt: "2026-09-10T17:40:19Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -171,12 +171,12 @@ tasks:
         - "delivery/evidence/I0-DEL-001/control-plane-integrity.md"
 
   I1-ENG-001:
-    state: "READY"
-    assignedAgent: null
-    claimedAt: null
+    state: "CLAIMED"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-10T17:40:19Z"
 
-    baselineCommit: null
-    branch: null
+    baselineCommit: "2e8844355e309fbfd28cba9a80acf27482a66169"
+    branch: "task/i1-eng-001-runway"
     pullRequest: null
 
     blockers: []
@@ -292,8 +292,8 @@ tasks:
 summary:
   counts:
     BACKLOG: 2
-    READY: 1
-    CLAIMED: 0
+    READY: 0
+    CLAIMED: 1
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
@@ -309,5 +309,5 @@ summary:
     SUPERSEDED: 0
     CANCELLED: 0
 
-  activeTask: null
+  activeTask: "I1-ENG-001"
   nextRecommendedTask: "I1-ENG-001"
