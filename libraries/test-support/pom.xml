@@ -14,13 +14,51 @@
   <artifactId>test-support</artifactId>
   <name>test-support</name>
   <description>
-    Shared technical primitive library (canonical location: ENG-001 doc §4).
-    Technical primitives only — domain aggregates, booking rules, persistence
-    entities, authorization policy and lifecycle decisions are prohibited
-    (§4.1). Real content is delivered by I1-ENG-002.
+    Shared technical primitive library (ENG-001 doc §4; §4.1 ownership rule 9):
+    Testcontainers factories pinned to the approved local baselines and a
+    deterministic clock. Production modules must not depend on this library.
+    Implemented by task I1-ENG-002.
   </description>
 
+  <properties>
+    <!-- Testcontainers 2.x line: compatible with the JUnit Jupiter 6 that
+         Spring Boot 4.1 manages (1.x targets Jupiter 5 and is silently not
+         discovered under the 6 engine). Latest stable at implementation time
+         per Maven Central metadata 2026-09-10. -->
+    <testcontainers.version>2.0.5</testcontainers.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainers.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-junit-jupiter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-postgresql</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers-rabbitmq</artifactId>
+    </dependency>
+    <!-- TC 2.x no longer transitively provides the JDBC driver -->
+    <dependency>
+      <groupId>org.postgresql</groupId>
+      <artifactId>postgresql</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
