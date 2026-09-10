@@ -14,13 +14,20 @@
   <artifactId>secure-logging</artifactId>
   <name>secure-logging</name>
   <description>
-    Shared technical primitive library (canonical location: ENG-001 doc §4).
-    Technical primitives only — domain aggregates, booking rules, persistence
-    entities, authorization policy and lifecycle decisions are prohibited
-    (§4.1). Real content is delivered by I1-ENG-002.
+    Shared technical primitive library (ENG-001 doc §4; §4.1 ownership rules):
+    structured logging with redaction by construction per §9 never-log policy.
+    Implemented by task I1-ENG-002.
   </description>
 
   <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
