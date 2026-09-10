@@ -382,6 +382,8 @@ GOV-004, REQ-001 and GOV-001 have been patched with GOV-007 scope. The patches a
 
 **Correction required (2026-07-12 review):** G3 executable CI validation at 27091c7 failed with 15 errors and 14 warnings. CON-175 and CON-176 opened; contract-dependent VERIFIED rows returned to PATCHED. G3-executable status corrected to `IN_REVIEW — VALIDATION_FAILED`.
 
+**Resolved (2026-09-10, owner-authorized):** G3 CI validation is fully green (run at 0be0cfde, 9/9 checks, PR #5 merged to main; close-out PRs #6–#9). CON-175/176 VERIFIED; contract-dependent rows re-VERIFIED; GOV-004 and GOV-001 record G3 as EXECUTABLE APPROVED.
+
 Remaining work after baseline approval:
 
 1. Fix G3 CI validation (OpenAPI, AsyncAPI, JSON Schema, registries, docs, security).

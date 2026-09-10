@@ -571,7 +571,7 @@ Default owner: **Project Owner**.
 | Resolved by ADR/approved document | 20 |
 | Open questions | 50+ |
 
-G2 (logical architecture): APPROVED. G3 (contract catalogues): LOGICAL APPROVED; EXECUTABLE IN_REVIEW (CI validation must pass green). G4 (security): APPROVED (ARC-007 + SEC-001). G5 (cloud/operations): IN_REVIEW. G6 (testing/readiness): PENDING. Implementation-enablement plans (GOV-007, ENG-001, ARC-022, SEC-001, ARC-023): APPROVED. W1 implementation readiness: PENDING. Business-feature implementation is BLOCKED until executable contracts validate green, security proofs pass, and the engineering foundation demonstrates green CI.
+G2 (logical architecture): APPROVED. G3 (contract catalogues): LOGICAL APPROVED; EXECUTABLE APPROVED (fully green CI run 0be0cfde, 9/9 checks, 2026-09-10; CON-175/176 resolution). G4 (security): APPROVED (ARC-007 + SEC-001). G5 (cloud/operations): IN_REVIEW. G6 (testing/readiness): PENDING. Implementation-enablement plans (GOV-007, ENG-001, ARC-022, SEC-001, ARC-023): APPROVED. W1 implementation readiness: PENDING. Business-feature implementation is BLOCKED until executable contracts validate green, security proofs pass, and the engineering foundation demonstrates green CI.
 
 ---
 

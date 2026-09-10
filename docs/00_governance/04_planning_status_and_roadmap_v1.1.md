@@ -19,7 +19,7 @@ This document outlines the current completion status of the planning foundation 
 The design phase is structured into separate gates:
 - **Gate G1: Planning Foundation** — **APPROVED** (tagged as `planning-foundation-v1.2`).
 - **Gate G2: Logical Architecture** — **APPROVED** (capability boundaries, communication, REST/event contracts, database models, concurrency, frontend UX, and technology selection in ARC-001 through ARC-009).
-- **Gate G3: Contract Catalogues & Executable Schemas** — **LOGICAL APPROVED; EXECUTABLE IN_REVIEW** (ARC-018–021 logical contracts approved. OpenAPI, AsyncAPI and JSON Schema executable contracts exist; CI validation must pass green before VERIFIED status.).
+- **Gate G3: Contract Catalogues & Executable Schemas** — **LOGICAL APPROVED; EXECUTABLE APPROVED** (fully green G3 CI run at 0be0cfde — 9/9 checks, 2026-09-10, first green run on main via PR #5; close-out evidence PRs #6–#9. Owner-authorized flip per CON-175/176 resolution.).
 - **Gate G4: Security Architecture** — **APPROVED** (ARC-007 security architecture and SEC-001 implementation proof plan approved).
 - **Gate G5: Cloud and Operations** — **IN_REVIEW** (ARC-010, ARC-011 cloud and deployment architecture in review).
 - **Gate G6: Testing, Quality and Readiness** — **PENDING** (ARC-012, ARC-013 dependent on earlier gates).
