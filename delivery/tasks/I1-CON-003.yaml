@@ -1,0 +1,282 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-CON-003"
+  title: "Align executable message registry with ARC-020 W1 Station Operations event catalogue"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-06"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L2"
+  owner: "Delivery / Contract Owner"
+  createdAt: "2026-09-11"
+  baselineCommit: null
+
+objective: >
+  Close the discovered gap between ARC-020's approved W1 catalogue and the
+  executable message registry: add the missing W1 Station Operations event
+  family (StationPublished, StationUpdated, StationStatusChanged,
+  EVSEConfigurationChanged, EVSEAdministrativeStateChanged,
+  ConnectorConfigurationChanged, TariffPublished, TariffRetired,
+  BookingPolicyChanged, OperatorOrganizationCreated,
+  OperatorOrganizationStatusChanged — ARC-020 §6 lines 160–172, all "Release
+  applicability: W1") to contracts/registries/messages-v1.yaml, author each
+  JSON Schema 2020-12 payload they reference, and declare the corresponding
+  AsyncAPI channels — so the registry mirrors ARC-020 exactly (its own
+  header rule) and the I1-MSG-001 messaging task can publish
+  StationPublished from the S1-01 seed. No semantics may be invented beyond
+  ARC-020/DOM-002: payload fields derive from the catalogue, the DOM-002
+  lifecycle transitions and the seeded domain columns; genuine gaps stop
+  with CLARIFICATION_REQUIRED.
+
+origin: >
+  OQ-I1-D1 (raised 2026-09-11 during I1-MSG-001 scoping): Discovery's
+  reference-data source was undefined — no station-metadata event existed in
+  the executable registry while cross-service reads are prohibited. Owner
+  selected option (a) on 2026-09-11 ("i guess option a"); investigation then
+  showed ARC-020 already defines the W1 Station Operations event family, so
+  this is an executable-registry ALIGNMENT, not a catalogue amendment.
+
+requirements:
+  - "FR-OPS-02 / FR-SIM-01 (enabling context); GOV-007 §3 S1-01/S1-02
+    (seeded stations become discoverable via published reference events)."
+
+useCases:
+  - "Enables UC-DR-001..002 (discovery) downstream; no use case changes."
+
+authority:
+  governance:
+    - path: "docs/00_governance/01_decision_and_open_question_register_v1.0.md"
+      section: "owner option-(a) decision 2026-09-11 recorded via this packet's approval (mirrors DEC-W1 series)"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "W1 wave tags for FR-OPS-02/FR-SIM-01 context"
+  domain:
+    - path: "docs/03_domain/02_lifecycle_and_invariant_catalogue_v1.0.md"
+      section: "STATION, EVSE_ADMINISTRATION, OPERATOR_ORGANIZATION transitions (event payloads reflect state changes)"
+  architecture:
+    - path: "docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md"
+      section: "§6 catalogue lines 160–172 (the eleven W1 events), §7 envelope rules, §8 payload table conventions, §9 service exchange/consumer matrix (line 319)"
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "§1 (no W1 message approved without owning service, persistence effect, verification test), registries header rules"
+  contracts:
+    - path: "contracts/registries/messages-v1.yaml"
+      identifiers: ["mirrors ARC-020 exactly; header rule"]
+    - path: "contracts/asyncapi/platform-messaging-v1.yaml"
+      identifiers: ["channel declarations for added messages"]
+    - path: "contracts/schemas/events/"
+      identifiers: ["JSON Schema 2020-12 payloads for each added event"]
+
+invariants:
+  - "Registries mirror ARC-020/DOM-002 — they never invent events, types, or
+    semantics (I0-CON-002 precedent, AGENTS.md §2)."
+  - "Every message is registered once with a single HTTP/protocol meaning;
+    namespaces stay com.evplatform (ARC-022 §19 items 10–12)."
+  - "No account, driver, vehicle or subject identifiers in Discovery-routed
+    payloads (AGENTS.md §4; ARC-020 §9 line 319)."
+  - "CloudEvents 1.0 envelope per contracts/schemas/common/cloud-event.json."
+
+ownership:
+  owningService: "Delivery / Contract Tooling"
+  dataOwner: "Not applicable"
+  supportingServices:
+    - "station-operations-service (producer of the added events)"
+    - "discovery-insights-service (consumer)"
+  prohibitedOwners:
+    - "Browser runtime"
+
+affectedArtifacts:
+  services: []
+  modules:
+    - "contracts/registries"
+    - "contracts/schemas/events"
+    - "contracts/asyncapi"
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations: []
+  commands: []
+  events:
+    - "StationPublished, StationUpdated, StationStatusChanged, EVSEConfigurationChanged, EVSEAdministrativeStateChanged, ConnectorConfigurationChanged, TariffPublished, TariffRetired, BookingPolicyChanged, OperatorOrganizationCreated, OperatorOrganizationStatusChanged (all W1, producer station-operations-service, consumer discovery-insights-service unless ARC-020 §9 states otherwise)"
+  schemas:
+    - "One JSON Schema 2020-12 payload per added event under contracts/schemas/events/"
+  registries:
+    - "messages-v1.yaml"
+  screens: []
+  infrastructure: []
+
+dependencies:
+  tasks:
+    - "I0-CON-002 (VERIFIED — registry/schema/asyncapi toolchain)"
+    - "I1-STA-001 (VERIFIED — the seeded aggregates these events describe)"
+  contracts: []
+  infrastructure:
+    - "G3 workflow validates registries/schemas/asyncapi on the PR"
+  humanDecisions:
+    - "Option (a) approved by owner 2026-09-11 (recorded in OQ-I1-D1); this
+      packet's merge records the L2 contract approval."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "contracts/registries/messages-v1.yaml"
+    - "contracts/schemas/events/**"
+    - "contracts/asyncapi/**"
+    - "contracts/examples/**"
+    - "delivery/handoffs/I1-CON-003/**"
+    - "delivery/evidence/I1-CON-003/**"
+    - "delivery/deviations/I1-CON-003/**"
+
+  prohibitedFiles:
+    - "docs/**"
+    - "services/**"
+    - "apps/**"
+    - "libraries/**"
+    - "infra/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+
+  maximumExpectedDiff: >
+    Eleven registry entries, ~11 event schemas, matching AsyncAPI channels,
+    example payloads. Payload fields limited to ARC-020 catalogue data,
+    DOM-002 transition facts and seeded STA columns (public_ref, display
+    metadata, coordinates, connector summaries, lifecycle state). If a
+    payload needs a field no authoritative document defines, stop with
+    CLARIFICATION_REQUIRED.
+
+  generatedFilesPolicy: >
+    Hand-authored contract artifacts (authoritative); never edit generated
+    output.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      messages-v1.yaml contains all eleven ARC-020 §6 W1 Station Operations
+      events with producer station-operations-service, the approved
+      exchange/routing conventions, correct consumers per ARC-020 §9, and a
+      cross-check table (ARC-020 line → registry entry) recorded as evidence;
+      no other registry content changes.
+    authorityReferences:
+      - "ARC-020 §6 lines 160–172, §9 line 319; registry header rules"
+    evidenceRequired:
+      - "cross-check table in evidence"
+      - "contracts:registries output"
+    testTypes: ["contract", "semantic-review"]
+
+  - id: "AC-02"
+    statement: >
+      Every new schemaPath target exists as a JSON Schema 2020-12 document
+      that compiles with contracts:schemas; envelopes validate against
+      contracts/schemas/common/cloud-event.json; examples (one per event,
+      derived from the S1-01 seed fixture) validate against their schemas.
+    authorityReferences:
+      - "ARC-022 §19 items 9, 15; ARC-018 §8"
+    evidenceRequired:
+      - "contracts:schemas output; example validation output"
+    testTypes: ["contract", "schema"]
+
+  - id: "AC-03"
+    statement: >
+      AsyncAPI declares channels/operations for the added messages consistent
+      with the registry (exchange/routing key/message name); contracts:openapi,
+      contracts:asyncapi and contracts:registries all green.
+    authorityReferences:
+      - "ARC-018 §8; ARC-022 §19 items 8–9, 11"
+    evidenceRequired:
+      - "contracts:asyncapi output"
+    testTypes: ["contract"]
+
+  - id: "AC-04"
+    statement: >
+      The full G3 gate is green from the candidate commit and on the PR
+      (Required Aggregation included); docs and privacy scanners stay green
+      (no subject identifiers in Discovery-routed payloads).
+    authorityReferences:
+      - "ARC-014 §13; ARC-022 §19 item 17"
+    evidenceRequired:
+      - "npm run contracts:verify output; GitHub Actions run reference"
+    testTypes: ["ci", "contract"]
+
+tests:
+  focusedCommands:
+    - "npm run contracts:registries"
+    - "npm run contracts:schemas"
+    - "npm run contracts:asyncapi"
+  requiredSuites:
+    - "npm run contracts:verify"
+    - "npm run contracts:self-test"
+    - "npm run contracts:secrets"
+    - "git diff --check"
+  positiveCases:
+    - "Registry entries resolve to existing schemas; examples validate."
+  negativeCases:
+    - "Existing self-test fixtures keep failing on controlled invalid inputs."
+  boundaryCases: []
+  concurrencyCases: []
+  securityCases:
+    - "Privacy scan: no subject identifiers in the new Discovery-routed payloads."
+  contractCases:
+    - "ARC-020 §6 → registry cross-check for all eleven events."
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: true
+  compatibilityClassification: "ADDITIVE"
+  requiredUpdates:
+    - "Registry, schemas and AsyncAPI gain the eleven ARC-020 W1 Station
+      Operations events; no existing message changed."
+  requiredExamples:
+    - "One example payload per added event, derived from the S1-01 seed fixture."
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: true
+  threatChanges: []
+  dataClassifications:
+    - "Public station reference metadata"
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData:
+    - "Driver/subject identifiers in Discovery-routed payloads; credentials anywhere"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: true
+  dataReviewer: false
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner / Contract Owner"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-CON-003/registry-alignment.md"
+  requiredCiChecks:
+    - "G3 workflows fully green on the PR (Required Aggregation included)"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "ARC-020 §6 lines 160–172 is the complete, authoritative list of missing
+    W1 Station Operations events; a registry sweep re-run will confirm no
+    further W1 catalogue entries are missing."
+  - "Exchange/routing conventions follow the existing registry patterns
+    (ev.domain.v1 + domain routing keys)."
+  - "The baseline commit is inserted when the task is claimed."
+
+openQuestions: []

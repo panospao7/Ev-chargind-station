@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-11T21:40:00Z"
+updatedAt: "2026-09-11T22:20:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -348,9 +348,48 @@ tasks:
     evidence:
       status: "NOT_STARTED"
       paths: []
+
+  I1-CON-003:
+    state: "BACKLOG"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    pullRequest: null
+
+    blockers:
+      - "Planning PR requires owner review+merge (L2 contract approval)"
+
+    deviations: []
+    unresolvedFindings: []
+
+    reviews:
+      planner: "PASS"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_STARTED"
+      dataReviewer: "NOT_APPLICABLE"
+      securityReviewer: "NOT_STARTED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "Planning branch awaiting owner review; L2 contract change, owner gate at merge"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
 summary:
   counts:
-    BACKLOG: 0
+    BACKLOG: 1
     READY: 0
     CLAIMED: 0
     BLOCKED: 0
