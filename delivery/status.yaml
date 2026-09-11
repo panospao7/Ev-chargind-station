@@ -346,7 +346,7 @@ tasks:
       paths: []
 summary:
   counts:
-    BACKLOG: 1
+    BACKLOG: 0
     READY: 0
     CLAIMED: 1
     BLOCKED: 0
