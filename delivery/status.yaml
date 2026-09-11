@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-10T21:45:00Z"
+updatedAt: "2026-09-11T09:40:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -218,22 +218,24 @@ tasks:
         - "delivery/evidence/I1-ENG-001/runway-validation.md"
 
   I1-DAT-001:
-    state: "HUMAN_REVIEW"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-10T21:45:00Z"
 
     baselineCommit: "548f314cc57b40cd14c562ea2aa290e61d76b96c"
     branch: "task/i1-dat-001-persistence"
-    pullRequest: null
+    candidateCommit: "2d764e21fa1fdb1fdc7f32e766f9d1bd171ad94e"
+    mergeCommit: "6050685ac77a4f0e056a232b37a729771ff168f0"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/14 (fix: #15)"
 
     blockers:
-      - "none — I1-ENG-001 VERIFIED; L3 authorization granted by owner 2026-09-10 ('authorize DAT-001')"
+      - "none — FIX-1 resolved: mvnw exec bit restored (PR #15); Database Migrations workflow GREEN on main at 6050685a (first JDK-25 CI execution)"
       - "none"
 
     deviations: []
     unresolvedFindings: []
 
-    handoffSequence: 4
+    handoffSequence: 6
     latestHandoff: "delivery/handoffs/I1-DAT-001/05-orchestrator.md"
     reviews:
       planner: "PASS"
@@ -245,19 +247,20 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
+      status: "PASS"
       candidateRunReference: "local G3 exit 0; db-migrations.yml runs on PR (JDK 25 temurin)"
-      mergeRunReference: null
+      mergeRunReference: "Database Migrations workflow SUCCESS at merge commit 6050685a on JDK 25 temurin; G3 9/9 at 1eb4c307"
       requiredChecks: []
 
     humanApproval:
       required: true
-      reference: "L3 packet — owner approval of the packet recorded via planning-branch merge; claim-time artifact authorization still required"
-      approvedCandidateCommit: null
+      reference: "Owner L3 authorization ('authorize DAT-001', 2026-09-10); owner merged PR #14 (candidate 2d764e21) and fix PR #15 on 2026-09-11; green Database Migrations run at 6050685a"
+      approvedCandidateCommit: "2d764e21fa1fdb1fdc7f32e766f9d1bd171ad94e"
 
     evidence:
-      status: "NOT_STARTED"
-      paths: []
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I1-DAT-001/migration-foundation.md"
 
   I1-ENG-002:
     state: "VERIFIED"
@@ -302,9 +305,48 @@ tasks:
       status: "NOT_STARTED"
       paths: []
 
+
+  I1-STA-001:
+    state: "BACKLOG"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    pullRequest: null
+
+    blockers:
+      - "Planning PR requires owner review+merge (L3 packet approval, I1-DAT-001 precedent)"
+
+    deviations: []
+    unresolvedFindings: []
+
+    reviews:
+      planner: "PASS"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_REQUIRED"
+      dataReviewer: "NOT_STARTED"
+      securityReviewer: "NOT_STARTED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "Planning branch awaiting owner review; L3 packet approval via merge"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
 summary:
   counts:
-    BACKLOG: 0
+    BACKLOG: 1
     READY: 0
     CLAIMED: 0
     BLOCKED: 0
@@ -313,9 +355,9 @@ summary:
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 1
+    HUMAN_REVIEW: 0
     MERGED: 0
-    VERIFIED: 5
+    VERIFIED: 6
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
