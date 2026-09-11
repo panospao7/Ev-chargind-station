@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-11T09:40:00Z"
+updatedAt: "2026-09-11T09:55:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -307,16 +307,16 @@ tasks:
 
 
   I1-STA-001:
-    state: "BACKLOG"
-    assignedAgent: null
-    claimedAt: null
+    state: "CLAIMED"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-11T09:55:00Z"
 
-    baselineCommit: null
-    branch: null
+    baselineCommit: "b73faffacedd3dd2e80cd3422aa3e9463a81bc9c"
+    branch: "task/i1-sta-001-seed"
     pullRequest: null
 
     blockers:
-      - "Planning PR requires owner review+merge (L3 packet approval, I1-DAT-001 precedent)"
+      - "none — planning PR #16 merged; L3 packet approval recorded via merge"
 
     deviations: []
     unresolvedFindings: []
@@ -348,7 +348,7 @@ summary:
   counts:
     BACKLOG: 1
     READY: 0
-    CLAIMED: 0
+    CLAIMED: 1
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
