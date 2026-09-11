@@ -39,6 +39,7 @@ class StationOperationsSeedTest {
     private static final String SCHEMA = "station_operations";
 
     private static final List<String> TABLES = List.of(
+            "outbox_message", "inbox_message", "idempotency_record", "audit_event",
             "operator_organization", "organization_member", "station",
             "station_opening_period", "station_schedule_exception", "evse",
             "connector", "tariff", "tariff_version", "tariff_component",
@@ -71,6 +72,19 @@ class StationOperationsSeedTest {
         }
     }
 
+    private static StationOperationsSeeder seeder() throws Exception {
+        var ds = new org.springframework.jdbc.datasource.SimpleDriverDataSource(
+                new org.postgresql.Driver(),
+                "jdbc:postgresql://" + PG.getHost() + ":" + PG.getMappedPort(5432) + "/" + DB,
+                RUNTIME, PW);
+        var tx = new org.springframework.transaction.support.TransactionTemplate(
+                new org.springframework.jdbc.datasource.DataSourceTransactionManager(ds));
+        return new StationOperationsSeeder(
+                org.springframework.jdbc.core.simple.JdbcClient.create(ds),
+                new com.evplatform.stationoperations.outbox.OutboxWriter(
+                        org.springframework.jdbc.core.simple.JdbcClient.create(ds)),
+                tx);
+    }
     private static Map<String, Long> counts() throws Exception {
         var out = new HashMap<String, Long>();
         for (String table : TABLES) {
@@ -88,7 +102,7 @@ class StationOperationsSeedTest {
 
     @Test
     @Order(1)
-    void migrationsApplyThirteenTables() throws Exception {
+    void migrationsApplySeventeenTables() throws Exception {
         Flyway.configure()
                 .dataSource("jdbc:postgresql://" + PG.getHost() + ":"
                         + PG.getMappedPort(5432) + "/" + DB, MIGRATOR, PW)
@@ -111,7 +125,7 @@ class StationOperationsSeedTest {
                     found.add(rs.getString(1));
                 }
                 assertEquals(TABLES.stream().sorted().toList(), found,
-                        "table set must equal the ARC-022 §9 W1-S1 list exactly");
+                        "table set must equal the ARC-022 §9 W1-S1 list plus §8 integration tables exactly");
             }
         }
     }
@@ -119,7 +133,7 @@ class StationOperationsSeedTest {
     @Test
     @Order(2)
     void seedProducesCanonicalS1Dataset() throws Exception {
-        new StationOperationsSeeder(jdbc(RUNTIME)).seed();
+        seeder().seed();
 
         assertEquals(1, count("operator_organization"), "one operator organization");
         assertEquals(2, count("organization_member"), "admin + operator member");
@@ -133,6 +147,7 @@ class StationOperationsSeedTest {
         assertEquals(1, count("booking_policy"));
         assertEquals(1, count("booking_policy_version"));
         assertEquals(4, count("simulator_assignment"), "one assignment per EVSE");
+        assertEquals(2, count("outbox_message"), "one StationPublished fact per published station");
 
         try (Connection c = connect(RUNTIME);
              PreparedStatement ps = c.prepareStatement(
@@ -177,7 +192,7 @@ class StationOperationsSeedTest {
     @Order(3)
     void seedIsIdempotent() throws Exception {
         Map<String, Long> before = counts();
-        new StationOperationsSeeder(jdbc(RUNTIME)).seed();
+        seeder().seed();
         assertEquals(before, counts(), "re-seeding must not change any row count");
     }
 
@@ -222,7 +237,7 @@ class StationOperationsSeedTest {
         for (String table : TABLES) {
             assertEquals(0, count(table), table + " must be empty after reset");
         }
-        new StationOperationsSeeder(jdbc(RUNTIME)).seed();
+        seeder().seed();
         assertEquals(2, count("station"));
         assertEquals(8, count("connector"));
         assertEquals(4, count("simulator_assignment"));

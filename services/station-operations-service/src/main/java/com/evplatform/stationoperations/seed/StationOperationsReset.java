@@ -22,6 +22,10 @@ public class StationOperationsReset {
 
     /** FK-safe deletion order (children before parents). */
     private static final List<String> TABLES = List.of(
+            "audit_event",
+            "idempotency_record",
+            "inbox_message",
+            "outbox_message",
             "simulator_assignment",
             "tariff_component",
             "tariff_version",
