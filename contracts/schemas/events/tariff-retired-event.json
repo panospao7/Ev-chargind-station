@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/tariff-retired-event.json",
+  "title": "TariffRetiredEvent",
+  "description": "Retired tariff version fact (ARC-020 §6). Consumer is discovery-insights-service only.",
+  "type": "object",
+  "properties": {
+    "tariffRef": {
+      "type": "string",
+      "description": "Tariff reference"
+    },
+    "tariffVersionRef": {
+      "type": "string",
+      "description": "Tariff version reference"
+    },
+    "versionNumber": {
+      "type": "integer",
+      "description": "Monotonic version number"
+    }
+  },
+  "required": [
+    "tariffRef",
+    "tariffVersionRef",
+    "versionNumber"
+  ]
+}

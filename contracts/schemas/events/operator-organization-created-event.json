@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/operator-organization-created-event.json",
+  "title": "OperatorOrganizationCreatedEvent",
+  "description": "Operator organization creation fact (DOM-002 OPERATOR_ORGANIZATION, ARC-020 §6 W1). Contains no personal data.",
+  "type": "object",
+  "properties": {
+    "organizationRef": {
+      "type": "string",
+      "description": "Organization reference"
+    },
+    "legalName": {
+      "type": "string",
+      "description": "Organization legal name"
+    }
+  },
+  "required": [
+    "organizationRef",
+    "legalName"
+  ]
+}

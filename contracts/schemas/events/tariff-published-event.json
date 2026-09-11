@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/tariff-published-event.json",
+  "title": "TariffPublishedEvent",
+  "description": "Activated tariff version with its components (ARC-020 §6; immutable while ACTIVE per ARC-022 §5.7). Consumer is discovery-insights-service only.",
+  "type": "object",
+  "properties": {
+    "tariffRef": {
+      "type": "string",
+      "description": "Tariff reference"
+    },
+    "tariffVersionRef": {
+      "type": "string",
+      "description": "Tariff version reference"
+    },
+    "versionNumber": {
+      "type": "integer",
+      "description": "Monotonic version number"
+    },
+    "currency": {
+      "type": "string",
+      "description": "ISO 4217 currency code"
+    },
+    "components": {
+      "type": "array",
+      "description": "Tariff components of the published version",
+      "items": {
+        "type": "object",
+        "properties": {
+          "componentKind": {
+            "type": "string",
+            "description": "Component kind (e.g. ENERGY_PER_KWH, OCCUPANCY_PER_MINUTE)"
+          },
+          "unit": {
+            "type": "string",
+            "description": "Pricing unit (e.g. KWH, MINUTE)"
+          },
+          "amountMinor": {
+            "type": "integer",
+            "description": "Amount in minor currency units"
+          }
+        },
+        "required": [
+          "componentKind",
+          "unit",
+          "amountMinor"
+        ]
+      }
+    }
+  },
+  "required": [
+    "tariffRef",
+    "tariffVersionRef",
+    "versionNumber",
+    "currency",
+    "components"
+  ]
+}

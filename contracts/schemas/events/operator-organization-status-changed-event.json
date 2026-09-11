@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/operator-organization-status-changed-event.json",
+  "title": "OperatorOrganizationStatusChangedEvent",
+  "description": "Organization lifecycle transition fact (ACTIVE/SUSPENDED/CLOSED). Contains no personal data.",
+  "type": "object",
+  "properties": {
+    "organizationRef": {
+      "type": "string",
+      "description": "Organization reference"
+    },
+    "fromState": {
+      "type": "string",
+      "description": "State before the transition"
+    },
+    "toState": {
+      "type": "string",
+      "description": "State after the transition"
+    }
+  },
+  "required": [
+    "organizationRef",
+    "fromState",
+    "toState"
+  ]
+}

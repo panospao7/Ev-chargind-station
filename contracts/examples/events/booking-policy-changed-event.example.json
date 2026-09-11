@@ -1,0 +1,15 @@
+{
+  "policyRef": "00000000-0000-0000-0000-0000000000d1",
+  "policyVersionRef": "00000000-0000-0000-0000-0000000000d2",
+  "versionNumber": 1,
+  "policy": {
+    "holdDurationSeconds": 300,
+    "slotIncrementMinutes": 15,
+    "minDurationMinutes": 15,
+    "maxDurationMinutes": 240,
+    "advanceBookingDays": 14,
+    "nearTermHorizonMinutes": 60,
+    "freshnessThresholdSeconds": 300,
+    "lateArrivalGraceMinutes": 15
+  }
+}

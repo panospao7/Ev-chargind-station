@@ -1,0 +1,11 @@
+{
+  "stationRef": "00000000-0000-0000-0000-000000000010",
+  "publicRef": "SEEDSTA0001",
+  "displayName": "Seed Fixture — Athens Center",
+  "addressLine": "Fixture Street 1",
+  "city": "Athens",
+  "postalCode": "10431",
+  "countryCode": "GR",
+  "latitude": 37.98381,
+  "longitude": 23.72754
+}

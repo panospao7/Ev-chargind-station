@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/connector-configuration-changed-event.json",
+  "title": "ConnectorConfigurationChangedEvent",
+  "description": "Connector configuration fact (ARC-020 §6). Consumer is discovery-insights-service only.",
+  "type": "object",
+  "properties": {
+    "connectorRef": {
+      "type": "string",
+      "description": "Connector reference"
+    },
+    "evseRef": {
+      "type": "string",
+      "description": "Owning EVSE reference"
+    },
+    "connectorType": {
+      "type": "string",
+      "description": "Connector type (e.g. CCS, TYPE2)"
+    },
+    "maxPowerW": {
+      "type": "integer",
+      "description": "Maximum power in watts"
+    }
+  },
+  "required": [
+    "connectorRef",
+    "evseRef",
+    "connectorType",
+    "maxPowerW"
+  ]
+}

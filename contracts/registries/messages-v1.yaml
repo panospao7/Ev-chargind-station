@@ -548,6 +548,160 @@ messages:
     outcomeMessages: [CapacityRestrictionReleased, CapacityRestrictionReleaseRejected]
     description: "Idempotency key required. Booking allocation is authoritative for restriction release."
 
+
+  - name: StationPublished
+    kind: EVENT
+    versionedType: com.evplatform.station.published.v1
+    producer: station-operations-service
+    consumers: [discovery-insights-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: station.published
+    schemaPath: events/station-published-event.json
+    classification: BUSINESS
+    aggregateType: Station
+    description: "Station reference snapshot emitted on DRAFT to PUBLISHED transition (DOM-002 STATION). Consumer is discovery-insights-service only. Contains no account, driver, or vehicle identifiers."
+
+
+  - name: StationUpdated
+    kind: EVENT
+    versionedType: com.evplatform.station.updated.v1
+    producer: station-operations-service
+    consumers: [discovery-insights-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: station.updated
+    schemaPath: events/station-updated-event.json
+    classification: BUSINESS
+    aggregateType: Station
+    description: "Updated station reference snapshot for a PUBLISHED station (ARC-020 §6). Consumer is discovery-insights-service only. Contains no subject identifiers."
+
+
+  - name: StationStatusChanged
+    kind: EVENT
+    versionedType: com.evplatform.station.status-changed.v1
+    producer: station-operations-service
+    consumers: [discovery-insights-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: station.status-changed
+    schemaPath: events/station-status-changed-event.json
+    classification: BUSINESS
+    aggregateType: Station
+    description: "Station lifecycle transition fact (DOM-002 STATION: DRAFT/PUBLISHED/TEMPORARILY_CLOSED/DEACTIVATED). Consumer is discovery-insights-service only."
+
+
+  - name: EVSEConfigurationChanged
+    kind: EVENT
+    versionedType: com.evplatform.station.evse-configuration-changed.v1
+    producer: station-operations-service
+    consumers: [discovery-insights-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: station.evse-configuration-changed
+    schemaPath: events/evse-configuration-changed-event.json
+    classification: BUSINESS
+    aggregateType: EVSE
+    description: "EVSE configuration fact (ARC-020 §6). Consumer is discovery-insights-service only."
+
+
+  - name: EVSEAdministrativeStateChanged
+    kind: EVENT
+    versionedType: com.evplatform.station.evse-administrative-state-changed.v1
+    producer: station-operations-service
+    consumers: [discovery-insights-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: station.evse-administrative-state-changed
+    schemaPath: events/evse-administrative-state-changed-event.json
+    classification: BUSINESS
+    aggregateType: EVSE
+    description: "EVSE administrative transition fact (ACTIVE/DISABLED/DEACTIVATED). Consumer is discovery-insights-service only."
+
+
+  - name: ConnectorConfigurationChanged
+    kind: EVENT
+    versionedType: com.evplatform.station.connector-configuration-changed.v1
+    producer: station-operations-service
+    consumers: [discovery-insights-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: station.connector-configuration-changed
+    schemaPath: events/connector-configuration-changed-event.json
+    classification: BUSINESS
+    aggregateType: Connector
+    description: "Connector configuration fact (ARC-020 §6). Consumer is discovery-insights-service only."
+
+
+  - name: TariffPublished
+    kind: EVENT
+    versionedType: com.evplatform.station.tariff-published.v1
+    producer: station-operations-service
+    consumers: [discovery-insights-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: station.tariff-published
+    schemaPath: events/tariff-published-event.json
+    classification: BUSINESS
+    aggregateType: TariffVersion
+    description: "Activated tariff version with its components (ARC-020 §6; immutable while ACTIVE per ARC-022 §5.7). Consumer is discovery-insights-service only."
+
+
+  - name: TariffRetired
+    kind: EVENT
+    versionedType: com.evplatform.station.tariff-retired.v1
+    producer: station-operations-service
+    consumers: [discovery-insights-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: station.tariff-retired
+    schemaPath: events/tariff-retired-event.json
+    classification: BUSINESS
+    aggregateType: TariffVersion
+    description: "Retired tariff version fact (ARC-020 §6). Consumer is discovery-insights-service only."
+
+
+  - name: BookingPolicyChanged
+    kind: EVENT
+    versionedType: com.evplatform.station.booking-policy-changed.v1
+    producer: station-operations-service
+    consumers: [discovery-insights-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: station.booking-policy-changed
+    schemaPath: events/booking-policy-changed-event.json
+    classification: BUSINESS
+    aggregateType: BookingPolicyVersion
+    description: "Booking policy version fact carrying the GOV-007 §3 S1-03 interval constants (ARC-020 §6). Consumer is discovery-insights-service only."
+
+
+  - name: OperatorOrganizationCreated
+    kind: EVENT
+    versionedType: com.evplatform.organization.created.v1
+    producer: station-operations-service
+    consumers: [discovery-insights-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: organization.created
+    schemaPath: events/operator-organization-created-event.json
+    classification: BUSINESS
+    aggregateType: OperatorOrganization
+    description: "Operator organization creation fact (DOM-002 OPERATOR_ORGANIZATION, ARC-020 §6 W1). Contains no personal data."
+
+
+  - name: OperatorOrganizationStatusChanged
+    kind: EVENT
+    versionedType: com.evplatform.organization.status-changed.v1
+    producer: station-operations-service
+    consumers: [discovery-insights-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: organization.status-changed
+    schemaPath: events/operator-organization-status-changed-event.json
+    classification: BUSINESS
+    aggregateType: OperatorOrganization
+    description: "Organization lifecycle transition fact (ACTIVE/SUSPENDED/CLOSED). Contains no personal data."
+
 # =============================================================================
 # End of Message Registry
 # =============================================================================
