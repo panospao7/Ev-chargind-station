@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-11T09:55:00Z"
+updatedAt: "2026-09-11T21:40:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -307,14 +307,15 @@ tasks:
 
 
   I1-STA-001:
-    state: "HUMAN_REVIEW"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-11T09:55:00Z"
 
     baselineCommit: "b73faffacedd3dd2e80cd3422aa3e9463a81bc9c"
     branch: "task/i1-sta-001-seed"
     candidateCommit: "1c05c59e5e394e12e9d8d1c943aaab91a88b47f1"
-    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/new/task/i1-sta-001-seed"
+    mergeCommit: "072fd31027896421f97fef64213a730d7feeef57"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/17"
 
     blockers:
       - "none — planning PR #16 merged; L3 packet approval recorded via merge"
@@ -322,8 +323,8 @@ tasks:
     deviations: []
     unresolvedFindings: []
 
-    handoffSequence: 4
-    latestHandoff: "delivery/handoffs/I1-STA-001/04-tester.md"
+    handoffSequence: 5
+    latestHandoff: "delivery/handoffs/I1-STA-001/05-orchestrator.md"
     reviews:
       planner: "PASS"
       tester: "PASS"
@@ -336,13 +337,13 @@ tasks:
     ci:
       status: "NOT_REQUIRED"
       candidateRunReference: "Service Tests workflow (JDK 25) + Database Migrations + G3 run on the PR"
-      mergeRunReference: null
+      mergeRunReference: "Service Tests workflow SUCCESS at merge commit 072fd31027896421f97fef64213a730d7feeef57 (first JDK-25 service-suite execution); Database Migrations SUCCESS; G3 not triggered (no G3-scope paths changed)"
       requiredChecks: []
 
     humanApproval:
       required: true
-      reference: "Planning branch awaiting owner review; L3 packet approval via merge"
-      approvedCandidateCommit: null
+      reference: "Owner reviewed and merged PR #17 (candidate 1c05c59e) on 2026-09-11; Service Tests + Database Migrations both green at the merge commit"
+      approvedCandidateCommit: "1c05c59e5e394e12e9d8d1c943aaab91a88b47f1"
 
     evidence:
       status: "NOT_STARTED"
@@ -358,9 +359,9 @@ summary:
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 1
+    HUMAN_REVIEW: 0
     MERGED: 0
-    VERIFIED: 6
+    VERIFIED: 7
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
