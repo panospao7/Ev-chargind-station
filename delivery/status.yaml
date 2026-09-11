@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-11T23:25:00Z"
+updatedAt: "2026-09-12T00:05:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -350,14 +350,15 @@ tasks:
       paths: []
 
   I1-CON-003:
-    state: "HUMAN_REVIEW"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-11T22:40:00Z"
 
     baselineCommit: "8475f5cd94982b1c1d25c4a4b920843e92673eb9"
     branch: "task/i1-con-003-registry"
     candidateCommit: "5fa7a0bc81d89d28ee6e3aeae5bf3b459842269b"
-    pullRequest: null
+    mergeCommit: "5945c502c22a1a396c0fa3814dccec31694697e0"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/21"
 
     blockers:
       - "none — planning PR #20 merged (L2 contract approval recorded)"
@@ -365,8 +366,8 @@ tasks:
     deviations: []
     unresolvedFindings: []
 
-    handoffSequence: 3
-    latestHandoff: "delivery/handoffs/I1-CON-003/03-tester.md"
+    handoffSequence: 4
+    latestHandoff: "delivery/handoffs/I1-CON-003/04-orchestrator.md"
     reviews:
       planner: "PASS"
       tester: "PASS"
@@ -379,13 +380,13 @@ tasks:
     ci:
       status: "NOT_REQUIRED"
       candidateRunReference: null
-      mergeRunReference: null
+      mergeRunReference: "G3 9/9 success at merge commit 5945c502c22a1a396c0fa3814dccec31694697e0 (Registry, Schemas, AsyncAPI green with the 11 added events)"
       requiredChecks: []
 
     humanApproval:
       required: true
-      reference: "Planning branch awaiting owner review; L2 contract change, owner gate at merge"
-      approvedCandidateCommit: null
+      reference: "Owner reviewed and merged PR #21 (candidate 5fa7a0bc81d89d28ee6e3aeae5bf3b459842269b) on 2026-09-11; G3 9/9 green at merge commit 5945c502c22a1a396c0fa3814dccec31694697e0"
+      approvedCandidateCommit: "5fa7a0bc81d89d28ee6e3aeae5bf3b459842269b"
 
     evidence:
       status: "NOT_STARTED"
@@ -401,9 +402,9 @@ summary:
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 1
+    HUMAN_REVIEW: 0
     MERGED: 0
-    VERIFIED: 7
+    VERIFIED: 8
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
