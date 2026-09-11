@@ -1,0 +1,44 @@
+name: Service Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/station-operations-service/**"
+      - "libraries/test-support/**"
+      - "pom.xml"
+      - "mvnw"
+      - ".github/workflows/service-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/station-operations-service/**"
+      - "libraries/test-support/**"
+      - "pom.xml"
+      - "mvnw"
+      - ".github/workflows/service-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: service-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  station-operations:
+    name: Station Operations Service (S1-01 seed)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Run station-operations service suite
+        run: ./mvnw -pl services/station-operations-service -am test
