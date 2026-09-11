@@ -1,0 +1,310 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-STA-001"
+  title: "S1-01 infrastructure seed — Station Operations W1-S1 tables and deterministic seed/reset"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-07"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L3"
+  owner: "Backend/Data Architect and Project Owner"
+  createdAt: "2026-09-11"
+  baselineCommit: null
+
+objective: >
+  Deliver GOV-007 §3 S1-01 (repeatable infrastructure seed) for the Station
+  Operations Service: the W1-S1 physical tables exactly as listed in ARC-022
+  §9 (operator_organization, organization_member, station,
+  station_opening_period, station_schedule_exception, evse, connector,
+  tariff, tariff_version, tariff_component, booking_policy,
+  booking_policy_version, simulator_assignment), plus a deterministic,
+  idempotent, service-owned seed and reset mechanism that produces the
+  canonical S1 dataset — one active operator organization, at least two
+  published Greek stations with two EVSEs each, at least two connector/power
+  combinations, opening hours, one active tariff version, one active
+  booking-policy version carrying the S1-03 constants, and simulator
+  assignments — entirely within station_operations_db. No REST APIs, no
+  business workflows: this is the data foundation the discovery, booking and
+  simulator tasks consume.
+
+origin: >
+  Owner direction 2026-09-11 ("let's do the recommendation") selecting the
+  orchestrator-recommended next W1-S1 packet after the wave-1 foundation
+  completed (I1-DAT-001 VERIFIED).
+
+requirements:
+  - "FR-OPS-02 (W1-S2) — this task delivers the authoritative DATA MODEL its
+    management APIs will later operate on; no APIs are built here."
+  - "FR-SIM-01 (W1-S1, enabling) — simulator_assignment rows provide the
+    station-scoped assignment Device Integration projects; machine identities
+    themselves are the device-integration task's."
+  - "GOV-007 §3 S1-01 — the S1 dataset definition itself."
+
+useCases:
+  - "None directly; the seeded dataset is the fixture for UC-DR-001..008
+    downstream and for operator workflows (UC-OP-001/002) in W1-S2."
+
+authority:
+  governance:
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§3 S1-01 (dataset bullets), §3 S1-03 (interval constants: 15-minute increments, 5-minute hold, 15-minute minimum, 4-hour maximum, 14-day advance limit, 60-minute near-term horizon, 300-second freshness), §7 (W1 blocking rule)"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "FR-OPS-02, FR-SIM-01 (enabling context)"
+  domain:
+    - path: "docs/03_domain/02_lifecycle_and_invariant_catalogue_v1.0.md"
+      section: "Station, EVSE, connector, tariff-version and booking-policy-version lifecycles (states used by seed rows; contract-lifecycles registry is the executable mirror)"
+  architecture:
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "§9 Station Operations Service W1-S1 table list (EXACT table set — no additions), §12–13 migration rules, §18 DATA-006 (seed/reset manifest), §19 (definition-of-done items 2–6, 14)"
+    - path: "docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md"
+      section: "§3 baselines, §4.1 ownership rules, §6.3 topology, §8.2 database commands"
+    - path: "docs/08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md"
+      section: "EPIC-07 scope boundary (this task precedes its APIs), §4 M3"
+
+invariants:
+  - "Station Operations owns station_operations_db alone; the seed and reset
+    never write outside it (AGENTS.md §4)."
+  - "Applied migrations are immutable; new tables arrive as new forward
+    migrations V2+ with unique numbering (AGENTS.md §10)."
+  - "Activation implies immutability: an ACTIVE tariff/booking-policy version
+    must be constraint-protected against mutation (ARC-022 §5.7 snapshot
+    semantics)."
+  - "No account, driver, vehicle or discovery-side identifiers in Station
+    Operations seed data beyond organization-owned references; test
+    identities belong to the identity task (explicit non-goal here)."
+  - "Column-level designs not fixed by ARC-022 §9 are derived strictly from
+    DOM-002 lifecycles and GOV-007 S1-03 constants; ambiguity stops with
+    CLARIFICATION_REQUIRED, never invention."
+
+ownership:
+  owningService: "station-operations-service"
+  dataOwner: "Station Operations Service (station_operations_db)"
+  supportingServices: []
+  prohibitedOwners:
+    - "Device Integration (projects the assignment; does not own it)"
+    - "Discovery (projections only)"
+    - "Browser runtime"
+
+affectedArtifacts:
+  services:
+    - "station-operations-service (persistence + seed runner only — no endpoints)"
+  modules:
+    - "services/station-operations-service/src/main/resources/db/migration (V2+)"
+    - "services/station-operations-service/src/main/java (schema/seed via Spring JdbcClient, profile-gated)"
+    - "services/station-operations-service/src/test/java (integration suite)"
+  tables:
+    - "Exactly the ARC-022 §9 W1-S1 Station Operations set: operator_organization, organization_member, station, station_opening_period, station_schedule_exception, evse, connector, tariff, tariff_version, tariff_component, booking_policy, booking_policy_version, simulator_assignment"
+  projections: []
+  migrations:
+    - "V2+ forward migrations in services/station-operations-service (V1 schema baseline already exists from I1-DAT-001)"
+  apiOperations: []
+  commands: []
+  events: []
+  schemas: []
+  registries: []
+  screens: []
+  infrastructure:
+    - ".github/workflows/service-tests.yml (NEW): JDK 25 temurin, paths-scoped to station-operations + shared test support"
+
+dependencies:
+  tasks:
+    - "I1-ENG-001 (VERIFIED — compose, Testcontainers smoke)"
+    - "I1-DAT-001 (VERIFIED — provisioning, roles, V1 baselines, migration suite factories)"
+  contracts: []
+  infrastructure:
+    - "Docker engine locally; GitHub runners provide Docker for CI"
+  humanDecisions:
+    - "L3 authorization: merging this planning PR constitutes the owner's
+      approval of the packet (per the I1-DAT-001 precedent); the claim-time
+      go-ahead is the owner's 'go' (or equivalent)."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "services/station-operations-service/**"
+    - "libraries/test-support/**"
+    - "pom.xml"
+    - ".github/workflows/service-tests.yml"
+    - "release-manifests/**"
+    - "delivery/handoffs/I1-STA-001/**"
+    - "delivery/evidence/I1-STA-001/**"
+    - "delivery/deviations/I1-STA-001/**"
+
+  prohibitedFiles:
+    - "contracts/**"
+    - "docs/**"
+    - "services/account-service/**"
+    - "services/booking-session-service/**"
+    - "services/device-integration-service/**"
+    - "services/discovery-insights-service/**"
+    - "services/notification-service/**"
+    - "services/governance-support-service/**"
+    - "apps/**"
+    - "simulator/**"
+    - "infra/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+
+  maximumExpectedDiff: >
+    Moderate-large and vertical: 13 tables of forward SQL migrations, a
+    profile-gated seed/reset runner (JdbcClient, no ORM), and an integration
+    suite. Any REST controller, business workflow, event/outbox code, or
+    table outside the ARC-022 §9 W1-S1 list is out of scope and must be
+    refused.
+
+  generatedFilesPolicy: >
+    All SQL and Java hand-authored. No generated clients exist at this layer.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      All thirteen ARC-022 §9 W1-S1 Station Operations tables exist in
+      station_operations_db via forward Flyway migrations (V2+) run by the
+      STA migrator role; fresh install and upgrade path pass; numbering is
+      unique and checksums verify; no table outside the list is created.
+    authorityReferences:
+      - "ARC-022 §9, §12–13; AGENTS.md §10"
+    evidenceRequired:
+      - "integration suite output; psql catalogue listing"
+    testTypes: ["migration", "integration"]
+
+  - id: "AC-02"
+    statement: >
+      The seed produces the exact S1-01 dataset deterministically: one ACTIVE
+      operator organization; ≥2 stations in PUBLISHED state with Greek
+      coordinates/metadata; ≥2 EVSEs per station in EVSE lifecycle states per
+      DOM-002; ≥2 connector/power combinations (e.g. CCS 150 kW DC + Type 2
+      22 kW AC); opening hours per station; exactly one ACTIVE tariff version
+      with components; exactly one ACTIVE booking-policy version carrying the
+      S1-03 constants (15-minute increments, 5-minute hold, 15-minute
+      minimum, 4-hour maximum, 14-day advance, 60-minute near-term horizon,
+      300-second freshness); simulator assignments for every seeded EVSE.
+    authorityReferences:
+      - "GOV-007 §3 S1-01, S1-03; DOM-002 lifecycles"
+    evidenceRequired:
+      - "seed output + dataset assertion suite"
+    testTypes: ["integration"]
+
+  - id: "AC-03"
+    statement: >
+      Seed is idempotent (re-run changes nothing, proven by row-count and
+      content equality) and reset restores the canonical seeded state; both
+      operate only within station_operations_db — the suite proves the
+      seeder's credentials cannot write elsewhere (role separation from
+      I1-DAT-001).
+    authorityReferences:
+      - "GOV-007 §3 S1-01 (repeatable reset); AGENTS.md §4"
+    evidenceRequired:
+      - "idempotency and reset test output"
+    testTypes: ["integration", "negative"]
+
+  - id: "AC-04"
+    statement: >
+      ACTIVE tariff/policy versions are immutability-protected at the
+      database level (trigger or constraint rejecting UPDATE/DELETE on active
+      versions), mirroring ARC-022 §5.7 snapshot semantics; lifecycle states
+      in seed rows match DOM-002 and the executable lifecycles registry.
+    authorityReferences:
+      - "ARC-022 §5.7; DOM-002; contracts/registries/lifecycles-v1.yaml"
+    evidenceRequired:
+      - "negative-fixture test output (mutation rejected)"
+    testTypes: ["migration", "negative"]
+
+  - id: "AC-05"
+    statement: >
+      The new service-tests workflow runs the station-operations suite
+      authoritatively on JDK 25 and is green on the PR; existing G3 and
+      db-migrations workflows remain green.
+    authorityReferences:
+      - "ARC-015 EPIC-07 acceptance (executable evidence); I1-DAT-001 CI precedent"
+    evidenceRequired:
+      - "GitHub Actions run references"
+    testTypes: ["ci"]
+
+tests:
+  focusedCommands:
+    - "./mvnw -pl services/station-operations-service -am test"
+  requiredSuites:
+    - "./mvnw test"
+    - "npm run contracts:verify"
+    - "node scripts/delivery/validate.mjs"
+    - "npm run contracts:secrets"
+    - "git diff --check"
+  positiveCases:
+    - "Fresh container → provision → migrate → seed → dataset invariants hold; reset → identical canonical state."
+  negativeCases:
+    - "Seed credentials cannot write outside station_operations_db."
+    - "UPDATE/DELETE on an ACTIVE tariff or policy version is rejected."
+    - "Duplicate migration version rejected (existing suite)."
+  boundaryCases: []
+  concurrencyCases: []
+  securityCases:
+    - "No credentials beyond documented dev-only values; secret scan green."
+  contractCases: []
+  migrationCases:
+    - "Fresh install, upgrade path, checksum integrity, unique numbering (V2+)."
+  accessibilityCases: []
+
+persistence:
+  affected: true
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "Seed contains no credentials; simulator_assignment holds device references only (identity enrollment is the device-integration task)."
+  dataClassifications:
+    - "Public station reference data; Greek station metadata"
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData:
+    - "Personal data, driver identities, credentials, or tokens in any seed row"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: false
+  dataReviewer: true
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L3)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-STA-001/seed-foundation.md"
+  requiredCiChecks:
+    - "Service Tests workflow (new) green on the PR"
+    - "G3 and Database Migrations workflows remain green"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "Column-level designs for §9 tables derive from DOM-002 lifecycles, GOV-007
+    S1-03 constants, and ARC-022 §5.7 snapshot semantics; genuinely ambiguous
+    points stop with CLARIFICATION_REQUIRED."
+  - "Greek station metadata (names, coordinates) is invented placeholder
+    fixture data clearly marked as seed — not a claim about real operators."
+  - "Test identities (driver/operator/admin in Keycloak and account_db) are
+    the identity task's seed; this packet covers Station Operations only."
+  - "The baseline commit is inserted when the task is claimed."
+
+openQuestions: []
