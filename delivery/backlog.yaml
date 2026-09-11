@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-11T09:40:00Z"
+updatedAt: "2026-09-11T22:20:00Z"
 
 authority:
   taskDefinition: "delivery/tasks/<TASK-ID>.yaml"
@@ -126,4 +126,19 @@ items:
       - w1-s1
       - l3
 
-nextRecommendedTask: "I1-STA-001"
+  - id: "I1-CON-003"
+    order: 35
+    priority: "P0"
+    iteration: "I1"
+    epic: "EPIC-06"
+    title: "Align executable message registry with ARC-020 W1 Station Operations event catalogue"
+    packet: "delivery/tasks/I1-CON-003.yaml"
+    dependsOn:
+      - "I1-DAT-001"
+    tags:
+      - contracts
+      - registry
+      - messaging
+      - w1-s1
+
+nextRecommendedTask: "I1-CON-003"

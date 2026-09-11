@@ -78,6 +78,8 @@ gates:
   - "I1-ENG-002: EPIC-03 shared technical kernel libraries — correlation,
     secure logging, event envelope, test support; technical primitives only
     (ENG doc §4, §4.1; FR-PLT-01..03)."
+  - "I1-CON-003: executable registry alignment with ARC-020 W1 Station
+    Operations event catalogue (owner option (a), OQ-I1-D1)."
   - "I1-STA-001: S1-01 repeatable infrastructure seed — Station Operations
     W1-S1 tables + deterministic seed/reset (GOV-007 §3 S1-01; ARC-022 §9,
     DATA-006)."
@@ -103,7 +105,9 @@ openQuestions:
       advisory availability later arriving via the existing Booking capacity
       events. Owner decision required before I1-MSG-001/I1-DSC-001 packets
       are finalized.
-    state: OPEN
+    state: "RESOLVED — owner selected option (a) 2026-09-11; ARC-020 §6 already
+      defines the W1 Station Operations event family, so the resolution is an
+      executable-registry alignment delivered by task I1-CON-003."
 
 status: "PLANNING"
 startedAt: null
@@ -112,3 +116,4 @@ tasks:
   - "I1-DAT-001"
   - "I1-ENG-002"
   - "I1-STA-001"
+  - "I1-CON-003"
