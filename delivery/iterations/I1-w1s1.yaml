@@ -86,6 +86,25 @@ gates:
     behaviour, Driver BFF API completion (ARC-022 API-001), S1-01 seed
     (DATA-006), then EPIC-07/08/09/10/12/13/14/16/19/20 per the critical
     path."
+openQuestions:
+  - id: OQ-I1-D1
+    raised: 2026-09-11
+    by: orchestrator (I1-MSG-001 scoping)
+    question: >
+      How does Discovery obtain station/EVSE/connector REFERENCE data in
+      W1-S1? The 38-message W1 registry contains no station-metadata
+      publication event from Station Operations (Discovery-consumed messages
+      are Booking capacity events and Device events only), and cross-service
+      database reads are prohibited (AGENTS.md §4). Options: (a) owner
+      approves a new W1 message (e.g. station reference upsert) via a
+      governance/contract decision and registry update; (b) W1-S1 Discovery
+      seeds its own reference projection copy deterministically from the
+      canonical S1-01 fixture (service-owned seed per GOV-007 S1-01), with
+      advisory availability later arriving via the existing Booking capacity
+      events. Owner decision required before I1-MSG-001/I1-DSC-001 packets
+      are finalized.
+    state: OPEN
+
 status: "PLANNING"
 startedAt: null
 tasks:
