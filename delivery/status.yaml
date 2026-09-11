@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-10T21:30:00Z"
+updatedAt: "2026-09-10T21:45:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -218,25 +218,27 @@ tasks:
         - "delivery/evidence/I1-ENG-001/runway-validation.md"
 
   I1-DAT-001:
-    state: "BACKLOG"
-    assignedAgent: null
-    claimedAt: null
+    state: "HUMAN_REVIEW"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-10T21:45:00Z"
 
-    baselineCommit: null
-    branch: null
+    baselineCommit: "548f314cc57b40cd14c562ea2aa290e61d76b96c"
+    branch: "task/i1-dat-001-persistence"
     pullRequest: null
 
     blockers:
-      - "Depends on I1-ENG-001 (merged or explicitly available)"
-      - "L3: owner authorization to edit persistence artifacts required at claim time"
+      - "none — I1-ENG-001 VERIFIED; L3 authorization granted by owner 2026-09-10 ('authorize DAT-001')"
+      - "none"
 
     deviations: []
     unresolvedFindings: []
 
+    handoffSequence: 4
+    latestHandoff: "delivery/handoffs/I1-DAT-001/04-tester.md"
     reviews:
       planner: "PASS"
-      tester: "NOT_STARTED"
-      generalReviewer: "NOT_STARTED"
+      tester: "PASS"
+      generalReviewer: "PENDING_INDEPENDENT_REVIEW"
       contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_STARTED"
       securityReviewer: "NOT_STARTED"
@@ -244,7 +246,7 @@ tasks:
 
     ci:
       status: "NOT_REQUIRED"
-      candidateRunReference: null
+      candidateRunReference: "local G3 exit 0; db-migrations.yml runs on PR (JDK 25 temurin)"
       mergeRunReference: null
       requiredChecks: []
 
@@ -287,7 +289,7 @@ tasks:
 
     ci:
       status: "NOT_REQUIRED"
-      candidateRunReference: null
+      candidateRunReference: "local G3 exit 0; db-migrations.yml runs on PR (JDK 25 temurin)"
       mergeRunReference: null
       requiredChecks: []
 
@@ -302,7 +304,7 @@ tasks:
 
 summary:
   counts:
-    BACKLOG: 1
+    BACKLOG: 0
     READY: 0
     CLAIMED: 0
     BLOCKED: 0
@@ -311,7 +313,7 @@ summary:
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 0
+    HUMAN_REVIEW: 1
     MERGED: 0
     VERIFIED: 5
 

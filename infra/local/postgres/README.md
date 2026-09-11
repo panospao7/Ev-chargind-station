@@ -1,7 +1,17 @@
-# PostgreSQL initialization (I1-DAT-001 scope)
+# PostgreSQL initialization (I1-DAT-001)
 
-Files here mount as `/docker-entrypoint-initdb.d` (first-boot only).
+`01-provision.sh` runs via `/docker-entrypoint-initdb.d` on FIRST volume
+initialization only. Per ENG-001 doc §6.3 and ARC-022 §4 it creates:
 
-Per ENG-001 doc §6.3, initialization may create databases and roles — the
-per-service databases, owner/migrator/runtime roles and V1 Flyway baselines
-are owned by delivery task **I1-DAT-001**. Intentionally empty on the runway.
+- nine logical databases (`account_db`, `station_operations_db`,
+  `booking_session_db`, `device_integration_db`, `discovery_insights_db`,
+  `notification_db`, `governance_support_db`, `bff_session_db`,
+  `keycloak_db`);
+- per-database `owner` / `migrator` / `runtime` LOGIN roles;
+- hardened grants: `CONNECT` revoked from `PUBLIC` (cross-service access
+  fails and is tested), migrator holds database-level `CREATE` for Flyway.
+
+The service schemas themselves are created by each service's `V1__baseline.sql`
+(Flyway, run by the migrator role). Keycloak's own wiring to `keycloak_db`
+stays with the identity delivery task. Business tables are never created
+here (ARC-022 §5–§9 belong to owning services).

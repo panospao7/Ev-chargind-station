@@ -1,0 +1,49 @@
+name: Database Migrations
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "services/**/src/main/resources/db/**"
+      - "infra/local/**"
+      - "scripts/db/**"
+      - "libraries/test-support/**"
+      - "pom.xml"
+      - ".github/workflows/db-migrations.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "services/**/src/main/resources/db/**"
+      - "infra/local/**"
+      - "scripts/db/**"
+      - "libraries/test-support/**"
+      - "pom.xml"
+      - ".github/workflows/db-migrations.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-migrations-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migration-tests:
+    name: Flyway Migrations and Role Separation (PostgreSQL 18)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Run provisioning, migration and role-separation suites
+        # Approved Java 25 baseline (ENG-001 doc §3). Testcontainers 2.x runs
+        # on the runner's Docker; suites bind-mount the REAL provisioning
+        # script and execute Flyway as the migrator role.
+        run: ./mvnw -pl libraries/test-support -am test
