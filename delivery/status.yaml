@@ -307,13 +307,14 @@ tasks:
 
 
   I1-STA-001:
-    state: "CLAIMED"
+    state: "HUMAN_REVIEW"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-11T09:55:00Z"
 
     baselineCommit: "b73faffacedd3dd2e80cd3422aa3e9463a81bc9c"
     branch: "task/i1-sta-001-seed"
-    pullRequest: null
+    candidateCommit: "1c05c59e5e394e12e9d8d1c943aaab91a88b47f1"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/new/task/i1-sta-001-seed"
 
     blockers:
       - "none — planning PR #16 merged; L3 packet approval recorded via merge"
@@ -321,10 +322,12 @@ tasks:
     deviations: []
     unresolvedFindings: []
 
+    handoffSequence: 4
+    latestHandoff: "delivery/handoffs/I1-STA-001/04-tester.md"
     reviews:
       planner: "PASS"
-      tester: "NOT_STARTED"
-      generalReviewer: "NOT_STARTED"
+      tester: "PASS"
+      generalReviewer: "PENDING_INDEPENDENT_REVIEW"
       contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_STARTED"
       securityReviewer: "NOT_STARTED"
@@ -332,7 +335,7 @@ tasks:
 
     ci:
       status: "NOT_REQUIRED"
-      candidateRunReference: null
+      candidateRunReference: "Service Tests workflow (JDK 25) + Database Migrations + G3 run on the PR"
       mergeRunReference: null
       requiredChecks: []
 
@@ -355,7 +358,7 @@ summary:
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 0
+    HUMAN_REVIEW: 1
     MERGED: 0
     VERIFIED: 6
 
