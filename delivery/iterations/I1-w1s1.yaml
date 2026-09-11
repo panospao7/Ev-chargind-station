@@ -83,6 +83,9 @@ gates:
   - "I1-STA-001: S1-01 repeatable infrastructure seed — Station Operations
     W1-S1 tables + deterministic seed/reset (GOV-007 §3 S1-01; ARC-022 §9,
     DATA-006)."
+  - "I1-MSG-001: messaging foundation — ARC-022 §8 integration tables,
+    outbox dispatcher, RabbitMQ topology, POC-04 behaviour proofs;
+    StationPublished emitted from the S1-01 seed."
   - "Later I1 packets (to be drafted after wave 1 lands): POC-01 Keycloak+BFF,
     POC-03 allocation constraint/lock protocol, POC-04 outbox/inbox broker
     behaviour, Driver BFF API completion (ARC-022 API-001), S1-01 seed
@@ -117,3 +120,4 @@ tasks:
   - "I1-ENG-002"
   - "I1-STA-001"
   - "I1-CON-003"
+  - "I1-MSG-001"

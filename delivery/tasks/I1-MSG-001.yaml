@@ -1,0 +1,314 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-MSG-001"
+  title: "Messaging foundation — ARC-022 §8 integration tables, outbox dispatcher, RabbitMQ topology (POC-04)"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-03"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L3"
+  owner: "Backend/Data Architect and Project Owner"
+  createdAt: "2026-09-12"
+  baselineCommit: null
+
+objective: >
+  Deliver the W1-S1 messaging foundation for station-operations-service per
+  ARC-022 §8 and GOV-007 §3 S1-09: the four common integration tables
+  (outbox_message, inbox_message, idempotency_record, audit_event) as a
+  forward V3 migration in station_operations_db; a transactional outbox
+  writer; a polling dispatcher with publisher confirms, mandatory publishing,
+  bounded retry and QUARANTINED terminal state; RabbitMQ topology per ENG-001
+  doc §6.4 (durable topic exchanges from the registry anchors, quorum queues,
+  dead-letter handling, manual acknowledgements) via approved Spring AMQP;
+  and the POC-04 behaviour proofs on Testcontainers RabbitMQ — at-least-once
+  delivery with duplicate consumption deduplicated by the inbox, per-aggregate
+  ordering, publish-failure retry then quarantine, and append-only audit. The
+  seed emits one StationPublished outbox message per published station,
+  committed atomically with the seed data (business change and outbox record
+  commit together). No Discovery consumption, no Booking capacity events, no
+  other services' copies — those are their own tasks.
+
+origin: >
+  Continuation of the I1 critical path after I1-CON-003 (registry alignment,
+  VERIFIED) and the owner's standing "continue" direction 2026-09-11. The
+  messaging foundation is the prerequisite for Discovery projections (S1-02)
+  and Booking (EPIC-10), and formally executes POC-04 (ARC-015 §10).
+
+requirements:
+  - "FR-PLT-01 — authoritative changes propagate asynchronously via the
+    transactional outbox (this task implements the STA-side machinery and
+    proves it; first real business payload: StationPublished from the seed)."
+  - "FR-PLT-02 — consumers handle at-least-once delivery safely (inbox
+    deduplication proven)."
+  - "FR-PLT-03 — bounded retries with backoff and controlled dead-letter/quarantine."
+  - "GOV-007 §3 S1-09 — transactional outbox, at-least-once, version/sequence
+    validation foundations (full Discovery projections are I1-DSC-001)."
+
+useCases:
+  - "Enabling infrastructure for UC-DR-001..008; no direct use-case behavior."
+
+authority:
+  governance:
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§3 S1-09 (messaging and projections foundations), §6 status ledger (RabbitMQ APPROVED)"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "FR-PLT-01..03"
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "§8 common integration persistence (EXACT table specs, states, uniqueness), §12–13 migration rules, §19 items 10–12"
+    - path: "docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md"
+      section: "§2 envelope, §4 delivery semantics (at-least-once, ordering), §6 StationPublished (W1)"
+    - path: "docs/05_architecture/08_technology_selection_adr_set_v1.0.md"
+      section: "Spring AMQP approved dependency; RabbitMQ 4.3"
+    - path: "docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md"
+      section: "§6.4 RabbitMQ local topology (one vhost, durable exchanges, publisher confirms, mandatory publishing, manual acks, retry/DLQ)"
+    - path: "docs/08_delivery_and_ai_agents/02_implementation_epics_dependency_roadmap_v1.0.md"
+      section: "§10 POC-04; EPIC-03 deliverables/constraints"
+  contracts:
+    - path: "contracts/registries/messages-v1.yaml"
+      identifiers: ["StationPublished (and the exchange anchors)"]
+    - path: "contracts/schemas/events/station-published-event.json"
+      identifiers: ["payload schema"]
+    - path: "contracts/schemas/common/cloud-event.json"
+      identifiers: ["envelope"]
+
+invariants:
+  - "Business change and outbox record commit atomically (AGENTS.md §4)."
+  - "Consumers are idempotent and assume at-least-once delivery (AGENTS.md §4)."
+  - "Station Operations owns its integration tables; the dispatcher publishes
+    only from station_operations_db's outbox (AGENTS.md §4)."
+  - "Applied migrations immutable; V3 forward-only with unique numbering."
+  - "Tokens and personal data never enter broker messages (AGENTS.md §4)."
+
+ownership:
+  owningService: "station-operations-service"
+  dataOwner: "Station Operations Service (station_operations_db)"
+  supportingServices:
+    - "discovery-insights-service (future consumer — out of scope here)"
+  prohibitedOwners:
+    - "Browser runtime"
+
+affectedArtifacts:
+  services:
+    - "station-operations-service (integration tables, outbox writer, dispatcher, audit writer, seed emits StationPublished)"
+  modules:
+    - "services/station-operations-service/src/main/resources/db/migration (V3)"
+    - "services/station-operations-service/src/main/java (outbox/dispatcher/audit, Spring AMQP)"
+    - "services/station-operations-service/src/test/java (POC-04 behaviour suite)"
+    - "services/station-operations-service/src/main/resources (amqp/rabbitmq config)"
+  tables:
+    - "outbox_message, inbox_message, idempotency_record, audit_event (ARC-022 §8, station_operations schema)"
+  projections: []
+  migrations:
+    - "V3__integration_tables.sql (forward; V1 baseline and V2 seed tables untouched)"
+  apiOperations: []
+  commands: []
+  events:
+    - "StationPublished emitted from the seed via the outbox (the only business payload in scope)"
+  schemas: []
+  registries: []
+  screens: []
+  infrastructure:
+    - "RabbitMQ topology declared by the service (durable topic exchange ev.domain.v1; quorum queue + DLQ for the POC consumer) — local broker from the existing compose core profile"
+
+dependencies:
+  tasks:
+    - "I1-DAT-001 (VERIFIED — roles, migration machinery)"
+    - "I1-STA-001 (VERIFIED — seeded aggregates, service skeleton)"
+    - "I1-CON-003 (VERIFIED — StationPublished registered with schema)"
+  contracts:
+    - "contracts/schemas/events/station-published-event.json (validation target)"
+  infrastructure:
+    - "Local RabbitMQ from compose core profile; Docker for Testcontainers"
+  humanDecisions:
+    - "L3 authorization: merging this planning PR constitutes the owner's
+      packet approval (I1-DAT-001/I1-STA-001 precedent); claim-time go-ahead
+      per standing cadence."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "services/station-operations-service/**"
+    - "libraries/test-support/**"
+    - "delivery/handoffs/I1-MSG-001/**"
+    - "delivery/evidence/I1-MSG-001/**"
+    - "delivery/deviations/I1-MSG-001/**"
+
+  prohibitedFiles:
+    - "contracts/**"
+    - "docs/**"
+    - "services/account-service/**"
+    - "services/booking-session-service/**"
+    - "services/device-integration-service/**"
+    - "services/discovery-insights-service/**"
+    - "services/notification-service/**"
+    - "services/governance-support-service/**"
+    - "apps/**"
+    - "simulator/**"
+    - "infra/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+
+  maximumExpectedDiff: >
+    Vertical and bounded: one V3 migration (four §8 tables), outbox
+    writer/dispatcher/audit classes, RabbitMQ topology configuration, seed
+    emitting StationPublished transactionally, POC-04 behaviour suite. Any
+    Discovery consumption, Booking events, or additional services' copies is
+    out of scope and must be refused.
+
+  generatedFilesPolicy: >
+    Hand-authored sources; message payloads validate against existing
+    executable schemas (never duplicated).
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      The four ARC-022 §8 tables exist in station_operations_db via V3 with
+      the specified fields, states (PENDING/PUBLISHED/QUARANTINED),
+      uniqueness constraints ((aggregate_type, aggregate_ref,
+      aggregate_version, message_type) for outbox facts;
+      (consumer_name, message_id) for inbox), and an append-only audit_event
+      (runtime role cannot update/delete).
+    authorityReferences:
+      - "ARC-022 §8.1–8.4"
+    evidenceRequired:
+      - "migration test output; catalogue listing"
+    testTypes: ["migration", "integration"]
+
+  - id: "AC-02"
+    statement: >
+      Seeding emits one StationPublished outbox message per published station
+      in the SAME transaction as the seed data; the unique event-fact
+      constraint makes re-seeding produce no duplicate facts; the dispatcher
+      publishes with publisher confirms and mandatory flagging, marking rows
+      PUBLISHED only on confirm.
+    authorityReferences:
+      - "AGENTS.md §4 (atomic commit); ARC-022 §8.1; ENG doc §6.4"
+    evidenceRequired:
+      - "integration test output (atomicity + confirm path)"
+    testTypes: ["integration"]
+
+  - id: "AC-03"
+    statement: >
+      POC-04 behaviour proofs pass on Testcontainers RabbitMQ: message
+      delivered at-least-once (forced duplicate consumption deduplicated by
+      inbox (consumer_name, message_id)); per-aggregate ordering preserved;
+      a failing publish retries with attempt count then transitions to
+      QUARANTINED; consumer uses manual acknowledgements with DLQ routing.
+    authorityReferences:
+      - "ARC-015 §10 POC-04; FR-PLT-01..03; ENG doc §6.4"
+    evidenceRequired:
+      - "behaviour suite output"
+    testTypes: ["integration", "negative"]
+
+  - id: "AC-04"
+    statement: >
+      audit_event is append-only (insert allowed, update/delete rejected) and
+      the idempotency_record carries the ARC-022 §8.3 scope and retention
+      fields (no deletion behavior — retention enforcement stays W3).
+    authorityReferences:
+      - "ARC-022 §8.3–8.4"
+    evidenceRequired:
+      - "negative-fixture test output"
+    testTypes: ["integration", "negative"]
+
+  - id: "AC-05"
+    statement: >
+      StationPublished payloads validate against
+      contracts/schemas/events/station-published-event.json and the
+      CloudEvents envelope schema; G3, delivery validators, secret scan and
+      the existing CI workflows remain green (service-tests and
+      db-migrations workflows cover this task's paths).
+    authorityReferences:
+      - "ARC-022 §19 items 9, 15; AGENTS.md §10"
+    evidenceRequired:
+      - "test output; GitHub Actions run references on the PR"
+    testTypes: ["ci", "contract"]
+
+tests:
+  focusedCommands:
+    - "./mvnw -pl services/station-operations-service -am test"
+  requiredSuites:
+    - "./mvnw test"
+    - "npm run contracts:verify"
+    - "node scripts/delivery/validate.mjs"
+    - "npm run contracts:secrets"
+    - "git diff --check"
+  positiveCases:
+    - "Seed → outbox rows commit atomically; dispatcher publishes with confirms; consumer deduplicates."
+  negativeCases:
+    - "Broker down → retries bounded → QUARANTINED; duplicate delivery → single effect; audit mutation rejected."
+  boundaryCases: []
+  concurrencyCases:
+    - "Two dispatcher instances do not double-publish a fact (unique constraint + state transition)."
+  securityCases:
+    - "No credentials/tokens in payloads; secret scan green."
+  contractCases:
+    - "StationPublished payload + envelope validate against executable schemas."
+  migrationCases:
+    - "V3 fresh install + upgrade path via the existing suites."
+  accessibilityCases: []
+
+persistence:
+  affected: true
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "Broker messages carry public station reference data only; no tokens."
+  dataClassifications:
+    - "Public station reference metadata in messages"
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements:
+    - "audit_event table per ARC-022 §8.4 (append-only)"
+  prohibitedData:
+    - "Tokens, credentials, personal data in broker messages or audit rows"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: true
+  dataReviewer: true
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L3)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-MSG-001/messaging-foundation.md"
+  requiredCiChecks:
+    - "Service Tests workflow green on the PR (JDK 25)"
+    - "Database Migrations workflow green on the PR"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "Spring AMQP (approved ADR dependency) is the messaging client; polling
+    dispatcher is acceptable for W1-S1 (no CDC requirement exists)."
+  - "The POC-04 consumer is a test/POC component — Discovery's real consumer
+    is I1-DSC-001."
+  - "Retention values are recorded as fields only (W3 enforcement)."
+  - "The baseline commit is inserted when the task is claimed."
+
+openQuestions: []
