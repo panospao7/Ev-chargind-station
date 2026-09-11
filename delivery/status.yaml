@@ -234,7 +234,7 @@ tasks:
     unresolvedFindings: []
 
     handoffSequence: 4
-    latestHandoff: "delivery/handoffs/I1-DAT-001/04-tester.md"
+    latestHandoff: "delivery/handoffs/I1-DAT-001/05-orchestrator.md"
     reviews:
       planner: "PASS"
       tester: "PASS"
