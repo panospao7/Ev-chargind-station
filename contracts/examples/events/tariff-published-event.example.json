@@ -1,0 +1,18 @@
+{
+  "tariffRef": "00000000-0000-0000-0000-0000000000e1",
+  "tariffVersionRef": "00000000-0000-0000-0000-0000000000f1",
+  "versionNumber": 1,
+  "currency": "EUR",
+  "components": [
+    {
+      "componentKind": "ENERGY_PER_KWH",
+      "unit": "KWH",
+      "amountMinor": 480
+    },
+    {
+      "componentKind": "OCCUPANCY_PER_MINUTE",
+      "unit": "MINUTE",
+      "amountMinor": 10
+    }
+  ]
+}

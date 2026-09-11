@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/evse-administrative-state-changed-event.json",
+  "title": "EVSEAdministrativeStateChangedEvent",
+  "description": "EVSE administrative transition fact (ACTIVE/DISABLED/DEACTIVATED). Consumer is discovery-insights-service only.",
+  "type": "object",
+  "properties": {
+    "evseRef": {
+      "type": "string",
+      "description": "EVSE reference"
+    },
+    "fromState": {
+      "type": "string",
+      "description": "State before the transition"
+    },
+    "toState": {
+      "type": "string",
+      "description": "State after the transition"
+    }
+  },
+  "required": [
+    "evseRef",
+    "fromState",
+    "toState"
+  ]
+}

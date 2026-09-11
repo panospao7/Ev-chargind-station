@@ -1,0 +1,6 @@
+{
+  "connectorRef": "3d3c8e4a-9b1f-5d20-8a4e-2f1c0b9d8e77",
+  "evseRef": "00000000-0000-0000-0000-0000000000a1",
+  "connectorType": "CCS",
+  "maxPowerW": 150000
+}

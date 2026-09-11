@@ -22,6 +22,160 @@ servers:
       - plain: []
 defaultContentType: application/cloudevents+json
 channels:
+
+  station.station.published:
+    publish:
+      operationId: publishStationPublished
+      summary: Event emitted when a station is published and its reference data becomes discoverable
+      message:
+        $ref: '#/components/messages/StationPublished'
+      bindings:
+        amqp:
+          exchange:
+            name: station
+            type: topic
+            durable: true
+          routingKey: station.published
+
+  station.station.updated:
+    publish:
+      operationId: publishStationUpdated
+      summary: Event emitted when published station reference data changes
+      message:
+        $ref: '#/components/messages/StationUpdated'
+      bindings:
+        amqp:
+          exchange:
+            name: station
+            type: topic
+            durable: true
+          routingKey: station.updated
+
+  station.station.status-changed:
+    publish:
+      operationId: publishStationStatusChanged
+      summary: Event emitted on a station lifecycle transition (DOM-002 STATION)
+      message:
+        $ref: '#/components/messages/StationStatusChanged'
+      bindings:
+        amqp:
+          exchange:
+            name: station
+            type: topic
+            durable: true
+          routingKey: station.status-changed
+
+  station.station.evse-configuration-changed:
+    publish:
+      operationId: publishEVSEConfigurationChanged
+      summary: Event emitted when an EVSE configuration changes
+      message:
+        $ref: '#/components/messages/EVSEConfigurationChanged'
+      bindings:
+        amqp:
+          exchange:
+            name: station
+            type: topic
+            durable: true
+          routingKey: station.evse-configuration-changed
+
+  station.station.evse-administrative-state-changed:
+    publish:
+      operationId: publishEVSEAdministrativeStateChanged
+      summary: Event emitted on an EVSE administrative lifecycle transition (DOM-002 EVSE_ADMINISTRATION)
+      message:
+        $ref: '#/components/messages/EVSEAdministrativeStateChanged'
+      bindings:
+        amqp:
+          exchange:
+            name: station
+            type: topic
+            durable: true
+          routingKey: station.evse-administrative-state-changed
+
+  station.station.connector-configuration-changed:
+    publish:
+      operationId: publishConnectorConfigurationChanged
+      summary: Event emitted when a connector configuration changes
+      message:
+        $ref: '#/components/messages/ConnectorConfigurationChanged'
+      bindings:
+        amqp:
+          exchange:
+            name: station
+            type: topic
+            durable: true
+          routingKey: station.connector-configuration-changed
+
+  station.station.tariff-published:
+    publish:
+      operationId: publishTariffPublished
+      summary: Event emitted when a tariff version is activated
+      message:
+        $ref: '#/components/messages/TariffPublished'
+      bindings:
+        amqp:
+          exchange:
+            name: station
+            type: topic
+            durable: true
+          routingKey: station.tariff-published
+
+  station.station.tariff-retired:
+    publish:
+      operationId: publishTariffRetired
+      summary: Event emitted when a tariff version is retired
+      message:
+        $ref: '#/components/messages/TariffRetired'
+      bindings:
+        amqp:
+          exchange:
+            name: station
+            type: topic
+            durable: true
+          routingKey: station.tariff-retired
+
+  station.station.booking-policy-changed:
+    publish:
+      operationId: publishBookingPolicyChanged
+      summary: Event emitted when a booking policy version is activated or changed
+      message:
+        $ref: '#/components/messages/BookingPolicyChanged'
+      bindings:
+        amqp:
+          exchange:
+            name: station
+            type: topic
+            durable: true
+          routingKey: station.booking-policy-changed
+
+  organization.organization.created:
+    publish:
+      operationId: publishOperatorOrganizationCreated
+      summary: Event emitted when an operator organization is created
+      message:
+        $ref: '#/components/messages/OperatorOrganizationCreated'
+      bindings:
+        amqp:
+          exchange:
+            name: organization
+            type: topic
+            durable: true
+          routingKey: organization.created
+
+  organization.organization.status-changed:
+    publish:
+      operationId: publishOperatorOrganizationStatusChanged
+      summary: Event emitted on an operator organization lifecycle transition (DOM-002 OPERATOR_ORGANIZATION)
+      message:
+        $ref: '#/components/messages/OperatorOrganizationStatusChanged'
+      bindings:
+        amqp:
+          exchange:
+            name: organization
+            type: topic
+            durable: true
+          routingKey: organization.status-changed
   booking.booking.confirmed:
     publish:
       operationId: publishBookingConfirmed
@@ -80,6 +234,182 @@ components:
       type: userPassword
       description: RabbitMQ plain authentication
   messages:
+
+    StationPublished:
+      messageId: StationPublished
+      name: StationPublished
+      title: Station Published
+      summary: Event emitted when a station is published and its reference data becomes discoverable
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/station-published-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: station.published
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+
+    StationUpdated:
+      messageId: StationUpdated
+      name: StationUpdated
+      title: Station Updated
+      summary: Event emitted when published station reference data changes
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/station-updated-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: station.updated
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+
+    StationStatusChanged:
+      messageId: StationStatusChanged
+      name: StationStatusChanged
+      title: Station Status Changed
+      summary: Event emitted on a station lifecycle transition (DOM-002 STATION)
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/station-status-changed-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: station.status-changed
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+
+    EVSEConfigurationChanged:
+      messageId: EVSEConfigurationChanged
+      name: EVSEConfigurationChanged
+      title: EVSE Configuration Changed
+      summary: Event emitted when an EVSE configuration changes
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/evse-configuration-changed-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: station.evse-configuration-changed
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+
+    EVSEAdministrativeStateChanged:
+      messageId: EVSEAdministrativeStateChanged
+      name: EVSEAdministrativeStateChanged
+      title: EVSE Administrative State Changed
+      summary: Event emitted on an EVSE administrative lifecycle transition (DOM-002 EVSE_ADMINISTRATION)
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/evse-administrative-state-changed-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: station.evse-administrative-state-changed
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+
+    ConnectorConfigurationChanged:
+      messageId: ConnectorConfigurationChanged
+      name: ConnectorConfigurationChanged
+      title: Connector Configuration Changed
+      summary: Event emitted when a connector configuration changes
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/connector-configuration-changed-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: station.connector-configuration-changed
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+
+    TariffPublished:
+      messageId: TariffPublished
+      name: TariffPublished
+      title: Tariff Published
+      summary: Event emitted when a tariff version is activated
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/tariff-published-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: station.tariff-published
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+
+    TariffRetired:
+      messageId: TariffRetired
+      name: TariffRetired
+      title: Tariff Retired
+      summary: Event emitted when a tariff version is retired
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/tariff-retired-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: station.tariff-retired
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+
+    BookingPolicyChanged:
+      messageId: BookingPolicyChanged
+      name: BookingPolicyChanged
+      title: Booking Policy Changed
+      summary: Event emitted when a booking policy version is activated or changed
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/booking-policy-changed-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: station.booking-policy-changed
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+
+    OperatorOrganizationCreated:
+      messageId: OperatorOrganizationCreated
+      name: OperatorOrganizationCreated
+      title: Operator Organization Created
+      summary: Event emitted when an operator organization is created
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/operator-organization-created-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: organization.created
+      headers:
+        $ref: ../schemas/common/cloud-event.json
+
+    OperatorOrganizationStatusChanged:
+      messageId: OperatorOrganizationStatusChanged
+      name: OperatorOrganizationStatusChanged
+      title: Operator Organization Status Changed
+      summary: Event emitted on an operator organization lifecycle transition (DOM-002 OPERATOR_ORGANIZATION)
+      contentType: application/cloudevents+json
+      schemaFormat: application/vnd.aas+json;version=2020-12
+      payload:
+        $ref: ../schemas/events/operator-organization-status-changed-event.json
+      bindings:
+        amqp:
+          contentEncoding: gzip
+          messageType: organization.status-changed
+      headers:
+        $ref: ../schemas/common/cloud-event.json
     BookingConfirmed:
       messageId: BookingConfirmed
       name: BookingConfirmed

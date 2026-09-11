@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/station-published-event.json",
+  "title": "StationPublishedEvent",
+  "description": "Station reference snapshot emitted on DRAFT to PUBLISHED transition (DOM-002 STATION). Consumer is discovery-insights-service only. Contains no account, driver, or vehicle identifiers.",
+  "type": "object",
+  "properties": {
+    "stationRef": {
+      "type": "string",
+      "description": "Station reference"
+    },
+    "publicRef": {
+      "type": "string",
+      "description": "Public station reference"
+    },
+    "displayName": {
+      "type": "string",
+      "description": "Station display name"
+    },
+    "addressLine": {
+      "type": "string",
+      "description": "Street address"
+    },
+    "city": {
+      "type": "string",
+      "description": "City"
+    },
+    "postalCode": {
+      "type": "string",
+      "description": "Postal code"
+    },
+    "countryCode": {
+      "type": "string",
+      "description": "ISO 3166 alpha-2 country code"
+    },
+    "latitude": {
+      "type": "number",
+      "description": "Latitude in decimal degrees"
+    },
+    "longitude": {
+      "type": "number",
+      "description": "Longitude in decimal degrees"
+    }
+  },
+  "required": [
+    "stationRef",
+    "publicRef",
+    "displayName",
+    "latitude",
+    "longitude"
+  ]
+}

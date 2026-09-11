@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/booking-policy-changed-event.json",
+  "title": "BookingPolicyChangedEvent",
+  "description": "Booking policy version fact carrying the GOV-007 §3 S1-03 interval constants (ARC-020 §6). Consumer is discovery-insights-service only.",
+  "type": "object",
+  "properties": {
+    "policyRef": {
+      "type": "string",
+      "description": "Booking policy reference"
+    },
+    "policyVersionRef": {
+      "type": "string",
+      "description": "Booking policy version reference"
+    },
+    "versionNumber": {
+      "type": "integer",
+      "description": "Monotonic version number"
+    },
+    "policy": {
+      "type": "object",
+      "description": "Policy constants (GOV-007 §3 S1-03)",
+      "properties": {
+        "holdDurationSeconds": {
+          "type": "integer"
+        },
+        "slotIncrementMinutes": {
+          "type": "integer"
+        },
+        "minDurationMinutes": {
+          "type": "integer"
+        },
+        "maxDurationMinutes": {
+          "type": "integer"
+        },
+        "advanceBookingDays": {
+          "type": "integer"
+        },
+        "nearTermHorizonMinutes": {
+          "type": "integer"
+        },
+        "freshnessThresholdSeconds": {
+          "type": "integer"
+        },
+        "lateArrivalGraceMinutes": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "holdDurationSeconds",
+        "slotIncrementMinutes",
+        "minDurationMinutes",
+        "maxDurationMinutes",
+        "advanceBookingDays",
+        "nearTermHorizonMinutes",
+        "freshnessThresholdSeconds",
+        "lateArrivalGraceMinutes"
+      ]
+    }
+  },
+  "required": [
+    "policyRef",
+    "policyVersionRef",
+    "versionNumber",
+    "policy"
+  ]
+}

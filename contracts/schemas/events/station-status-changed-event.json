@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/station-status-changed-event.json",
+  "title": "StationStatusChangedEvent",
+  "description": "Station lifecycle transition fact (DOM-002 STATION: DRAFT/PUBLISHED/TEMPORARILY_CLOSED/DEACTIVATED). Consumer is discovery-insights-service only.",
+  "type": "object",
+  "properties": {
+    "stationRef": {
+      "type": "string",
+      "description": "Station reference"
+    },
+    "fromState": {
+      "type": "string",
+      "description": "State before the transition"
+    },
+    "toState": {
+      "type": "string",
+      "description": "State after the transition"
+    }
+  },
+  "required": [
+    "stationRef",
+    "fromState",
+    "toState"
+  ]
+}
