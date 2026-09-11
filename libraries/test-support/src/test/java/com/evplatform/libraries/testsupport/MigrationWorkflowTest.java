@@ -67,12 +67,14 @@ class MigrationWorkflowTest {
 
     @Test
     @Order(1)
-    void freshInstallAppliesExactlyOneMigrationPerService() {
+    void freshInstallAppliesAllMigrationsPerService() {
+        // grew from ==1 (DAT-001 snapshot) to >=1: services legitimately gain
+        // forward migrations after their V1 baseline (I1-STA-001 added V2)
         for (String[] s : SERVICES) {
             Flyway flyway = flywayFor(s[2], s[1], s[3], List.of(migrationDir(s[0]).toString()));
             MigrateResult result = flyway.migrate();
-            assertEquals(1, result.migrationsExecuted,
-                    s[0] + " must apply exactly its V1 baseline from an empty database");
+            assertTrue(result.migrationsExecuted >= 1,
+                    s[0] + " must apply its migrations cleanly from an empty database");
         }
     }
 

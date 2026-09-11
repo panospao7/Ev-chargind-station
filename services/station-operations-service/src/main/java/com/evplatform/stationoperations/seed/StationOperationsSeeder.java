@@ -1,0 +1,263 @@
+package com.evplatform.stationoperations.seed;
+
+import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.stereotype.Component;
+
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.UUID;
+
+/**
+ * Deterministic, idempotent S1-01 seed for station_operations_db.
+ *
+ * Service-owned (AGENTS.md §4): every statement targets this service's own
+ * schema; the runner connects with the STA runtime role, which provably
+ * cannot reach other databases (I1-DAT-001 role separation).
+ *
+ * Idempotency: fixed identifiers + ON CONFLICT DO NOTHING — re-running never
+ * duplicates or mutates.
+ */
+@Component
+public class StationOperationsSeeder {
+
+    private final JdbcClient jdbc;
+
+    public StationOperationsSeeder(JdbcClient jdbc) {
+        this.jdbc = jdbc;
+    }
+
+    /** Applies the canonical dataset; safe to run any number of times. */
+    public void seed() {
+        insertOrganization();
+        insertMembers();
+        insertStation(SeedDataset.STATION_A_REF, SeedDataset.STATION_A_PUBLIC_REF,
+                SeedDataset.STATION_A_NAME, SeedDataset.STATION_A_ADDRESS,
+                SeedDataset.STATION_A_CITY, SeedDataset.STATION_A_POSTAL,
+                SeedDataset.STATION_A_LAT, SeedDataset.STATION_A_LON);
+        insertStation(SeedDataset.STATION_B_REF, SeedDataset.STATION_B_PUBLIC_REF,
+                SeedDataset.STATION_B_NAME, SeedDataset.STATION_B_ADDRESS,
+                SeedDataset.STATION_B_CITY, SeedDataset.STATION_B_POSTAL,
+                SeedDataset.STATION_B_LAT, SeedDataset.STATION_B_LON);
+        insertEvse(SeedDataset.EVSE_A1);
+        insertEvse(SeedDataset.EVSE_A2);
+        insertEvse(SeedDataset.EVSE_B1);
+        insertEvse(SeedDataset.EVSE_B2);
+        insertConnectors(SeedDataset.EVSE_A1);
+        insertConnectors(SeedDataset.EVSE_A2);
+        insertConnectors(SeedDataset.EVSE_B1);
+        insertConnectors(SeedDataset.EVSE_B2);
+        insertOpeningHours(SeedDataset.STATION_A_REF);
+        insertOpeningHours(SeedDataset.STATION_B_REF);
+        insertTariff();
+        insertPolicy();
+        insertSimulatorAssignment(SeedDataset.SIM_A1);
+        insertSimulatorAssignment(SeedDataset.SIM_A2);
+        insertSimulatorAssignment(SeedDataset.SIM_B1);
+        insertSimulatorAssignment(SeedDataset.SIM_B2);
+    }
+
+    private void insertOrganization() {
+        jdbc.sql("""
+                INSERT INTO station_operations.operator_organization
+                    (organization_ref, legal_name, state)
+                VALUES (?, ?, ?)
+                ON CONFLICT (organization_ref) DO NOTHING
+                """).param(SeedDataset.ORGANIZATION_REF)
+                .param(SeedDataset.ORGANIZATION_NAME)
+                .param(SeedDataset.ORGANIZATION_STATE)
+                .update();
+    }
+
+    private void insertMembers() {
+        jdbc.sql("""
+                INSERT INTO station_operations.organization_member
+                    (member_ref, organization_ref, display_name, member_role)
+                VALUES (?, ?, ?, 'ADMINISTRATOR'), (?, ?, ?, 'OPERATOR')
+                ON CONFLICT (member_ref) DO NOTHING
+                """)
+                .param(SeedDataset.MEMBER_ADMIN_REF)
+                .param(SeedDataset.ORGANIZATION_REF)
+                .param("Seed Fixture Administrator")
+                .param(SeedDataset.MEMBER_OPERATOR_REF)
+                .param(SeedDataset.ORGANIZATION_REF)
+                .param("Seed Fixture Operator")
+                .update();
+    }
+
+    private void insertStation(UUID ref, String publicRef, String name,
+                               String address, String city, String postal,
+                               String lat, String lon) {
+        jdbc.sql("""
+                INSERT INTO station_operations.station
+                    (station_ref, organization_ref, public_ref, display_name, state,
+                     address_line, city, postal_code, country_code, latitude, longitude)
+                VALUES (?, ?, ?, ?, 'PUBLISHED', ?, ?, ?, 'GR', ?, ?)
+                ON CONFLICT (station_ref) DO NOTHING
+                """)
+                .param(ref).param(SeedDataset.ORGANIZATION_REF).param(publicRef)
+                .param(name).param(address).param(city).param(postal)
+                .param(new java.math.BigDecimal(lat))
+                .param(new java.math.BigDecimal(lon))
+                .update();
+    }
+
+    private void insertEvse(SeedDataset.Evse evse) {
+        jdbc.sql("""
+                INSERT INTO station_operations.evse (evse_ref, station_ref, evse_uid, state)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT (evse_ref) DO NOTHING
+                """)
+                .param(evse.ref()).param(evse.stationRef()).param(evse.uid())
+                .param(SeedDataset.EVSE_STATE)
+                .update();
+    }
+
+    private void insertConnectors(SeedDataset.Evse evse) {
+        jdbc.sql("""
+                INSERT INTO station_operations.connector
+                    (connector_ref, evse_ref, connector_type, max_power_w)
+                VALUES (?, ?, ?, ?), (?, ?, ?, ?)
+                ON CONFLICT (connector_ref) DO NOTHING
+                """)
+                .param(UUID.nameUUIDFromBytes(
+                        (evse.uid() + "|CCS").getBytes()))
+                .param(evse.ref()).param(SeedDataset.CONNECTOR_DC)
+                .param(SeedDataset.CONNECTOR_DC_POWER_W)
+                .param(UUID.nameUUIDFromBytes(
+                        (evse.uid() + "|TYPE2").getBytes()))
+                .param(evse.ref()).param(SeedDataset.CONNECTOR_AC)
+                .param(SeedDataset.CONNECTOR_AC_POWER_W)
+                .update();
+    }
+
+    private void insertOpeningHours(UUID stationRef) {
+        for (int weekday = 0; weekday <= 6; weekday++) {
+            jdbc.sql("""
+                    INSERT INTO station_operations.station_opening_period
+                        (period_ref, station_ref, weekday, opens_at, closes_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT (period_ref) DO NOTHING
+                    """)
+                    .param(UUID.nameUUIDFromBytes(
+                            (stationRef + "|hours|" + weekday).getBytes()))
+                    .param(stationRef).param((short) weekday)
+                    .param(java.time.LocalTime.MIN)
+                    .param(java.time.LocalTime.MAX)
+                    .update();
+        }
+    }
+
+    private void insertTariff() {
+        jdbc.sql("""
+                INSERT INTO station_operations.tariff
+                    (tariff_ref, organization_ref, display_name, currency)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT (tariff_ref) DO NOTHING
+                """)
+                .param(SeedDataset.TARIFF_REF)
+                .param(SeedDataset.ORGANIZATION_REF)
+                .param(SeedDataset.TARIFF_NAME)
+                .param(SeedDataset.TARIFF_CURRENCY)
+                .update();
+        // canonical ordering: version starts DRAFT, components are inserted,
+        // then the version is activated (guarded — re-runs must not touch the
+        // already-ACTIVE row, whose mutation the protection trigger rejects)
+        jdbc.sql("""
+                INSERT INTO station_operations.tariff_version
+                    (tariff_version_ref, tariff_ref, version_number, state, valid_from)
+                VALUES (?, ?, ?, 'DRAFT', ?)
+                ON CONFLICT (tariff_version_ref) DO NOTHING
+                """)
+                .param(SeedDataset.TARIFF_VERSION_REF)
+                .param(SeedDataset.TARIFF_REF)
+                .param(SeedDataset.TARIFF_VERSION_NUMBER)
+                .param(Timestamp.from(SeedDataset.TARIFF_VALID_FROM))
+                .update();
+        insertComponent(SeedDataset.COMPONENT_ENERGY_REF,
+                SeedDataset.TARIFF_VERSION_REF, SeedDataset.COMPONENT_ENERGY_KIND,
+                SeedDataset.COMPONENT_ENERGY_UNIT, SeedDataset.COMPONENT_ENERGY_AMOUNT_MINOR);
+        insertComponent(SeedDataset.COMPONENT_OCCUPANCY_REF,
+                SeedDataset.TARIFF_VERSION_REF, SeedDataset.COMPONENT_OCCUPANCY_KIND,
+                SeedDataset.COMPONENT_OCCUPANCY_UNIT, SeedDataset.COMPONENT_OCCUPANCY_AMOUNT_MINOR);
+        jdbc.sql("""
+                UPDATE station_operations.tariff_version
+                SET state = 'ACTIVE'
+                WHERE tariff_version_ref = ? AND state = 'DRAFT'
+                """)
+                .param(SeedDataset.TARIFF_VERSION_REF)
+                .update();
+    }
+
+    /**
+     * Existence-guarded insert: BEFORE-row triggers fire even for rows that
+     * would conflict, so an EXISTS check is required to keep re-runs silent
+     * while the parent version is ACTIVE.
+     */
+    private void insertComponent(UUID ref, UUID versionRef, String kind,
+                                 String unit, long amountMinor) {
+        boolean exists = Boolean.TRUE.equals(jdbc.sql("""
+                SELECT EXISTS (SELECT 1 FROM station_operations.tariff_component
+                               WHERE component_ref = ?)
+                """)
+                .param(ref)
+                .query(Boolean.class)
+                .single());
+        if (exists) {
+            return;
+        }
+        jdbc.sql("""
+                INSERT INTO station_operations.tariff_component
+                    (component_ref, tariff_version_ref, component_kind, unit, amount_minor)
+                VALUES (?, ?, ?, ?, ?)
+                """)
+                .param(ref).param(versionRef).param(kind).param(unit).param(amountMinor)
+                .update();
+    }
+
+    private void insertPolicy() {
+        jdbc.sql("""
+                INSERT INTO station_operations.booking_policy
+                    (policy_ref, organization_ref, display_name)
+                VALUES (?, ?, ?)
+                ON CONFLICT (policy_ref) DO NOTHING
+                """)
+                .param(SeedDataset.POLICY_REF)
+                .param(SeedDataset.ORGANIZATION_REF)
+                .param(SeedDataset.POLICY_NAME)
+                .update();
+        jdbc.sql("""
+                INSERT INTO station_operations.booking_policy_version
+                    (policy_version_ref, policy_ref, version_number, state,
+                     hold_duration_seconds, slot_increment_minutes, min_duration_minutes,
+                     max_duration_minutes, advance_booking_days, near_term_horizon_minutes,
+                     freshness_threshold_seconds, late_arrival_grace_minutes)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (policy_version_ref) DO NOTHING
+                """)
+                .param(SeedDataset.POLICY_VERSION_REF)
+                .param(SeedDataset.POLICY_REF)
+                .param(SeedDataset.POLICY_VERSION_NUMBER)
+                .param(SeedDataset.POLICY_VERSION_STATE)
+                .param(SeedDataset.HOLD_DURATION_SECONDS)
+                .param(SeedDataset.SLOT_INCREMENT_MINUTES)
+                .param(SeedDataset.MIN_DURATION_MINUTES)
+                .param(SeedDataset.MAX_DURATION_MINUTES)
+                .param(SeedDataset.ADVANCE_BOOKING_DAYS)
+                .param(SeedDataset.NEAR_TERM_HORIZON_MINUTES)
+                .param(SeedDataset.FRESHNESS_THRESHOLD_SECONDS)
+                .param(SeedDataset.LATE_ARRIVAL_GRACE_MINUTES)
+                .update();
+    }
+
+    private void insertSimulatorAssignment(SeedDataset.SimulatorAssignment a) {
+        jdbc.sql("""
+                INSERT INTO station_operations.simulator_assignment
+                    (assignment_ref, evse_ref, simulator_device_ref, assigned_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT (assignment_ref) DO NOTHING
+                """)
+                .param(a.assignmentRef()).param(a.evseRef()).param(a.deviceRef())
+                .param(Timestamp.from(Instant.now()))
+                .update();
+    }
+}

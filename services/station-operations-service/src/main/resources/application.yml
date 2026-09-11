@@ -1,6 +1,15 @@
 spring:
   application:
     name: station-operations-service
+  datasource:
+    # station_operations_db only (ARC-022 §4). Runtime role: DML-only.
+    url: ${STA_DB_URL:jdbc:postgresql://127.0.0.1:5432/station_operations_db}
+    username: ${STA_DB_USER:station_operations_runtime}
+    password: ${STA_DB_PASSWORD:evplatform_dev_only}
+  flyway:
+    # Migrations run through the delivery pipeline (migrator role), not at
+    # application boot; the seed profiles assume migrated schema.
+    enabled: false
 
 management:
   endpoints:
