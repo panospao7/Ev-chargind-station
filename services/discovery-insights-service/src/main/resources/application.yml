@@ -1,6 +1,48 @@
 spring:
   application:
     name: discovery-insights-service
+  datasource:
+    # discovery_insights_db only (ARC-022 §4). Runtime role: DML-only.
+    url: ${DISC_DB_URL:jdbc:postgresql://127.0.0.1:5432/discovery_insights_db}
+    username: ${DISC_DB_USER:discovery_insights_runtime}
+    password: ${DISC_DB_PASSWORD:evplatform_dev_only}
+    # Lazy until first use: the context smoke test (and any broker-less boot)
+    # must not require a live database (mirrors station-operations-service).
+    hikari:
+      initialization-fail-timeout: -1
+  rabbitmq:
+    host: ${RABBITMQ_HOST:127.0.0.1}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:evplatform_dev}
+    password: ${RABBITMQ_PASSWORD:evplatform_dev_only}
+    # Consumer-only service: no publisher confirms needed.
+    listener:
+      simple:
+        # Transient-failure handling: bounded container retry, then reject to
+        # the DLQ (x-dead-letter-exchange on the main queue). Disclosed
+        # simplification — requeue-based redelivery is NOT layered on top;
+        # the container retry covers transient DB failures, exhausted
+        # retries dead-letter (AC-06 semantics).
+        retry:
+          enabled: true
+          # Boot 4.x renamed max-attempts → max-retries (max-attempts is a
+          # deprecated-at-error alias that fails the whole retry property
+          # group's binding, silently disabling the interceptor)
+          max-retries: 3
+          initial-interval: 500
+          multiplier: 2.0
+          max-interval: 5000
+  flyway:
+    # Migrations run through the delivery pipeline (migrator role), not at
+    # application boot (mirrors station-operations-service).
+    enabled: false
+
+# Top level, NOT under spring: — @Value("${discovery.consumer.*}") binds
+# against top-level configuration properties only (MSG-002 m4 lesson).
+discovery:
+  consumer:
+    queue-name: ${DISC_CONSUMER_QUEUE:discovery.station.published}
+    dlq-suffix: .dlq
 
 management:
   endpoints:
@@ -11,3 +53,6 @@ management:
     health:
       probes:
         enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}

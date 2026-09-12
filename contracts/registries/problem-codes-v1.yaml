@@ -378,6 +378,22 @@ problemCodes:
       - POST /capacity-restrictions
     releaseWave: W1
 
+  # ──────────────────────────────────────────────────────────────────────────
+  # General Errors (ARC-003 §14)
+  # ──────────────────────────────────────────────────────────────────────────
+
+  # ARC-003 §14 initial shared General code; registry was incomplete relative
+  # to its source (owner-approved scope extension, I1-DSC-001, 2026-09-12).
+  - code: RESOURCE_NOT_FOUND
+    httpStatus: 404
+    retryable: false
+    title: Resource not found
+    detailTemplate: "The requested {resource} does not exist."
+    parameters: [resource]
+    applicableOperations:
+      - GET /api/v1/stations/{stationRef}
+    releaseWave: W1
+
 # =============================================================================
 # End of Problem Codes Registry
 # =============================================================================

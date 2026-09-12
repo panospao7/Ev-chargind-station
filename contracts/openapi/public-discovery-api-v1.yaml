@@ -38,6 +38,40 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/StationSummary'
+  /api/v1/stations/{stationRef}:
+    get:
+      operationId: getStationDetails
+      summary: Get public station details
+      parameters:
+        - name: stationRef
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Station details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationDetails'
+              example:
+                ref: "SEEDSTA0001"
+                name: "Seed Fixture — Athens Center"
+                address: "Fixture Street 1"
+                latitude: 37.983810
+                longitude: 23.727540
+                city: "Athens"
+                postalCode: "10431"
+                countryCode: "GR"
+                updatedAt: "2026-09-12T00:00:00Z"
+                sourceVersion: 0
+        '404':
+          description: Station not found
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
   /api/v1/stations/{stationRef}/availability:
     get:
       operationId: getStationAvailability
@@ -94,6 +128,46 @@ components:
         - name
         - latitude
         - longitude
+    StationDetails:
+      type: object
+      properties:
+        ref:
+          type: string
+          description: Public station reference
+        name:
+          type: string
+          description: Station display name
+        address:
+          type: string
+          description: Street address
+        latitude:
+          type: number
+          description: Latitude in decimal degrees
+        longitude:
+          type: number
+          description: Longitude in decimal degrees
+        city:
+          type: string
+          description: City
+        postalCode:
+          type: string
+          description: Postal code
+        countryCode:
+          type: string
+          description: ISO 3166 alpha-2 country code
+        updatedAt:
+          type: string
+          format: date-time
+          description: Projection update timestamp (operational freshness)
+        sourceVersion:
+          type: integer
+          description: Source aggregate version of the last applied event
+      required:
+        - ref
+        - name
+        - latitude
+        - longitude
+        - updatedAt
     StationAvailability:
       type: object
       properties:
