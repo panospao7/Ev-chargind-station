@@ -1,0 +1,286 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-MSG-003"
+  title: "Wire envelope extensions — emit aggregateid/aggregateversion/correlationid/dataschema on the wire (S1-09 prerequisite)"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-03"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L2"
+  owner: "Backend/Data Architect and Project Owner"
+  createdAt: "2026-09-12"
+  baselineCommit: null
+
+objective: >
+  Extend the StationPublished wire envelope emitted by the station-operations
+  outbox with the CloudEvents extensions ARC-014 §2 adopts —
+  `correlationid`, `causationid`, `traceparent`, `aggregateid`,
+  `aggregateversion` — plus `dataschema` (pointing at the executable schema
+  $id). S1-09 requires version/sequence validation in consumers (ARC-014 §5:
+  event ID dedup, aggregate version ordering detection, last-applied version,
+  gap detection); a consumer cannot implement that without these attributes
+  on the wire. The outbox_message columns already carry workflow/correlation/
+  causation and aggregate version (ARC-022 §8.1) — this task surfaces them on
+  the wire. Backward-compatible: the executable cloud-event.json schema
+  already permits these attributes (extension attributes are additional
+  properties; no schema change, no registry change). Scope is the STA seed's
+  StationPublished emission path only — the OutboxWriter API gains optional
+  extension attributes; no other message family is emitted yet.
+
+origin: >
+  Contract reviewer finding (I1-MSG-001, post-merge review, finding 3):
+  "envelope omits dataschema and the declared extensions; correlation/
+  causation exist only as outbox columns and never reach the wire, so
+  consumers cannot correlate or order-detect from the message itself (ARC-014
+  §5 relies on aggregate version on the wire)". Recorded in
+  delivery/handoffs/I1-MSG-001/05-orchestrator.md NOTEs and flagged as
+  required before I1-DSC-001. Owner approved this task as a DSC-001
+  prerequisite on 2026-09-12.
+
+requirements:
+  - "FR-PLT-02 — idempotent consumption (needs event ID + dedup support)."
+  - "GOV-007 §3 S1-09 — version/sequence validation (needs aggregate version
+    on the wire)."
+  - "ARC-014 §2 — CloudEvents envelope with dataschema and the declared
+    extensions (correlationid, causationid, traceparent, aggregateid,
+    aggregateversion)."
+
+useCases:
+  - "Enabling infrastructure for UC-DR-001 (discovery); no direct use-case
+    behavior."
+
+authority:
+  governance:
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§3 S1-09 (version/sequence validation)"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "FR-PLT-02"
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md"
+      section: "§2 envelope (dataschema + extensions), §5 ordering clarification"
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "§8.1 outbox_message fields (source columns for the extensions)"
+  contracts:
+    - path: "contracts/schemas/common/cloud-event.json"
+      identifiers: ["envelope — extensions are additional properties, NO change"]
+
+invariants:
+  - "Business change and outbox record commit atomically (AGENTS.md §4)."
+  - "No schema/registry change (extensions are additional properties in the
+    executable schema)."
+  - "Applied migrations immutable (no migration in this task)."
+  - "Tokens and personal data never enter broker messages (AGENTS.md §4)."
+
+ownership:
+  owningService: "station-operations-service"
+  dataOwner: "Station Operations Service (station_operations_db)"
+  supportingServices:
+    - "discovery-insights-service (future consumer — not modified here)"
+  prohibitedOwners:
+    - "Browser runtime"
+
+affectedArtifacts:
+  services:
+    - "station-operations-service (OutboxWriter extension attributes; seed
+      emission; ContractSchemaValidationTest extended)"
+  modules:
+    - "services/station-operations-service/src/main/java (OutboxWriter, seeder)"
+    - "services/station-operations-service/src/test/java"
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations: []
+  commands: []
+  events:
+    - "StationPublished wire envelope gains extension attributes (payload
+      unchanged)"
+  schemas: []
+  registries: []
+  screens: []
+  infrastructure: []
+
+dependencies:
+  tasks:
+    - "I1-MSG-002 (VERIFIED — dispatcher/outbox foundation)"
+  contracts:
+    - "contracts/schemas/common/cloud-event.json (unchanged; validation target)"
+  infrastructure: []
+  humanDecisions:
+    - "Owner approved this task as an I1-DSC-001 prerequisite (interactive
+      session decision 2026-09-12)."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "services/station-operations-service/**"
+    - "delivery/handoffs/I1-MSG-003/**"
+    - "delivery/evidence/I1-MSG-003/**"
+    - "delivery/deviations/I1-MSG-003/**"
+
+  prohibitedFiles:
+    - "contracts/**"
+    - "docs/**"
+    - "services/account-service/**"
+    - "services/booking-session-service/**"
+    - "services/device-integration-service/**"
+    - "services/discovery-insights-service/**"
+    - "services/notification-service/**"
+    - "services/governance-support-service/**"
+    - "apps/**"
+    - "simulator/**"
+    - "infra/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+
+  maximumExpectedDiff: >
+    Small: OutboxWriter gains optional extension parameters (or an extensions
+    map) persisted into the existing §8.1 columns and surfaced into the wire
+    envelope at send time or write time; seed emits them; tests extended.
+    ~100 lines plus tests. No contract, schema, registry, or migration
+    change.
+
+  generatedFilesPolicy: >
+    Hand-authored sources; envelope continues to validate against the
+    existing executable schemas (never duplicated).
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      StationPublished envelopes on the wire carry the ARC-014 §2 extensions:
+      correlationid (from the outbox correlation_id), aggregateid (aggregate
+      ref), aggregateversion (aggregate version), and dataschema (the
+      executable schema $id); causationid/traceparent emitted when
+      available (causation_id nullable — may be absent for seed-originated
+      facts, which is acceptable and must be stated).
+    authorityReferences:
+      - "ARC-014 §2; I1-MSG-001 review finding"
+    evidenceRequired:
+      - "integration test asserting the wire envelope attributes"
+    testTypes: ["integration", "contract"]
+
+  - id: "AC-02"
+    statement: >
+      Envelopes still validate against contracts/schemas/common/cloud-event.json
+      (extensions are additional properties) and payloads still validate
+      against station-published-event.json; the existing ContractSchema
+      ValidationTest extended to assert the new attributes and remains green.
+    authorityReferences:
+      - "ARC-022 §19 items 9, 15"
+    evidenceRequired:
+      - "schema-validation test output"
+    testTypes: ["contract"]
+
+  - id: "AC-03"
+    statement: >
+      The dispatcher sends the enriched envelope without behavior change:
+      confirms, mandatory, UNROUTABLE handling, claim protocol, and all
+      existing tests remain green (no regression in the 24-test suite).
+    authorityReferences:
+      - "I1-MSG-002 acceptance criteria (regression guard)"
+    evidenceRequired:
+      - "full focused suite output"
+    testTypes: ["integration"]
+
+  - id: "AC-04"
+    statement: >
+      Idempotency preserved: the §8.1 event-fact uniqueness still governs
+      emission; re-seeding produces no duplicate facts and no duplicate wire
+      messages beyond the at-least-once contract.
+    authorityReferences:
+      - "AGENTS.md §4; ARC-022 §8.1"
+    evidenceRequired:
+      - "existing dedup tests remain green"
+    testTypes: ["integration"]
+
+tests:
+  focusedCommands:
+    - "./mvnw -pl services/station-operations-service -am test"
+  requiredSuites:
+    - "./mvnw test"
+    - "npm run contracts:verify"
+    - "node scripts/delivery/validate.mjs"
+    - "npm run contracts:secrets"
+    - "git diff --check"
+  positiveCases:
+    - "Seed emits envelope with correlationid/aggregateid/aggregateversion/dataschema; dispatcher publishes unchanged."
+  negativeCases:
+    - "Envelope validation still rejects missing required attributes (negative control retained)."
+  boundaryCases: []
+  concurrencyCases: []
+  securityCases:
+    - "No tokens/personal data in the new attributes; secret scan green."
+  contractCases:
+    - "Enriched envelope validates against cloud-event.json (extensions as additional properties)."
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: false
+  threatChanges:
+    - "None — extensions carry only aggregate/correlation references (public
+      station data context)."
+  dataClassifications:
+    - "Public station reference metadata (unchanged)"
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData:
+    - "Tokens, credentials, personal data in broker messages"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: true
+  dataReviewer: false
+  securityReviewer: false
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L2 contract-adjacent)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-MSG-003/envelope-extensions.md"
+  requiredCiChecks:
+    - "Service Tests workflow green on the PR (JDK 25)"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "traceparent may be emitted as a static/absent value for seed-originated
+    facts (no ambient trace context in the seeder); stated honestly if so."
+  - "dataschema value is the executable schema $id
+    (https://schema-registry.example.com/events/station-published-event.json)."
+  - "Envelope construction moves (or is duplicated at) send time only if
+    needed to carry the extensions; payload content is unchanged."
+
+openQuestions: []
+
+recordedDecisions:
+  - "Owner selected the minimal first slice for I1-DSC-001 and approved this
+    task as its prerequisite (interactive session, 2026-09-12)."
+  - "Owner approved the L2 public-discovery details endpoint (planned in
+    I1-DSC-001, not this task)."
+  - "Owner approved I1-CON-004 (AsyncAPI alignment) as a parallel
+    prerequisite."
