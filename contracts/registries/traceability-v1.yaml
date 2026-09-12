@@ -148,13 +148,20 @@ traceability:
     owningService: discovery-insights-service
     apis:
       - GetStationDetails
-    messages: []
+      - ListStations
+    messages:
+      - EVSEConfigurationChanged
+      - ConnectorConfigurationChanged
+      - TariffPublished
     commands: []
     tests: []
     epic: "EP-DIS-02"
     securityRule: "Public-field allowlist"
     dbTables:
       - station_search_projection
+      - evse_search_projection
+      - connector_search_projection
+      - tariff_public_projection
       - projection_checkpoint
     status: "IMPLEMENTED"
 

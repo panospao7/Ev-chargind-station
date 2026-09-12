@@ -656,14 +656,15 @@ tasks:
       status: "NOT_STARTED"
       paths: []
   I1-DSC-002:
-    state: "CLAIMED"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-12T23:00:00Z"
 
     baselineCommit: "753c31abeb9dbca740f41a2f6eebc38711d0c6e2"
     branch: "task/i1-dsc-002-depth"
-    candidateCommit: null
-    pullRequest: null
+    candidateCommit: "ae0490fb7b39ac0b30aa1241002d59d117a2f923"
+    mergeCommit: "fe58261927b9dcbe4c84e44dcc3d511cde0d96e9"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/36"
 
     blockers: []
 
@@ -699,7 +700,7 @@ summary:
   counts:
     BACKLOG: 0
     READY: 0
-    CLAIMED: 1
+    CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
@@ -708,7 +709,7 @@ summary:
     CI_PENDING: 0
     HUMAN_REVIEW: 0
     MERGED: 0
-    VERIFIED: 14
+    VERIFIED: 15
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0

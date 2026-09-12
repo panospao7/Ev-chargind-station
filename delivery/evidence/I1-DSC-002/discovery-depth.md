@@ -73,13 +73,15 @@ every station.
 
 ## Authoritative CI status
 
-`NOT_RUN at evidence time — CI_PENDING on push.` Required checks: Service
-Tests (both jobs), Database Migrations (PG18 — Discovery V3), G3 Contract
-Validation. Run references to be appended at closeout:
+**ALL 11 CHECKS GREEN at PR head ae0490fb (verified via GitHub API
+check-runs), owner merged as PR #36 (merge commit fe582619, 2026-09-13):**
 
-- Service Tests: PENDING
-- Database Migrations: PENDING
-- G3 Contract Validation: PENDING
+- Discovery Insights Service (first slice): **success** (16 tests, JDK 25)
+- Station Operations Service (S1-01 seed): **success** (25 tests, JDK 25)
+- Flyway Migrations and Role Separation (PostgreSQL 18): **success**
+  (Discovery V3 fresh-install + role separation)
+- Required Aggregation: success; all 7 G3 sub-checks: success (OpenAPI with
+  the extended shapes, registries, schemas, privacy, secrets, docs, self-test)
 
 ## Residual tracked items (non-blocking)
 
