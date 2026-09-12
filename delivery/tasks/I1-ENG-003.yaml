@@ -1,0 +1,262 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-ENG-003"
+  title: "CI coverage — extend Service Tests workflow to Discovery; verify STA listener retry config for the Boot 4.1.1 MANUAL-ack pattern"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-01"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L2"
+  owner: "Delivery Engineering and Project Owner"
+  createdAt: "2026-09-12"
+  baselineCommit: null
+
+objective: >
+  Close the CI coverage gap exposed by I1-DSC-001: the Service Tests
+  workflow's path filter covers only services/station-operations-service/**,
+  so Discovery's 27-test suite never runs in CI (disclosed NOT_RUN in the
+  I1-DSC-001 closeout, owner-approved disposition). Extend the path triggers
+  to include services/discovery-insights-service/** and prove Discovery's
+  suite green in CI (JDK 25). Additionally verify the station-operations
+  listener/outbox configuration against the Boot 4.1.1 findings from the
+  I1-DSC-001 fix round (deprecated max-attempts key; MANUAL-ack retry chain
+  behavior) and apply the same honest-config corrections if the pattern is
+  shared. Also restore the disclosed-but-inert bounded container retry for
+  Discovery's transient DB failures OR record the immediate-DLQ behavior as
+  the approved design — one or the other, no silent third state.
+
+origin: >
+  I1-DSC-001 closeout (delivery/handoffs/I1-DSC-001/02-orchestrator.md):
+  Service Tests NOT_RUN at the merge commit because service-tests.yml has no
+  path trigger for discovery-insights-service; owner chose "close + follow-up
+  task". The listener-retry item comes from the I1-DSC-001 fix-round coder's
+  bytecode-verified findings (Boot 4.1.1 renamed the retry key;
+  spring-retry is not used by spring-amqp 4.1.1; MANUAL-ack listeners park
+  silently without an active advice chain).
+
+requirements:
+  - "FR-PLT-04 — CI/CD quality gates (implied by the delivery foundation
+    epic; the workflow is a G-gate enabler)."
+
+useCases:
+  - "Enabling infrastructure for all Discovery tasks; no direct use-case
+    behavior."
+
+authority:
+  governance:
+    - path: "docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md"
+      section: "CI/CD pipeline definition (scoped workflows)"
+  requirements: []
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "§11 testing rules (real PostgreSQL/rabbit gates in CI)"
+  contracts: []
+
+invariants:
+  - "CI gates cannot be weakened to obtain green runs (AGENTS.md §11)."
+  - "Every behavior change requires appropriate tests (AGENTS.md §10)."
+
+ownership:
+  owningService: "delivery infrastructure (GitHub Actions workflow)"
+  dataOwner: "n/a"
+  supportingServices:
+    - "station-operations-service (listener config check only)"
+    - "discovery-insights-service (CI coverage subject)"
+  prohibitedOwners: []
+
+affectedArtifacts:
+  services:
+    - "discovery-insights-service (possible retry-config correction)"
+    - "station-operations-service (possible listener-config correction —
+      bounded to the retry/deprecated-key pattern only)"
+  modules:
+    - ".github/workflows/service-tests.yml (path triggers)"
+    - "services/*/src/main/resources/application.yml (listener retry blocks,
+      if correction needed)"
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations: []
+  commands: []
+  events: []
+  schemas: []
+  registries: []
+  screens: []
+  infrastructure:
+    - "GitHub Actions workflow (path filter change only — no permission,
+      secret, or runner changes)"
+
+dependencies:
+  tasks:
+    - "I1-DSC-001 (VERIFIED — the task that exposed the gap)"
+  contracts: []
+  infrastructure:
+    - "GitHub Actions runners (JDK 25 temurin, Docker)"
+  humanDecisions:
+    - "Owner approval via planning-PR merge (L2: CI workflow change)."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - ".github/workflows/service-tests.yml"
+    - "services/discovery-insights-service/src/main/resources/application.yml"
+    - "services/station-operations-service/src/main/resources/application.yml"
+    - "services/discovery-insights-service/src/main/java/com/evplatform/discoveryinsights/consumer/StationPublishedConsumer.java"
+    - "delivery/handoffs/I1-ENG-003/**"
+    - "delivery/evidence/I1-ENG-003/**"
+    - "delivery/deviations/I1-ENG-003/**"
+
+  prohibitedFiles:
+    - "contracts/**"
+    - "docs/**"
+    - "services/account-service/**"
+    - "services/booking-session-service/**"
+    - "services/device-integration-service/**"
+    - "services/notification-service/**"
+    - "services/governance-support-service/**"
+    - "apps/**"
+    - "simulator/**"
+    - "infra/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+    - ".github/workflows/db-migrations.yml"
+    - ".github/workflows/g3-contract-validation.yml"
+
+  maximumExpectedDiff: >
+    Bounded: one workflow path-filter extension (+2 lines), possible small
+    listener-retry corrections in one or two application.yml files, possible
+    small consumer adjustment if the retry chain is restored. No product
+    logic changes, no contract changes, no new dependencies.
+
+  generatedFilesPolicy: >
+    Hand-edited workflow and configuration only.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      The Service Tests workflow triggers on changes to
+      services/discovery-insights-service/** and executes Discovery's full
+      suite green on JDK 25 (proven by the workflow run on this PR).
+    authorityReferences:
+      - "I1-DSC-001 closeout; delivery foundation doc"
+    evidenceRequired:
+      - "workflow run reference (green) on this PR"
+    testTypes: ["ci"]
+
+  - id: "AC-02"
+    statement: >
+      The Service Tests workflow continues to trigger and pass for
+      station-operations-service (no regression in the existing trigger).
+    authorityReferences:
+      - "Existing workflow behavior"
+    evidenceRequired:
+      - "workflow run reference (green) on this PR"
+    testTypes: ["ci"]
+
+  - id: "AC-03"
+    statement: >
+      STA's listener/outbox configuration is verified against the Boot 4.1.1
+      findings: any deprecated retry keys or inert MANUAL-ack retry chains
+      are corrected to honest configuration, or the current behavior is
+      explicitly documented as the approved design. Discovery's transient
+      DB-failure path is either wired to the bounded container retry (restored
+      advice chain) or recorded as immediate-DLQ-by-design in the consumer
+      javadoc and the evidence file — no silent divergence between disclosed
+      and actual behavior.
+    authorityReferences:
+      - "I1-DSC-001 fix-round findings; AGENTS.md §11 (no silent weakening)"
+    evidenceRequired:
+      - "config diff + verification note in the evidence file"
+    testTypes: ["configuration", "review"]
+
+  - id: "AC-04"
+    statement: >
+      No workflow permissions, secrets, runners, or other CI security
+      surfaces are changed; the diff is limited to path triggers and
+      application configuration.
+    authorityReferences:
+      - "ARC-016 §8 (CI/CD workflow permissions require human confirmation)"
+    evidenceRequired:
+      - "diff review in the evidence file"
+    testTypes: ["review"]
+
+tests:
+  focusedCommands:
+    - ".\\mvnw.cmd -pl services/discovery-insights-service -am test \"-Dmaven.compiler.release=21\""
+    - ".\\mvnw.cmd -pl services/station-operations-service -am test \"-Dmaven.compiler.release=21\""
+  requiredSuites:
+    - "CI: Service Tests workflow green on this PR (both services)"
+  positiveCases:
+    - "Discovery suite green in CI on JDK 25."
+  negativeCases: []
+  boundaryCases: []
+  concurrencyCases: []
+  securityCases:
+    - "No workflow permission/secret changes; secret scan green."
+  contractCases: []
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: false
+  threatChanges:
+    - "None — path-filter extension only; no permission or secret surface
+      changes."
+  dataClassifications: []
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData: []
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: false
+  dataReviewer: false
+  securityReviewer: false
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L2 — CI workflow change)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-ENG-003/ci-coverage.md"
+  requiredCiChecks:
+    - "Service Tests workflow green on the PR covering BOTH services"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "The workflow change is additive to path filters; no job/step/permission
+    changes."
+  - "If the STA listener config proves clean, AC-03 is satisfied by the
+    verification note alone (no diff)."
+  - "Retry-chain restoration vs immediate-DLQ recording is an implementation
+    choice within this task; either is acceptable if honestly documented."
+
+openQuestions: []
+
+recordedDecisions:
+  - "Owner approved closing I1-DSC-001 with the disclosed CI gap and spawning
+    this follow-up (interactive session, 2026-09-12)."
