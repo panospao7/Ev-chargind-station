@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.AmqpHeaders;
@@ -78,10 +77,12 @@ import java.util.UUID;
  *   <li>Payload-shape RuntimeExceptions (Jackson coercion failures on
  *       malformed numerics, missing required fields) are PERMANENT → reject
  *       to DLQ [category=PAYLOAD_INVALID].</li>
- *   <li>Transient DataAccessException → rollback and rethrow; the container
- *       retry (spring.rabbitmq.listener.simple.retry: 3 attempts, 500ms
- *       initial) redelivers; exhausted retries dead-letter via the broker
- *       (container reject → DLQ). Disclosed simplification per task packet.</li>
+ *   <li>Transient DataAccessException → rollback and RETHROW THE ORIGINAL
+ *       EXCEPTION (not wrapped in AmqpRejectAndDontRequeueException, which
+ *       would bypass the retry interceptor and dead-letter immediately);
+ *       the yml-configured container retry (3 attempts, 500ms initial)
+ *       redelivers; the default RejectAndDontRequeueRecoverer then rejects
+ *       to the DLQ. Corrected by I1-ENG-003 after the Boot 4.1.1 findings.</li>
  * </ol>
  *
  * <p>Manual acks (ackMode MANUAL): ack on every terminal outcome
@@ -233,8 +234,13 @@ public class StationPublishedConsumer {
             // retry (bounded) and finally dead-letter handle redelivery
             log.warn("Discovery consumer: transient DB failure for message {} "
                     + "[category=TRANSIENT_DB_FAILURE]", messageId);
-            throw new AmqpRejectAndDontRequeueException(
-                    "transient DB failure; container retry then DLQ", transientOrDbFailure);
+            // Rethrow the ORIGINAL exception (do NOT wrap in
+            // AmqpRejectAndDontRequeueException - that signals the container
+            // to reject immediately, bypassing the retry interceptor). With
+            // the yml-configured stateless retry + RejectAndDontRequeueRecoverer
+            // default, the container retries bounded times, then the
+            // recoverer rejects to the DLQ. Honest per Boot 4.1.1 findings.
+            throw transientOrDbFailure;
         } catch (RuntimeException payloadShapeFailure) {
             // Payload-shape defects (Jackson coercion failures on malformed
             // numerics, missing required fields, illegal casts) are PERMANENT:
