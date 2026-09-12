@@ -656,17 +656,16 @@ tasks:
       status: "NOT_STARTED"
       paths: []
   I1-DSC-002:
-    state: "READY"
-    assignedAgent: null
-    claimedAt: null
+    state: "CLAIMED"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-12T23:00:00Z"
 
-    baselineCommit: null
-    branch: null
+    baselineCommit: "753c31abeb9dbca740f41a2f6eebc38711d0c6e2"
+    branch: "task/i1-dsc-002-depth"
     candidateCommit: null
     pullRequest: null
 
-    blockers:
-      - "Owner packet approval pending (L2; planning-PR merge = approval precedent)"
+    blockers: []
 
     deviations: []
     unresolvedFindings: []
@@ -699,8 +698,8 @@ tasks:
 summary:
   counts:
     BACKLOG: 0
-    READY: 1
-    CLAIMED: 0
+    READY: 0
+    CLAIMED: 1
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
