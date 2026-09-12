@@ -5,7 +5,9 @@
 -- projection) and §8 (common integration persistence; Discovery owns its own
 -- copies as a message-consuming service). Public reference data ONLY — no
 -- account, driver or vehicle identifiers (ARC-022 §9).
--- Explicit stable constraint names per §10.
+-- Explicit stable constraint names per §10. (audit_event PK named explicitly
+-- per ARC-022 §10; amended pre-application, never applied to a shared
+-- environment)
 -- =============================================================================
 
 -- ── 9. station_search_projection ────────────────────────────────────────────
@@ -75,7 +77,7 @@ CREATE TABLE discovery_insights.inbox_message (
 -- ── 8.4 audit_event (append-only; runtime role may insert only) ────────────
 
 CREATE TABLE discovery_insights.audit_event (
-    audit_ref       uuid PRIMARY KEY,
+    audit_ref       uuid         CONSTRAINT pk_audit_event PRIMARY KEY,
     actor           varchar(96)  NOT NULL,
     calling_service varchar(96)  NOT NULL,
     action          varchar(96)  NOT NULL,
