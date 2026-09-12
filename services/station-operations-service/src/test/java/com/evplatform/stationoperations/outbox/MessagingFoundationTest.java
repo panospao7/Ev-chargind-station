@@ -48,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -165,6 +166,37 @@ class MessagingFoundationTest {
     private static String rowState(UUID messageId) throws Exception {
         return scalar("SELECT state FROM " + SCHEMA + ".outbox_message "
                 + "WHERE message_id = '" + messageId + "'");
+    }
+
+    /**
+     * Selects the §8.1 traceability columns for one outbox message so the
+     * consumed wire envelope can be asserted against the authoritative
+     * columns (I1-MSG-003).
+     */
+    private record OutboxColumns(UUID correlationId, UUID causationId,
+                                 UUID aggregateRef, long aggregateVersion,
+                                 String classification) {
+    }
+
+    private static OutboxColumns outboxColumns(UUID messageId) throws Exception {
+        try (Connection c = connect(RUNTIME);
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT correlation_id, causation_id, aggregate_ref, aggregate_version, "
+                             + "classification "
+                             + "FROM " + SCHEMA + ".outbox_message WHERE message_id = ?")) {
+            ps.setObject(1, messageId);
+            try (ResultSet rs = ps.executeQuery()) {
+                assertTrue(rs.next(), "outbox row must exist: " + messageId);
+                long version = rs.getLong("aggregate_version");
+                assertFalse(rs.wasNull(), "aggregate_version must not be null");
+                UUID correlation = rs.getObject("correlation_id", UUID.class);
+                UUID causation = rs.getObject("causation_id", UUID.class);
+                UUID aggregateRef = rs.getObject("aggregate_ref", UUID.class);
+                String classification = rs.getString("classification");
+                return new OutboxColumns(correlation, causation, aggregateRef, version,
+                        classification);
+            }
+        }
     }
 
     private static int outboxCount(String where) throws Exception {
@@ -291,6 +323,34 @@ class MessagingFoundationTest {
                 assertEquals("1.0", envelope.get("specversion").asText());
                 assertEquals("com.evplatform.station.published.v1",
                         envelope.get("type").asText());
+
+                // I1-MSG-003: the wire envelope must carry the ARC-014 §2
+                // extension attributes derived from the outbox columns.
+                UUID consumedId = UUID.fromString(envelope.get("id").asText());
+                assertEquals("https://schema-registry.example.com/events/station-published-event.json",
+                        envelope.get("dataschema").asText(),
+                        "dataschema must map the message type to the event schema $id");
+                OutboxColumns columns = outboxColumns(consumedId);
+                assertEquals(columns.correlationId().toString(),
+                        envelope.get("correlationid").asText(),
+                        "correlationid must equal the outbox correlation_id column");
+                assertEquals(columns.aggregateRef().toString(),
+                        envelope.get("aggregateid").asText(),
+                        "aggregateid must equal the outbox aggregate_ref column");
+                assertEquals(columns.aggregateVersion(),
+                        envelope.get("aggregateversion").asLong(),
+                        "aggregateversion must equal the outbox aggregate_version column as a number");
+                assertEquals(columns.classification(),
+                        envelope.get("classification").asText(),
+                        "classification must equal the outbox classification column");
+                // seed facts have NULL causation_id → the attribute must be
+                // absent entirely (never serialized as null), and traceparent
+                // is never emitted (AC-01 honest-disclosure assertions).
+                assertNull(envelope.get("causationid"),
+                        "causationid must be absent for NULL causation_id, not null-valued");
+                assertNull(envelope.get("traceparent"),
+                        "traceparent must never be emitted by the dispatcher");
+
                 // inbox deduplication: first delivery processes, duplicates skip
                 String consumer = "poc-discovery-projection";
                 boolean first = Boolean.TRUE.equals(jdbc(RUNTIME).sql("""

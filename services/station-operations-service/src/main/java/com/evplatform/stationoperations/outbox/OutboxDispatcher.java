@@ -1,5 +1,8 @@
 package com.evplatform.stationoperations.outbox;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.beans.factory.annotation.Value;
@@ -8,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -24,10 +28,23 @@ import java.util.concurrent.TimeUnit;
  * (safe failure category recorded). Delivery is at-least-once: consumers
  * deduplicate via the inbox (FR-PLT-02). Cross-instance dispatch may
  * reorder per-aggregate facts across batches; consumers order by
- * aggregate version (ARC-014 §5).
+ * aggregate version (ARC-014 §5). Wire envelopes carry the ARC-020 §2 /
+ * ARC-004 §4 extension attributes, derived from the outbox columns at send
+ * time (see {@link #enrichedPayload}).
  */
 @Component
 public class OutboxDispatcher {
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /**
+     * ARC-020 §2 / ARC-004 §4 dataschema mapping: message_type → the $id of
+     * the executable event schema. Unmapped message types emit no dataschema
+     * attribute (disclosed behavior; no fail-fast).
+     */
+    private static final Map<String, String> DATASCHEMA_BY_MESSAGE_TYPE = Map.of(
+            "com.evplatform.station.published.v1",
+            "https://schema-registry.example.com/events/station-published-event.json");
 
     private final JdbcClient jdbc;
     private final RabbitTemplate rabbit;
@@ -62,7 +79,9 @@ public class OutboxDispatcher {
         return key;
     }
 
-    record OutboxRow(UUID messageId, String messageType, String payload, int attemptCount) {
+    record OutboxRow(UUID messageId, String messageType, String payload, int attemptCount,
+                     UUID correlationId, UUID causationId, UUID aggregateRef,
+                     long aggregateVersion, String classification) {
     }
 
     /**
@@ -85,15 +104,72 @@ public class OutboxDispatcher {
                     ORDER BY aggregate_ref, aggregate_version, occurred_at
                     LIMIT 100
                     FOR UPDATE SKIP LOCKED)
-                RETURNING message_id, message_type, payload, attempt_count
+                RETURNING message_id, message_type, payload, attempt_count,
+                         correlation_id, causation_id, aggregate_ref, aggregate_version,
+                         classification
                 """)
                 .param(claimLeaseSeconds)
                 .query((rs, i) -> new OutboxRow(
                         rs.getObject("message_id", UUID.class),
                         rs.getString("message_type"),
                         rs.getString("payload"),
-                        rs.getInt("attempt_count")))
+                        rs.getInt("attempt_count"),
+                        rs.getObject("correlation_id", UUID.class),
+                        rs.getObject("causation_id", UUID.class),
+                        rs.getObject("aggregate_ref", UUID.class),
+                        rs.getLong("aggregate_version"),
+                        rs.getString("classification")))
                 .list();
+    }
+
+    /**
+     * Derives the wire envelope from the stored outbox payload by adding the
+     * ARC-020 §2 / ARC-004 §4 extension attributes, sourced from the outbox
+     * columns claimed in the same batch (single read, no second lookup):
+     *
+     * <ul>
+     *   <li>{@code dataschema} — from {@link #DATASCHEMA_BY_MESSAGE_TYPE};
+     *       omitted for unmapped message types (disclosed behavior, no
+     *       fail-fast)</li>
+     *   <li>{@code correlationid} — correlation_id column (NOT NULL)</li>
+     *   <li>{@code aggregateid} — aggregate_ref column</li>
+     *   <li>{@code aggregateversion} — aggregate_version column, as a JSON
+     *       number</li>
+     *   <li>{@code causationid} — only when causation_id is non-NULL; the
+     *       attribute is omitted entirely otherwise (never serialized as
+     *       null)</li>
+     *   <li>{@code classification} — classification column (ARC-004 §4
+     *       extension, value from the outbox column)</li>
+     *   <li>{@code traceparent} — never emitted: there is no ambient trace
+     *       context here and none is fabricated</li>
+     * </ul>
+     *
+     * The stored payload is expected to be a JSON object (the CloudEvents
+     * envelope the writer validated). A parse failure propagates to the
+     * caller's catch in {@link #dispatchOnce()} and is retried then
+     * quarantined like any other dispatch failure — malformed payloads are
+     * never sent to the broker.
+     */
+    static String enrichedPayload(OutboxRow row) {
+        ObjectNode envelope;
+        try {
+            envelope = (ObjectNode) MAPPER.readTree(row.payload());
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(
+                    "outbox payload is not a JSON object; message_id=" + row.messageId(), e);
+        }
+        String dataschema = DATASCHEMA_BY_MESSAGE_TYPE.get(row.messageType());
+        if (dataschema != null) {
+            envelope.put("dataschema", dataschema);
+        }
+        envelope.put("correlationid", row.correlationId().toString());
+        envelope.put("aggregateid", row.aggregateRef().toString());
+        envelope.put("aggregateversion", row.aggregateVersion());
+        if (row.causationId() != null) {
+            envelope.put("causationid", row.causationId().toString());
+        }
+        envelope.put("classification", row.classification());
+        return envelope.toString();
     }
 
     /** One dispatch pass over the claimed batch. Safe to call repeatedly. */
@@ -103,7 +179,8 @@ public class OutboxDispatcher {
             String routingKey = routingKeyFor(row.messageType());
             try {
                 CorrelationData correlation = new CorrelationData(row.messageId().toString());
-                rabbit.convertAndSend(RabbitTopologyConfiguration.DOMAIN_EXCHANGE, routingKey, row.payload(),
+                rabbit.convertAndSend(RabbitTopologyConfiguration.DOMAIN_EXCHANGE, routingKey,
+                        enrichedPayload(row),
                         m -> {
                             m.getMessageProperties().setCorrelationId(row.messageId().toString());
                             m.getMessageProperties().setContentType("application/json");

@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T15:40:00Z"
+updatedAt: "2026-09-12T16:10:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -490,17 +490,17 @@ tasks:
       paths:
         - "delivery/evidence/I1-MSG-002/messaging-fix-round.md"
   I1-MSG-003:
-    state: "READY"
-    assignedAgent: null
-    claimedAt: null
+    state: "CLAIMED"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-12T16:10:00Z"
 
-    baselineCommit: null
-    branch: null
+    baselineCommit: "c79d5b4db121414cdb89e513375ed7f918b1070b"
+    branch: "task/i1-msg-003-envelope"
     candidateCommit: null
     pullRequest: null
 
     blockers:
-      - "none — prerequisites VERIFIED; owner approved as I1-DSC-001 prerequisite"
+      - "none — packet approved via owner merge of PR #28"
 
     deviations: []
     unresolvedFindings: []
@@ -617,8 +617,8 @@ tasks:
 summary:
   counts:
     BACKLOG: 0
-    READY: 3
-    CLAIMED: 0
+    READY: 2
+    CLAIMED: 1
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
@@ -634,5 +634,5 @@ summary:
     SUPERSEDED: 0
     CANCELLED: 0
 
-  activeTask: "I1-MSG-002"
+  activeTask: "I1-MSG-003"
   nextRecommendedTask: "I1-MSG-003"
