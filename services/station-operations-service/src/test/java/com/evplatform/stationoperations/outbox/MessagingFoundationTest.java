@@ -167,11 +167,6 @@ class MessagingFoundationTest {
                 + "WHERE message_id = '" + messageId + "'");
     }
 
-    private static String rowColumn(UUID messageId, String column) throws Exception {
-        return scalar("SELECT " + column + " FROM " + SCHEMA + ".outbox_message "
-                + "WHERE message_id = '" + messageId + "'");
-    }
-
     private static int outboxCount(String where) throws Exception {
         return count("outbox_message", where);
     }
@@ -574,14 +569,19 @@ class MessagingFoundationTest {
                         "each fact must reach exactly one PUBLISHED outcome");
                 assertEquals(1, outboxCount("message_id = '" + fact
                                 + "' AND attempt_count = 1 AND state = 'PUBLISHED'"),
-                        "a fact sent by both instances would show attempt_count > 1");
+                        "a fact marked by both instances would show attempt_count > 1");
                 assertEquals(0, outboxCount("message_id = '" + fact
                                 + "' AND state = 'QUARANTINED'"),
                         "no fact may be quarantined by the race");
             }
 
-            // drain the POC queue: exactly 3 messages with 3 distinct ids —
-            // a double-send would surface as a duplicate message_id
+            // The DB assertions above are necessary but NOT sufficient to
+            // detect double-publish: the actual detector is this queue
+            // drain — exactly 3 messages with 3 distinct ids. A duplicate
+            // send would surface here as a fourth delivery repeating an
+            // already-seen message_id. (attempt_count only proves the
+            // CAS-guarded markPublished ran once per row, not that the
+            // broker received the message once.)
             Set<String> ids = new LinkedHashSet<>();
             int total = 0;
             var cf = new CachingConnectionFactory(RABBIT.getHost(), RABBIT.getMappedPort(5672));
@@ -661,9 +661,9 @@ class MessagingFoundationTest {
     /**
      * AC-06 (review finding m2): the ON CONFLICT clause must target the
      * event-fact uniqueness constraint explicitly — re-inserting the SAME
-     * fact identity with a different message_id stays a silent no-op, while
-     * a message_id collision on a DIFFERENT fact surfaces as a primary-key
-     * violation instead of being masked.
+     * fact identity (same aggregate_ref, different message_id) stays a
+     * silent no-op, while a message_id collision on a DIFFERENT fact
+     * surfaces as a primary-key violation instead of being masked.
      */
     @Test
     @Order(11)
@@ -673,14 +673,43 @@ class MessagingFoundationTest {
         UUID sameFactOtherMessage = UUID.fromString("00000000-0000-0000-0000-000000000802");
         UUID otherFact = UUID.fromString("00000000-0000-0000-0000-000000000803");
         try {
-            appendFreshFact(writer, fact); // message_id M1 = fact
-            int before = outboxCount("aggregate_ref = '" + fact + "'");
+            appendFreshFact(writer, fact); // message_id 801 = fact, aggregate_ref = fact
+            int before = outboxCount(null);
 
-            // same fact identity (aggregate_type/ref/version/message_type),
-            // different message_id → silent no-op, outbox count unchanged
-            assertDoesNotThrow(() -> appendFreshFact(writer, sameFactOtherMessage));
-            assertEquals(before, outboxCount("aggregate_ref = '" + fact + "'"),
-                    "a duplicate fact insert must be a no-op");
+            // same fact identity (aggregate_type/ref/version/message_type)
+            // as the first fact, different message_id → silent no-op, total
+            // outbox count unchanged. aggregate_ref is deliberately the
+            // FIRST fact's ref: appendFreshFact derives aggregate_ref from
+            // the message id, which would insert a new fact (802) instead
+            // of exercising the event-fact conflict target at all.
+            assertDoesNotThrow(() -> {
+                ObjectNode data = MAPPER.createObjectNode();
+                data.put("stationRef", fact.toString());
+                data.put("publicRef", "FIXSTA-" + fact);
+                data.put("displayName", "Messaging Fixture Station");
+                data.put("addressLine", "Fixture Street 9");
+                data.put("city", "Athens");
+                data.put("postalCode", "10431");
+                data.put("countryCode", "GR");
+                data.put("latitude", 37.983810);
+                data.put("longitude", 23.727540);
+                ObjectNode envelope = MAPPER.createObjectNode();
+                envelope.put("specversion", "1.0");
+                envelope.put("type", "com.evplatform.station.published.v1");
+                envelope.put("source", "//station-operations-service");
+                envelope.put("id", sameFactOtherMessage.toString());
+                envelope.put("time", Instant.now().toString());
+                envelope.put("datacontenttype", "application/json");
+                envelope.put("subject", "station/" + data.get("publicRef").asText());
+                envelope.set("data", data);
+                // message_id = 802, aggregate_ref = fact (801): the SAME fact
+                writer.append(sameFactOtherMessage, "EVENT",
+                        "com.evplatform.station.published.v1",
+                        "Station", fact, 0, fact, null, "BUSINESS",
+                        envelope, Instant.now());
+            });
+            assertEquals(before, outboxCount(null),
+                    "a duplicate fact insert must be a silent no-op (total outbox count unchanged)");
 
             // different fact (different aggregate_ref) reusing message_id M1
             // → PK violation must surface (the fact-conflict target does not

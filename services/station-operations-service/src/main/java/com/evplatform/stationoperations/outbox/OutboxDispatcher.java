@@ -22,7 +22,9 @@ import java.util.concurrent.TimeUnit;
  * CorrelationData future). Failed or unconfirmed publishes increment the
  * attempt count and back off; exhaustion moves the row to QUARANTINED
  * (safe failure category recorded). Delivery is at-least-once: consumers
- * deduplicate via the inbox (FR-PLT-02).
+ * deduplicate via the inbox (FR-PLT-02). Cross-instance dispatch may
+ * reorder per-aggregate facts across batches; consumers order by
+ * aggregate version (ARC-014 §5).
  */
 @Component
 public class OutboxDispatcher {
@@ -123,7 +125,14 @@ public class OutboxDispatcher {
                     markAttempt(row.messageId(), confirm == null ? "confirm-timeout" : "nacked");
                 }
             } catch (Exception e) {
-                markAttempt(row.messageId(), e.getClass().getSimpleName());
+                // failure_category is varchar(48): an over-long exception
+                // class name would throw inside this catch and abort the
+                // batch, so the category is truncated to the column bound.
+                String category = e.getClass().getSimpleName();
+                if (category.length() > 48) {
+                    category = category.substring(0, 48);
+                }
+                markAttempt(row.messageId(), category);
             }
         }
         return published;
