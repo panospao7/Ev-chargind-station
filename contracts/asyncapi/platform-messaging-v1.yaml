@@ -32,7 +32,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: station
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: station.published
@@ -46,7 +46,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: station
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: station.updated
@@ -60,7 +60,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: station
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: station.status-changed
@@ -74,7 +74,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: station
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: station.evse-configuration-changed
@@ -88,7 +88,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: station
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: station.evse-administrative-state-changed
@@ -102,7 +102,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: station
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: station.connector-configuration-changed
@@ -116,7 +116,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: station
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: station.tariff-published
@@ -130,7 +130,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: station
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: station.tariff-retired
@@ -144,7 +144,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: station
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: station.booking-policy-changed
@@ -158,7 +158,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: organization
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: organization.created
@@ -172,7 +172,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: organization
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: organization.status-changed
@@ -185,7 +185,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: booking
+            name: ev.domain.v1
             type: topic
             durable: true
           routingKey: booking.confirmed
@@ -198,10 +198,10 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: session
+            name: ev.domain.v1
             type: topic
             durable: true
-          routingKey: charging.started
+          routingKey: charging.session-started
   station.capacity.restriction.created:
     publish:
       operationId: publishCapacityRestrictionCreated
@@ -211,10 +211,10 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: station
+            name: ev.domain.v1
             type: topic
             durable: true
-          routingKey: capacity.restriction.created
+          routingKey: capacity.restriction-created
   device.online:
     publish:
       operationId: publishDeviceOnline
@@ -224,7 +224,7 @@ channels:
       bindings:
         amqp:
           exchange:
-            name: device
+            name: ev.device.telemetry.v1
             type: topic
             durable: true
           routingKey: device.online
@@ -437,7 +437,7 @@ components:
       bindings:
         amqp:
           contentEncoding: gzip
-          messageType: charging.session.started
+          messageType: charging.session-started
       headers:
         $ref: ../schemas/common/cloud-event.json
     CapacityRestrictionCreated:
@@ -448,29 +448,11 @@ components:
       contentType: application/cloudevents+json
       schemaFormat: application/vnd.aas+json;version=2020-12
       payload:
-        type: object
-        properties:
-          ref:
-            type: string
-          stationRef:
-            type: string
-          startTime:
-            type: string
-            format: date-time
-          endTime:
-            type: string
-            format: date-time
-          reason:
-            type: string
-        required:
-          - ref
-          - stationRef
-          - startTime
-          - endTime
+        $ref: ../schemas/events/capacity-restriction-created-event.json
       bindings:
         amqp:
           contentEncoding: gzip
-          messageType: capacity.restriction.created
+          messageType: capacity.restriction-created
       headers:
         $ref: ../schemas/common/cloud-event.json
     DeviceOnline:
@@ -481,23 +463,7 @@ components:
       contentType: application/cloudevents+json
       schemaFormat: application/vnd.aas+json;version=2020-12
       payload:
-        type: object
-        properties:
-          deviceRef:
-            type: string
-          deviceType:
-            type: string
-          firmwareVersion:
-            type: string
-          ipAddress:
-            type: string
-          onlineAt:
-            type: string
-            format: date-time
-        required:
-          - deviceRef
-          - deviceType
-          - onlineAt
+        $ref: ../schemas/events/device-online-event.json
       bindings:
         amqp:
           contentEncoding: gzip

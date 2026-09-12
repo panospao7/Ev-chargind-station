@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/device-online-event.json",
+  "title": "DeviceOnlineEvent",
+  "description": "Payload for the DeviceOnline event",
+  "type": "object",
+  "properties": {
+    "deviceRef": {
+      "type": "string",
+      "description": "Device reference"
+    },
+    "deviceType": {
+      "type": "string",
+      "description": "Device type"
+    },
+    "firmwareVersion": {
+      "type": "string",
+      "description": "Device firmware version"
+    },
+    "ipAddress": {
+      "type": "string",
+      "description": "Optional diagnostic field; omitted in normal operation"
+    },
+    "onlineAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Time the device came online"
+    }
+  },
+  "required": ["deviceRef", "deviceType", "onlineAt"]
+}

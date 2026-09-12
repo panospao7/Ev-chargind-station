@@ -328,6 +328,18 @@ messages:
     classification: BUSINESS
     aggregateType: CapacityRestriction
 
+  - name: CapacityRestrictionCreated
+    kind: EVENT
+    versionedType: com.evplatform.capacity.restriction-created.v1
+    producer: booking-session-service
+    consumers: [station-operations-service]
+    releaseWave: W1
+    exchange: *ex-domain
+    routingKey: capacity.restriction-created
+    schemaPath: events/capacity-restriction-created-event.json
+    classification: BUSINESS
+    aggregateType: CapacityRestriction
+
   - name: CapacityRestrictionReleased
     kind: EVENT
     versionedType: com.evplatform.capacity.restriction-released.v1
@@ -441,6 +453,18 @@ messages:
     classification: TECHNICAL
     aggregateType: Device
     description: "Normalized device fault. Contains no device credentials or internal diagnostics."
+
+  - name: DeviceOnline
+    kind: EVENT
+    versionedType: com.evplatform.device.online.v1
+    producer: device-integration-service
+    consumers: [station-operations-service]
+    releaseWave: W1
+    exchange: *ex-device-telemetry
+    routingKey: device.online
+    schemaPath: events/device-online-event.json
+    classification: TECHNICAL
+    aggregateType: Device
 
   # ────────────────────────────────────────────────────────────────────────
   # Commands
