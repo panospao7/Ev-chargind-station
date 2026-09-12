@@ -437,7 +437,7 @@ components:
       bindings:
         amqp:
           contentEncoding: gzip
-          messageType: charging.session.started
+          messageType: charging.session-started
       headers:
         $ref: ../schemas/common/cloud-event.json
     CapacityRestrictionCreated:
