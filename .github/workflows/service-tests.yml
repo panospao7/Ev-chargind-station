@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "services/station-operations-service/**"
+      - "services/discovery-insights-service/**"
       - "libraries/test-support/**"
       - "pom.xml"
       - "mvnw"
@@ -13,6 +14,7 @@ on:
     branches: [main]
     paths:
       - "services/station-operations-service/**"
+      - "services/discovery-insights-service/**"
       - "libraries/test-support/**"
       - "pom.xml"
       - "mvnw"
@@ -42,3 +44,20 @@ jobs:
 
       - name: Run station-operations service suite
         run: ./mvnw -pl services/station-operations-service -am test
+
+  discovery-insights:
+    name: Discovery Insights Service (first slice)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Run discovery-insights service suite
+        run: ./mvnw -pl services/discovery-insights-service -am test

@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T21:00:00Z"
+updatedAt: "2026-09-12T21:20:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -614,11 +614,51 @@ tasks:
     evidence:
       status: "NOT_STARTED"
       paths: []
+  I1-ENG-003:
+    state: "CLAIMED"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-12T21:20:00Z"
+
+    baselineCommit: "9eb14eec6ff5c676f7771ed09d5621898922a63d"
+    branch: "task/i1-eng-003-ci-coverage"
+    candidateCommit: null
+    pullRequest: null
+
+    blockers: []
+
+    deviations: []
+    unresolvedFindings: []
+
+    handoffSequence: 0
+    latestHandoff: null
+    reviews:
+      planner: "NOT_STARTED"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_REQUIRED"
+      dataReviewer: "NOT_REQUIRED"
+      securityReviewer: "NOT_REQUIRED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "L2 CI workflow change; owner approval via PR merge"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
 summary:
   counts:
     BACKLOG: 0
     READY: 0
-    CLAIMED: 0
+    CLAIMED: 1
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
