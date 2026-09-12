@@ -222,6 +222,7 @@ class DiscoverySliceIntegrationTest {
                 "uq_station_search_public_ref", "station_search_projection",
                 "pk_projection_checkpoint", "projection_checkpoint",
                 "pk_inbox_message", "inbox_message",
+                "ck_inbox_processing_outcome", "inbox_message",
                 "pk_audit_event", "audit_event");
         for (var entry : constraintRelations.entrySet()) {
             Integer n = jdbc(MIGRATOR).sql("""
@@ -384,6 +385,20 @@ class DiscoverySliceIntegrationTest {
                         + "WHERE projection_name = 'station_search_projection'");
         assertNotNull(gapAt, "gap_recorded_at must be set");
 
+        // gap evidence is PRESERVED on the completed inbox row: a gap-apply
+        // fact completes with the VERSION_GAP failure_category kept (not
+        // NULLed) — the completed inbox row is the durable gap trace once the
+        // checkpoint's gap fields are overwritten by the next in-sequence fact
+        String gapCategory = scalar(
+                "SELECT failure_category FROM " + SCHEMA + ".inbox_message "
+                        + "WHERE message_id = '" + FACT_V5_ID + "'");
+        assertEquals("VERSION_GAP", gapCategory,
+                "completed gap-apply inbox row must preserve failure_category=VERSION_GAP");
+        String gapOutcome = scalar(
+                "SELECT processing_outcome FROM " + SCHEMA + ".inbox_message "
+                        + "WHERE message_id = '" + FACT_V5_ID + "'");
+        assertEquals("COMPLETED", gapOutcome);
+
         // late v1 for the same aggregate: §7.1 guard must keep v5
         FACT_V1_ENVELOPE = envelope(FACT_V1_ID, FACT_A_AGG.toString(), 1,
                 "FIXSTA-A", "Fixture Station A v1", 37.980000, 23.720000, "Athens");
@@ -420,6 +435,49 @@ class DiscoverySliceIntegrationTest {
 
     private static void publishRaw(String body) {
         RABBIT_TEMPLATE.convertAndSend("ev.domain.v1", "station.published", body);
+    }
+
+    @Test
+    @Order(9)
+    void aggregatePayloadMismatchGoesToDlq() throws Exception {
+        // envelope aggregateid points at one station, payload stationRef at
+        // another → poison-classified (AGGREGATE_PAYLOAD_MISMATCH) → DLQ;
+        // no projection row may be created for the payload's stationRef.
+        UUID mismatchId = UUID.fromString("00000000-0000-0000-0000-00000000d005");
+        String aggB = "00000000-0000-0000-0000-00000000a002"; // station B's aggregate
+        ObjectNode mismatched = envelope(mismatchId, aggB, 0,
+                "FIXSTA-C", "Fixture Station C", 48.856600, 2.352200, "Paris");
+        ((ObjectNode) mismatched.get("data")).put("stationRef",
+                "00000000-0000-0000-0000-00000000a999"); // ≠ aggregateid
+        publish(mismatched);
+
+        String dlqBody = pollDlq(15_000);
+        assertNotNull(dlqBody, "aggregate/payload mismatch must be dead-lettered");
+        assertEquals(mismatched.toString(), dlqBody);
+        assertEquals(0, count("station_search_projection", "public_ref = 'FIXSTA-C'"),
+                "mismatched fact must not be projected");
+    }
+
+    @Test
+    @Order(10)
+    void malformedNumericPayloadGoesToDlq() throws Exception {
+        // security finding 1 companion (documented current behavior; full
+        // JSON-schema validation is the booked hardening follow-up): a
+        // non-numeric latitude makes Jackson's decimalValue() coercion throw
+        // inside the DB transaction → rollback → container retry exhausts →
+        // reject → DLQ; no projection row may exist for the fact.
+        UUID badNumericId = UUID.fromString("00000000-0000-0000-0000-00000000d006");
+        String aggC = "00000000-0000-0000-0000-00000000a003";
+        ObjectNode badNumeric = envelope(badNumericId, aggC, 0,
+                "FIXSTA-D", "Fixture Station D", 0, 0, "Athens");
+        ((ObjectNode) badNumeric.get("data")).put("latitude", "not-a-number");
+        publish(badNumeric);
+
+        String dlqBody = pollDlq(15_000);
+        assertNotNull(dlqBody, "malformed numeric payload must be dead-lettered");
+        assertEquals(badNumeric.toString(), dlqBody);
+        assertEquals(0, count("station_search_projection", "public_ref = 'FIXSTA-D'"),
+                "malformed fact must not be projected");
     }
 
     /** basicGet poll of the DLQ (manual ack, mirrors the STA harness). */
@@ -489,6 +547,23 @@ class DiscoverySliceIntegrationTest {
         assertEquals("GR", d.get("countryCode").asText());
         assertEquals(5L, d.get("sourceVersion").asLong());
         assertNotNull(d.get("updatedAt"));
+
+        // Privacy absence assertions (ARC-022 §9): the details response must
+        // not expose the internal station identity. Checked explicitly here —
+        // (a) no "stationRef" field anywhere in the body, (b) no UUID-shaped
+        // value anywhere in the body (the fixture aggregate UUIDs are
+        // FACT_A_AGG and FACT_B's aggregate; DTOs carry no such field, this
+        // asserts the wire representation too).
+        String detailsBody = details.getBody();
+        assertFalse(detailsBody.contains("\"stationRef\""),
+                "details response must not contain a stationRef field");
+        String uuidPattern = "\"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+                + "[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\"";
+        assertFalse(detailsBody.matches(".*" + uuidPattern + ".*"),
+                "details response must not contain any UUID-shaped value: " + detailsBody);
+        // and specifically the fixture's own internal aggregate UUID
+        assertFalse(detailsBody.contains(FACT_A_AGG.toString()),
+                "details response must not contain the internal station UUID");
 
         // unknown ref → 404 problem+json. RestTemplate throws on 4xx, so the
         // response is asserted from the thrown HttpClientErrorException (the
@@ -567,10 +642,13 @@ class DiscoverySliceIntegrationTest {
                         "column name must not match privacy pattern '" + pattern + "': " + column);
             }
         }
-        // projection row carries only public fields (spot check: no station_ref
-        // leak into API responses was asserted in Order 6; here assert the
-        // projection row has no unexpected non-null sensitive columns — the
-        // table simply has none by construction, verified above)
+        // projection row carries only public fields. Protection is
+        // STRUCTURAL: the DTOs (StationSummary/StationDetails) have no
+        // station_ref/internal-identifier field at all, and Order 6 asserts
+        // the wire representation (no "stationRef" field, no UUID-shaped
+        // value in the details body). Here we assert the projection table
+        // itself has no unexpected non-null sensitive columns — the table
+        // simply has none by construction, verified above.
     }
 
     /** Boots the real application once, against the containers. */
@@ -611,8 +689,10 @@ class DiscoverySliceIntegrationTest {
                 "--server.port=0",
                 "--spring.datasource.hikari.initialization-fail-timeout=60000",
                 "--spring.rabbitmq.listener.simple.retry.initial-interval=100",
-                "--spring.rabbitmq.listener.simple.retry.max-interval=500");
+                "--spring.rabbitmq.listener.simple.retry.max-interval=500",
+                "--spring.rabbitmq.listener.simple.retry.max-retries=3");
         RABBIT_TEMPLATE = CTX.getBean(RabbitTemplate.class);
+
         REST = new org.springframework.web.client.RestTemplate();
         var webServerAppContainer = (org.springframework.boot.web.server.servlet.context.
                 ServletWebServerApplicationContext) CTX;

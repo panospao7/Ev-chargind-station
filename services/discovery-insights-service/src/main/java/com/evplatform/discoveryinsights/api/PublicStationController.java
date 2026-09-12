@@ -25,8 +25,11 @@ import java.util.List;
  * no top-level "code" property, so the stable code RESOURCE_NOT_FOUND is
  * carried in the `type` URI per RFC 9457 style
  * (https://api.evplatform.example/problems/resource-not-found), title/status/
- * detail follow the schema. Phase 1 registered this exact type URI in
- * problem-codes-v1.yaml for RESOURCE_NOT_FOUND (owner-approved).</p>
+ * detail follow the schema. That code→URI mapping is a code-level RFC 9457
+ * convention: RESOURCE_NOT_FOUND is registered in problem-codes-v1.yaml
+ * (owner-approved scope extension), but the registry does not anchor type
+ * URIs — URI anchoring in the registry is booked as part of the follow-up
+ * contract task for the remaining ARC-003 §14 general codes.</p>
  */
 @RestController
 @RequestMapping("/api/v1/stations")

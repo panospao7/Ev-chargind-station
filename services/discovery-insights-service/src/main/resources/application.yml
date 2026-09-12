@@ -25,7 +25,10 @@ spring:
         # retries dead-letter (AC-06 semantics).
         retry:
           enabled: true
-          max-attempts: 3
+          # Boot 4.x renamed max-attempts → max-retries (max-attempts is a
+          # deprecated-at-error alias that fails the whole retry property
+          # group's binding, silently disabling the interceptor)
+          max-retries: 3
           initial-interval: 500
           multiplier: 2.0
           max-interval: 5000
@@ -40,8 +43,6 @@ discovery:
   consumer:
     queue-name: ${DISC_CONSUMER_QUEUE:discovery.station.published}
     dlq-suffix: .dlq
-    max-delivery-retries: ${DISC_MAX_DELIVERY_RETRIES:3}
-    gap-retry-attempts: ${DISC_GAP_RETRY_ATTEMPTS:3}
 
 management:
   endpoints:

@@ -56,15 +56,15 @@ paths:
               schema:
                 $ref: '#/components/schemas/StationDetails'
               example:
-                ref: "ST-ATH-001"
-                name: "Athens Central Charging Hub"
-                address: "12 Leoforos Vasilissis Sofias"
-                latitude: 37.9838
-                longitude: 23.7275
+                ref: "SEEDSTA0001"
+                name: "Seed Fixture — Athens Center"
+                address: "Fixture Street 1"
+                latitude: 37.983810
+                longitude: 23.727540
                 city: "Athens"
-                postalCode: "10557"
+                postalCode: "10431"
                 countryCode: "GR"
-                updatedAt: "2026-09-12T10:00:00Z"
+                updatedAt: "2026-09-12T00:00:00Z"
                 sourceVersion: 0
         '404':
           description: Station not found

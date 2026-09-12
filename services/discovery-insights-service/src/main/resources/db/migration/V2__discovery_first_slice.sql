@@ -6,8 +6,8 @@
 -- copies as a message-consuming service). Public reference data ONLY — no
 -- account, driver or vehicle identifiers (ARC-022 §9).
 -- Explicit stable constraint names per §10. (audit_event PK named explicitly
--- per ARC-022 §10; amended pre-application, never applied to a shared
--- environment)
+-- per ARC-022 §10; inbox processing_outcome CHECK named per review; both
+-- amended pre-application, never applied to a shared environment)
 -- =============================================================================
 
 -- ── 9. station_search_projection ────────────────────────────────────────────
@@ -66,6 +66,7 @@ CREATE TABLE discovery_insights.inbox_message (
     received_at        timestamptz  NOT NULL DEFAULT now(),
     completed_at       timestamptz,
     processing_outcome varchar(24)  NOT NULL
+        CONSTRAINT ck_inbox_processing_outcome
         CHECK (processing_outcome IN ('PROCESSING', 'COMPLETED', 'FAILED', 'SKIPPED')),
     attempt_count      integer      NOT NULL DEFAULT 0,
     failure_category   varchar(48),

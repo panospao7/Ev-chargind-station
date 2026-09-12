@@ -45,6 +45,10 @@ import java.util.UUID;
  *       (disclosed choice: silently dropping would hide routing defects;
  *       the queue binding is type-specific today, so anything else arriving
  *       here is an operator-visible anomaly).</li>
+ *   <li>Aggregate/payload coherence: envelope aggregateid must equal the
+ *       payload's stationRef (both parsed as UUID); a mismatch is
+ *       poison-classified and dead-lettered [category=AGGREGATE_PAYLOAD_MISMATCH]
+ *       — the fact cannot be attributed to a trustworthy aggregate stream.</li>
  *   <li>Inbox insert ON CONFLICT DO NOTHING — duplicate → ack and stop
  *       (first delivery already finished; nothing else to do).</li>
  *   <li>Checkpoint version discipline (PER AGGREGATE):
@@ -63,9 +67,17 @@ import java.util.UUID;
  *       are intentionally NOT cleared after a gap-apply) for operator
  *       visibility until the next in-sequence fact overwrites the
  *       checkpoint row (which clears gap fields). The inbox row records
- *       attempt accounting; requeue-based gap redelivery loops were
+ *       attempt accounting and the gap evidence: a gap-apply fact completes
+ *       with processing_outcome='COMPLETED' while KEEPING
+ *       failure_category='VERSION_GAP' on the completed row (the checkpoint
+ *       gap fields alone are transient — they are cleared by the next
+ *       in-sequence fact — so the completed inbox row is the durable gap
+ *       trace). Requeue-based gap redelivery loops were
  *       deliberately not implemented — they add redelivery-loop risk
  *       without correctness benefit given full snapshots.</li>
+ *   <li>Payload-shape RuntimeExceptions (Jackson coercion failures on
+ *       malformed numerics, missing required fields) are PERMANENT → reject
+ *       to DLQ [category=PAYLOAD_INVALID].</li>
  *   <li>Transient DataAccessException → rollback and rethrow; the container
  *       retry (spring.rabbitmq.listener.simple.retry: 3 attempts, 500ms
  *       initial) redelivers; exhausted retries dead-letter via the broker
@@ -94,19 +106,15 @@ public class StationPublishedConsumer {
     private final ObjectMapper objectMapper;
     private final TransactionTemplate tx;
     private final JdbcClient jdbc;
-    private final int gapRetryAttempts;
 
     public StationPublishedConsumer(
             @Autowired(required = false) ObjectMapper injectedObjectMapper,
             PlatformTransactionManager transactionManager,
-            JdbcClient jdbc,
-            @org.springframework.beans.factory.annotation.Value(
-                    "${discovery.consumer.gap-retry-attempts:3}") int gapRetryAttempts) {
+            JdbcClient jdbc) {
         this.objectMapper = injectedObjectMapper != null
                 ? injectedObjectMapper : new ObjectMapper();
         this.tx = new TransactionTemplate(transactionManager);
         this.jdbc = jdbc;
-        this.gapRetryAttempts = gapRetryAttempts;
     }
 
     @RabbitListener(
@@ -168,6 +176,55 @@ public class StationPublishedConsumer {
         String correlationId = envelope.hasNonNull("correlationid")
                 ? envelope.get("correlationid").asText() : null;
 
+        // Envelope/payload coherence: the aggregateid extension attribute must
+        // reference the same station as the payload's stationRef. A mismatch
+        // means the routing key and the fact body disagree — the fact cannot
+        // be attributed to a trustworthy aggregate stream, so it is
+        // poison-classified (basicNack requeue=false → DLQ) instead of
+        // projecting an unattributable snapshot.
+        UUID payloadStationRef;
+        try {
+            payloadStationRef = uuidOrNull(envelope.get("data"), "stationRef");
+        } catch (IllegalArgumentException nonUuidStationRef) {
+            log.warn("Discovery consumer: data.stationRef is not a UUID rejected to DLQ "
+                    + "[category=AGGREGATE_PAYLOAD_MISMATCH]");
+            rejectToDlq(channel, deliveryTag);
+            return;
+        }
+        UUID aggregateId;
+        try {
+            aggregateId = UUID.fromString(aggregateRef);
+        } catch (IllegalArgumentException nonUuidAggregateId) {
+            log.warn("Discovery consumer: envelope aggregateid is not a UUID rejected to DLQ "
+                    + "[category=AGGREGATE_PAYLOAD_MISMATCH]");
+            rejectToDlq(channel, deliveryTag);
+            return;
+        }
+        if (!aggregateId.equals(payloadStationRef)) {
+            log.warn("Discovery consumer: envelope aggregateid {} does not match payload "
+                            + "stationRef {} rejected to DLQ [category=AGGREGATE_PAYLOAD_MISMATCH]",
+                    aggregateId, payloadStationRef);
+            rejectToDlq(channel, deliveryTag);
+            return;
+        }
+
+        // Payload-shape validation (fail-closed, security review finding 1):
+        // Jackson 2.x decimalValue() SILENTLY coerces missing or wrong-typed
+        // numeric fields to zero, which would project a station at (0,0).
+        // Validate the types the projection SQL depends on BEFORE the
+        // transaction; anything malformed is poison-classified.
+        JsonNode data = envelope.get("data");
+        if (data == null || !data.isObject()
+                || !data.hasNonNull("stationRef") || !data.hasNonNull("publicRef")
+                || !data.hasNonNull("displayName")
+                || !data.get("latitude").isNumber()
+                || !data.get("longitude").isNumber()) {
+            log.warn("Discovery consumer: malformed payload rejected to DLQ "
+                    + "[category=PAYLOAD_INVALID] (message {})", messageId);
+            rejectToDlq(channel, deliveryTag);
+            return;
+        }
+
         try {
             process(messageId, aggregateRef, aggregateVersion, correlationId, envelope);
             channel.basicAck(deliveryTag, false);
@@ -178,6 +235,17 @@ public class StationPublishedConsumer {
                     + "[category=TRANSIENT_DB_FAILURE]", messageId);
             throw new AmqpRejectAndDontRequeueException(
                     "transient DB failure; container retry then DLQ", transientOrDbFailure);
+        } catch (RuntimeException payloadShapeFailure) {
+            // Payload-shape defects (Jackson coercion failures on malformed
+            // numerics, missing required fields, illegal casts) are PERMANENT:
+            // redelivery cannot repair them. Fail closed to the DLQ with a
+            // permanent failure category instead of parking the message
+            // unacked or misclassifying it as transient. Ordered AFTER the
+            // DataAccessException catch: transient DB failures keep their
+            // specific handling.
+            log.warn("Discovery consumer: malformed payload for message {} "
+                    + "[category=PAYLOAD_INVALID]", messageId, payloadShapeFailure);
+            rejectToDlq(channel, deliveryTag);
         }
     }
 
@@ -247,7 +315,14 @@ public class StationPublishedConsumer {
             }
 
             insertAuditRow(messageId, correlationId, envelope);
-            markInboxCompleted(messageId);
+            if (inSequence) {
+                markInboxCompleted(messageId);
+            } else {
+                // keep the gap evidence: the completed row retains the
+                // VERSION_GAP failure category (markInboxGapRecorded set it
+                // above; do not NULL it on completion)
+                markInboxCompletedGap(messageId);
+            }
         });
     }
 
@@ -425,7 +500,12 @@ public class StationPublishedConsumer {
                 .update();
     }
 
-    /** Gap accounting on the inbox row (attempt bookkeeping for operators). */
+    /**
+     * Gap accounting on the inbox row (attempt bookkeeping for operators).
+     * The VERSION_GAP category set here is preserved by
+     * {@link #markInboxCompletedGap} when the gap fact completes, so the
+     * completed inbox row keeps the gap evidence for operators.
+     */
     private void markInboxGapRecorded(UUID messageId, long gapFrom) {
         jdbc.sql("""
                         UPDATE discovery_insights.inbox_message
@@ -437,11 +517,32 @@ public class StationPublishedConsumer {
                 .update();
     }
 
+    /** Completion for an in-sequence fact: no failure category to preserve. */
     private void markInboxCompleted(UUID messageId) {
         jdbc.sql("""
                         UPDATE discovery_insights.inbox_message
                         SET processing_outcome = 'COMPLETED', completed_at = now(),
                             failure_category = NULL
+                        WHERE consumer_name = ? AND message_id = ?
+                        """)
+                .param(CONSUMER_NAME)
+                .param(messageId)
+                .update();
+    }
+
+    /**
+     * Completion for a gap-apply fact: COMPLETED, but the VERSION_GAP
+     * failure_category is PRESERVED on the completed row as durable gap
+     * evidence (clearing it would erase the operator-visible trace of the
+     * gap; the checkpoint's gap_from_version/gap_recorded_at fields alone
+     * are overwritten by the next in-sequence fact).
+     */
+    private void markInboxCompletedGap(UUID messageId) {
+        jdbc.sql("""
+                        UPDATE discovery_insights.inbox_message
+                        SET processing_outcome = 'COMPLETED', completed_at = now(),
+                            attempt_count = attempt_count + 1,
+                            failure_category = 'VERSION_GAP'
                         WHERE consumer_name = ? AND message_id = ?
                         """)
                 .param(CONSUMER_NAME)
