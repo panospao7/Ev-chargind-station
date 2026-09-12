@@ -17,6 +17,7 @@ permission:
     "**/secrets/**": deny
   edit:
     "*": deny
+    "delivery/backlog.yaml": allow
     "delivery/status.yaml": allow
     "delivery/handoffs/**": allow
     "delivery/evidence/**": allow
@@ -44,17 +45,28 @@ permission:
     "git show *": allow
     "git branch --show-current": allow
     "git rev-parse *": allow
-    "git add*": deny
-    "git commit*": deny
-    "git push*": deny
+    "git add*": allow
+    "git add -A*": deny
+    "git add --all*": deny
+    "git commit*": allow
+    "git commit -a*": deny
+    "git commit --all*": deny
+    "git push*": allow
+    "git push origin main*": deny
+    "git push --force*": deny
+    "git push -f*": deny
+    "git push --all*": deny
+    "git push --mirror*": deny
     "git pull*": deny
     "git merge*": deny
     "git rebase*": deny
     "git reset*": deny
     "git restore*": deny
     "git clean*": deny
-    "git checkout*": deny
-    "git switch*": deny
+    "git checkout*": allow
+    "git checkout --*": deny
+    "git checkout .": deny
+    "git switch*": allow
     "git stash*": deny
     "git tag*": deny
     "rm *": deny
