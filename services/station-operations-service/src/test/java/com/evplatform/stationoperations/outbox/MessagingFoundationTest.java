@@ -174,13 +174,15 @@ class MessagingFoundationTest {
      * columns (I1-MSG-003).
      */
     private record OutboxColumns(UUID correlationId, UUID causationId,
-                                 UUID aggregateRef, long aggregateVersion) {
+                                 UUID aggregateRef, long aggregateVersion,
+                                 String classification) {
     }
 
     private static OutboxColumns outboxColumns(UUID messageId) throws Exception {
         try (Connection c = connect(RUNTIME);
              PreparedStatement ps = c.prepareStatement(
-                     "SELECT correlation_id, causation_id, aggregate_ref, aggregate_version "
+                     "SELECT correlation_id, causation_id, aggregate_ref, aggregate_version, "
+                             + "classification "
                              + "FROM " + SCHEMA + ".outbox_message WHERE message_id = ?")) {
             ps.setObject(1, messageId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -190,7 +192,9 @@ class MessagingFoundationTest {
                 UUID correlation = rs.getObject("correlation_id", UUID.class);
                 UUID causation = rs.getObject("causation_id", UUID.class);
                 UUID aggregateRef = rs.getObject("aggregate_ref", UUID.class);
-                return new OutboxColumns(correlation, causation, aggregateRef, version);
+                String classification = rs.getString("classification");
+                return new OutboxColumns(correlation, causation, aggregateRef, version,
+                        classification);
             }
         }
     }
@@ -336,6 +340,9 @@ class MessagingFoundationTest {
                 assertEquals(columns.aggregateVersion(),
                         envelope.get("aggregateversion").asLong(),
                         "aggregateversion must equal the outbox aggregate_version column as a number");
+                assertEquals(columns.classification(),
+                        envelope.get("classification").asText(),
+                        "classification must equal the outbox classification column");
                 // seed facts have NULL causation_id → the attribute must be
                 // absent entirely (never serialized as null), and traceparent
                 // is never emitted (AC-01 honest-disclosure assertions).

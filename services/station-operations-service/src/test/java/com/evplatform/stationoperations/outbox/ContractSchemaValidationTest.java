@@ -92,7 +92,8 @@ class ContractSchemaValidationTest {
         try (Connection c = connect(RUNTIME);
              PreparedStatement ps = c.prepareStatement(
                      "SELECT message_id, message_type, payload, attempt_count, "
-                             + "correlation_id, causation_id, aggregate_ref, aggregate_version "
+                             + "correlation_id, causation_id, aggregate_ref, aggregate_version, "
+                             + "classification "
                              + "FROM " + SCHEMA + ".outbox_message "
                              + "WHERE message_type = 'com.evplatform.station.published.v1' "
                              + "ORDER BY message_id");
@@ -107,6 +108,7 @@ class ContractSchemaValidationTest {
                 UUID causationId = rs.getObject("causation_id", UUID.class);
                 UUID aggregateRef = rs.getObject("aggregate_ref", UUID.class);
                 long aggregateVersion = rs.getLong("aggregate_version");
+                String classification = rs.getString("classification");
 
                 // raw stored payload validations (unchanged, I1-MSG-002)
                 JsonNode envelope = MAPPER.readTree(payload);
@@ -125,7 +127,8 @@ class ContractSchemaValidationTest {
                 // dispatcher derives at send time
                 OutboxDispatcher.OutboxRow row = new OutboxDispatcher.OutboxRow(
                         messageId, messageType, payload, attemptCount,
-                        correlationId, causationId, aggregateRef, aggregateVersion);
+                        correlationId, causationId, aggregateRef, aggregateVersion,
+                        classification);
                 JsonNode enriched = MAPPER.readTree(OutboxDispatcher.enrichedPayload(row));
                 Set<ValidationMessage> enrichedEnvelopeErrors =
                         cloudEventSchema.validate(enriched);
@@ -150,6 +153,9 @@ class ContractSchemaValidationTest {
                 assertEquals("https://schema-registry.example.com/events/station-published-event.json",
                         enriched.get("dataschema").asText(),
                         "dataschema must be the event schema $id");
+                assertEquals(classification,
+                        enriched.get("classification").asText(),
+                        "classification must equal the outbox classification column");
                 assertNull(enriched.get("causationid"),
                         "causationid must be absent for NULL causation_id, not null-valued");
                 assertNull(enriched.get("traceparent"),

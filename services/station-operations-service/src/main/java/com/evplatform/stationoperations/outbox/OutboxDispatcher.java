@@ -28,9 +28,9 @@ import java.util.concurrent.TimeUnit;
  * (safe failure category recorded). Delivery is at-least-once: consumers
  * deduplicate via the inbox (FR-PLT-02). Cross-instance dispatch may
  * reorder per-aggregate facts across batches; consumers order by
- * aggregate version (ARC-014 §5). Wire envelopes carry the ARC-014 §2
- * extension attributes, derived from the outbox columns at send time
- * (see {@link #enrichedPayload}).
+ * aggregate version (ARC-014 §5). Wire envelopes carry the ARC-020 §2 /
+ * ARC-004 §4 extension attributes, derived from the outbox columns at send
+ * time (see {@link #enrichedPayload}).
  */
 @Component
 public class OutboxDispatcher {
@@ -38,8 +38,8 @@ public class OutboxDispatcher {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     /**
-     * ARC-014 §2 dataschema mapping: message_type → the $id of the
-     * executable event schema. Unmapped message types emit no dataschema
+     * ARC-020 §2 / ARC-004 §4 dataschema mapping: message_type → the $id of
+     * the executable event schema. Unmapped message types emit no dataschema
      * attribute (disclosed behavior; no fail-fast).
      */
     private static final Map<String, String> DATASCHEMA_BY_MESSAGE_TYPE = Map.of(
@@ -81,7 +81,7 @@ public class OutboxDispatcher {
 
     record OutboxRow(UUID messageId, String messageType, String payload, int attemptCount,
                      UUID correlationId, UUID causationId, UUID aggregateRef,
-                     long aggregateVersion) {
+                     long aggregateVersion, String classification) {
     }
 
     /**
@@ -105,7 +105,8 @@ public class OutboxDispatcher {
                     LIMIT 100
                     FOR UPDATE SKIP LOCKED)
                 RETURNING message_id, message_type, payload, attempt_count,
-                         correlation_id, causation_id, aggregate_ref, aggregate_version
+                         correlation_id, causation_id, aggregate_ref, aggregate_version,
+                         classification
                 """)
                 .param(claimLeaseSeconds)
                 .query((rs, i) -> new OutboxRow(
@@ -116,14 +117,15 @@ public class OutboxDispatcher {
                         rs.getObject("correlation_id", UUID.class),
                         rs.getObject("causation_id", UUID.class),
                         rs.getObject("aggregate_ref", UUID.class),
-                        rs.getLong("aggregate_version")))
+                        rs.getLong("aggregate_version"),
+                        rs.getString("classification")))
                 .list();
     }
 
     /**
      * Derives the wire envelope from the stored outbox payload by adding the
-     * ARC-014 §2 extension attributes, sourced from the outbox columns
-     * claimed in the same batch (single read, no second lookup):
+     * ARC-020 §2 / ARC-004 §4 extension attributes, sourced from the outbox
+     * columns claimed in the same batch (single read, no second lookup):
      *
      * <ul>
      *   <li>{@code dataschema} — from {@link #DATASCHEMA_BY_MESSAGE_TYPE};
@@ -136,6 +138,8 @@ public class OutboxDispatcher {
      *   <li>{@code causationid} — only when causation_id is non-NULL; the
      *       attribute is omitted entirely otherwise (never serialized as
      *       null)</li>
+     *   <li>{@code classification} — classification column (ARC-004 §4
+     *       extension, value from the outbox column)</li>
      *   <li>{@code traceparent} — never emitted: there is no ambient trace
      *       context here and none is fabricated</li>
      * </ul>
@@ -164,6 +168,7 @@ public class OutboxDispatcher {
         if (row.causationId() != null) {
             envelope.put("causationid", row.causationId().toString());
         }
+        envelope.put("classification", row.classification());
         return envelope.toString();
     }
 
