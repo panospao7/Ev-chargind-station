@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T08:00:00Z"
+updatedAt: "2026-09-12T12:10:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -393,30 +393,81 @@ tasks:
       paths: []
 
   I1-MSG-001:
-    state: "HUMAN_REVIEW"
+    state: "FIX_REQUIRED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-12T08:00:00Z"
 
     baselineCommit: "fd9559833d89c8a7b02c7332c67f2255eb8d0cea"
     branch: "task/i1-msg-001-foundation"
-    candidateCommit: "5e8d9d21bbf06e7550fac0461d68e80b3e3d1795"
-    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/new/task/i1-msg-001-foundation"
+    candidateCommit: "d870e449800b6785908829df12b123b4c13d7c1b"
+    mergeCommit: "f9de0f4cc46b73bc37f445e84676908cf5da3e22"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/24"
 
     blockers:
       - "none — planning PR #23 merged; L3 packet approval recorded via merge"
 
     deviations: []
-    unresolvedFindings: []
+    unresolvedFindings:
+      - "M1 MAJOR: dispatcher marks unroutable mandatory publishes PUBLISHED (no ReturnsCallback handling) — silent event loss; fix in I1-MSG-002"
+      - "M2 MAJOR: forced-duplicate dedup test is vacuous (no duplicate ever delivered); evidence overstated AC-03; fix in I1-MSG-002"
+      - "M3 MAJOR: no dispatcher claim protocol and packet-required two-instance concurrency test absent; fix or owner-approved deviation in I1-MSG-002"
+      - "M4 MAJOR: emitted payload/envelope not validated against executable schemas in tests (contract reviewer supplied interim manual ajv evidence); fix in I1-MSG-002"
+      - "MINOR folds m1-m8 recorded in delivery/handoffs/I1-MSG-001/05-orchestrator.md (constraint names, ON CONFLICT target, config keys, seed-reset docs, atomicity failure-injection, run references)"
 
-    handoffSequence: 4
-    latestHandoff: "delivery/handoffs/I1-MSG-001/04-tester.md"
+    handoffSequence: 5
+    latestHandoff: "delivery/handoffs/I1-MSG-001/05-orchestrator.md"
     reviews:
       planner: "PASS"
       tester: "PASS"
-      generalReviewer: "PENDING_INDEPENDENT_REVIEW"
-      contractReviewer: "NOT_STARTED"
+      generalReviewer: "FAIL (4 MAJOR — post-merge independent review)"
+      contractReviewer: "PASS_WITH_FINDINGS"
+      dataReviewer: "FAIL (3 MAJOR — post-merge independent review)"
+      securityReviewer: "PASS_WITH_FINDINGS"
+      humanReview: "PASS (owner merged PR #24)"
+
+    ci:
+      status: "PASS"
+      candidateRunReference: "PR #24 checks (verified via GitHub API): Station Operations Service success; Flyway Migrations and Role Separation success"
+      mergeRunReference: "Both scoped workflows SUCCESS at merge commit f9de0f4cc46b73bc37f445e84676908cf5da3e22 (JDK 25)"
+      requiredChecks:
+        - "Station Operations Service (S1-01 seed): success"
+        - "Flyway Migrations and Role Separation (PostgreSQL 18): success"
+
+    humanApproval:
+      required: true
+      reference: "Owner reviewed and merged PR #24 (candidate d870e449) on 2026-09-12; merge stands; unresolved MAJOR findings tracked as I1-MSG-002"
+      approvedCandidateCommit: "d870e449800b6785908829df12b123b4c13d7c1b"
+
+    evidence:
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I1-MSG-001/messaging-foundation.md"
+
+  I1-MSG-002:
+    state: "READY"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    candidateCommit: null
+    pullRequest: null
+
+    blockers:
+      - "Owner packet approval pending (L3; planning-PR merge = approval precedent)"
+
+    deviations: []
+    unresolvedFindings: []
+
+    handoffSequence: 0
+    latestHandoff: null
+    reviews:
+      planner: "NOT_STARTED"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_STARTED"
-      securityReviewer: "NOT_STARTED"
+      securityReviewer: "NOT_REQUIRED"
       humanReview: "NOT_STARTED"
 
     ci:
@@ -427,7 +478,7 @@ tasks:
 
     humanApproval:
       required: true
-      reference: "Planning branch awaiting owner review; L3 packet approval via merge"
+      reference: "L3 fix round; owner approval via planning-PR merge"
       approvedCandidateCommit: null
 
     evidence:
@@ -441,10 +492,10 @@ summary:
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
-    FIX_REQUIRED: 0
+    FIX_REQUIRED: 1
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
-    HUMAN_REVIEW: 1
+    HUMAN_REVIEW: 0
     MERGED: 0
     VERIFIED: 8
 
@@ -453,5 +504,5 @@ summary:
     SUPERSEDED: 0
     CANCELLED: 0
 
-  activeTask: "I1-ENG-001"
-  nextRecommendedTask: "I1-ENG-001"
+  activeTask: "I1-MSG-002"
+  nextRecommendedTask: "I1-MSG-002"

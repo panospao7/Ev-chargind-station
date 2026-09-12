@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T00:20:00Z"
+updatedAt: "2026-09-12T12:10:00Z"
 
 authority:
   taskDefinition: "delivery/tasks/<TASK-ID>.yaml"
@@ -159,4 +159,20 @@ items:
       - w1-s1
       - l3
 
-nextRecommendedTask: "I1-MSG-001"
+  - id: "I1-MSG-002"
+    order: 37
+    priority: "P0"
+    iteration: "I1"
+    epic: "EPIC-03"
+    title: "Messaging foundation fix round — returns handling, real dedup test, dispatcher claim protocol, schema-validation test"
+    packet: "delivery/tasks/I1-MSG-002.yaml"
+    dependsOn:
+      - "I1-MSG-001"
+    tags:
+      - messaging
+      - outbox
+      - fix-round
+      - w1-s1
+      - l3
+
+nextRecommendedTask: "I1-MSG-002"

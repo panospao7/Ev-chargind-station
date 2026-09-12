@@ -1,0 +1,314 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-MSG-002"
+  title: "Messaging foundation fix round — returns handling, real dedup test, dispatcher claim protocol, schema-validation test"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-03"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L3"
+  owner: "Backend/Data Architect and Project Owner"
+  createdAt: "2026-09-12"
+  baselineCommit: null
+
+objective: >
+  Close the unresolved MAJOR findings from the independent post-merge reviews
+  of I1-MSG-001 (merge f9de0f4c, PR #24), and fold in the bounded MINOR
+  findings: (M1) returned-message handling in the dispatcher so an unroutable
+  mandatory publish is treated as a failure (attempt/backoff → QUARANTINED
+  with an UNROUTABLE-class failure category) instead of being confirmed and
+  marked PUBLISHED; (M2) a real forced-duplicate-consumption test proving
+  inbox dedup (second delivery of the same message → first=false, single
+  effect); (M3) dispatcher claim protection for multi-instance dispatch
+  (FOR UPDATE SKIP LOCKED or CAS claim) plus the packet-required two-instance
+  concurrency test — or an owner-approved recorded deviation; (M4) a test
+  validating the emitted StationPublished envelope+payload against the
+  executable JSON Schemas. MINOR folds: explicit constraint names via a new
+  additive V4 migration (RENAME CONSTRAINT + idempotency expiry index),
+  conflict-target on the outbox ON CONFLICT, fix the spring.outbox.* /
+  outbox.* config-key mismatch, correct the seed-reset documented invocation,
+  failure-injection proof of seed atomicity, and evidence run references.
+
+origin: >
+  Independent post-merge specialist reviews of I1-MSG-001 (general: FAIL 4
+  MAJOR; data: FAIL 3 MAJOR; contract and security: PASS_WITH_FINDINGS),
+  recorded in delivery/handoffs/I1-MSG-001/05-orchestrator.md. AGENTS.md §15:
+  a task cannot proceed with unresolved MAJOR findings.
+
+requirements:
+  - "FR-PLT-01 — transactional outbox propagation (no-loss semantics restored
+    for unroutable publishes)."
+  - "FR-PLT-02 — at-least-once consumption safety (dedup now actually
+    proven)."
+  - "FR-PLT-03 — bounded retries with controlled quarantine (returns path
+    included)."
+
+useCases:
+  - "Enabling infrastructure for UC-DR-001..008; no direct use-case behavior."
+
+authority:
+  governance:
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§3 S1-09 (messaging foundations)"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "FR-PLT-01..03"
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "§8 table specs (unchanged — no field changes), §10 index/constraint naming rules, §12–13 migration rules"
+    - path: "docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md"
+      section: "§4 delivery semantics (mandatory routing detects events with no valid queue binding)"
+    - path: "docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md"
+      section: "§6.4 publisher confirms + mandatory publishing + retry/DLQ"
+  contracts:
+    - path: "contracts/schemas/events/station-published-event.json"
+      identifiers: ["payload validation target"]
+    - path: "contracts/schemas/common/cloud-event.json"
+      identifiers: ["envelope validation target"]
+
+invariants:
+  - "Business change and outbox record commit atomically (AGENTS.md §4)."
+  - "Consumers are idempotent and assume at-least-once delivery (AGENTS.md §4)."
+  - "Applied migrations immutable; V4 forward-only additive with unique numbering."
+  - "No remote call occurs while allocation locks are held (not touched here — no allocation code in scope)."
+
+ownership:
+  owningService: "station-operations-service"
+  dataOwner: "Station Operations Service (station_operations_db)"
+  supportingServices: []
+  prohibitedOwners:
+    - "Browser runtime"
+
+affectedArtifacts:
+  services:
+    - "station-operations-service (dispatcher returns handling + claim protocol; tests)"
+  modules:
+    - "services/station-operations-service/src/main/java (OutboxDispatcher, OutboxWriter)"
+    - "services/station-operations-service/src/main/resources (application.yml key fix)"
+    - "services/station-operations-service/src/main/resources/db/migration (V4 additive: constraint renames + idempotency expiry index)"
+    - "services/station-operations-service/src/test/java (M2 dedup test, M3 two-instance test, M4 schema-validation test, M7 atomicity failure-injection test)"
+  tables:
+    - "outbox_message (constraint renames only), idempotency_record (constraint rename + expiry index)"
+  projections: []
+  migrations:
+    - "V4__integration_table_naming.sql (additive: RENAME CONSTRAINT + CREATE INDEX; no column or data changes)"
+  apiOperations: []
+  commands: []
+  events: []
+  schemas: []
+  registries: []
+  screens: []
+  infrastructure: []
+
+dependencies:
+  tasks:
+    - "I1-MSG-001 (merged f9de0f4c — the code under fix)"
+  contracts:
+    - "contracts/schemas/events/station-published-event.json (test-only validation target)"
+  infrastructure:
+    - "Docker for Testcontainers (PG18 + RabbitMQ 4.3)"
+  humanDecisions:
+    - "L3 authorization: merging this planning PR constitutes the owner's
+      packet approval (I1-MSG-001 precedent)."
+    - "M3 disposition: owner chooses claim protocol implementation vs
+      recorded deviation (orchestrator recommends implementing the claim)."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "services/station-operations-service/**"
+    - "delivery/handoffs/I1-MSG-002/**"
+    - "delivery/evidence/I1-MSG-002/**"
+    - "delivery/deviations/I1-MSG-002/**"
+
+  prohibitedFiles:
+    - "contracts/**"
+    - "docs/**"
+    - "services/account-service/**"
+    - "services/booking-session-service/**"
+    - "services/device-integration-service/**"
+    - "services/discovery-insights-service/**"
+    - "services/notification-service/**"
+    - "services/governance-support-service/**"
+    - "apps/**"
+    - "simulator/**"
+    - "infra/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+
+  maximumExpectedDiff: >
+    Bounded fix round: dispatcher returns handling + claim protocol (~60
+    lines), one additive V4 migration (renames + one index), four new/changed
+    tests, config-key fix, javadoc corrections. No contract changes, no new
+    tables/columns, no behavior beyond M1–M4 and the listed MINOR folds.
+
+  generatedFilesPolicy: >
+    Hand-authored sources; tests validate against existing executable
+    schemas (never duplicated).
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      An unroutable mandatory publish (no bound queue) is treated as a
+      dispatch failure: the outbox row is NOT marked PUBLISHED; attempts
+      increment with an UNROUTABLE-class failure category; after max attempts
+      the row is QUARANTINED. Proven by a negative test that publishes with
+      no queue bound and asserts the row never reaches PUBLISHED.
+    authorityReferences:
+      - "ARC-014 §4; FR-PLT-03; review finding M1"
+    evidenceRequired:
+      - "negative integration test output"
+    testTypes: ["integration", "negative"]
+
+  - id: "AC-02"
+    statement: >
+      A forced duplicate delivery (same message_id delivered twice to the
+      consumer) is deduplicated by the inbox: the second insert yields
+      first=false, the effect is applied exactly once, and the test asserts
+      the dedup path was actually exercised.
+    authorityReferences:
+      - "FR-PLT-02; AGENTS.md §4; review finding M2"
+    evidenceRequired:
+      - "integration test output showing the duplicate delivery"
+    testTypes: ["integration", "negative"]
+
+  - id: "AC-03"
+    statement: >
+      Two concurrent dispatcher passes cannot double-mark or reorder
+      per-aggregate facts: dispatch claims rows via FOR UPDATE SKIP LOCKED
+      (or CAS claim) so only one instance sends a given row; a two-instance
+      test proves a single PUBLISHED outcome per fact. If the owner instead
+      approves the deviation path, a recorded deviation plus a documented
+      single-instance operational constraint replaces this criterion.
+    authorityReferences:
+      - "Task packet I1-MSG-001 tests.concurrencyCases; review finding M3"
+    evidenceRequired:
+      - "two-instance concurrency test output (or recorded deviation)"
+    testTypes: ["integration", "concurrency"]
+
+  - id: "AC-04"
+    statement: >
+      The emitted StationPublished envelope and payload validate against
+      contracts/schemas/common/cloud-event.json and
+      contracts/schemas/events/station-published-event.json inside the test
+      suite (executable-schema validation, not shape assertion).
+    authorityReferences:
+      - "I1-MSG-001 AC-05; review finding M4"
+    evidenceRequired:
+      - "schema-validation test output"
+    testTypes: ["contract"]
+
+  - id: "AC-05"
+    statement: >
+      V4 migration applies cleanly on fresh install and after V3 (upgrade
+      path); constraints carry explicit stable names (RENAME CONSTRAINT);
+      idempotency_record.expires_at is indexed; no V1–V3 migration is
+      modified; all existing suites remain green.
+    authorityReferences:
+      - "ARC-022 §10, §12–13; review findings m1, m5"
+    evidenceRequired:
+      - "migration test output; catalogue listing"
+    testTypes: ["migration", "integration"]
+
+  - id: "AC-06"
+    statement: >
+      OutboxWriter's ON CONFLICT targets the event-fact uniqueness constraint
+      explicitly; the outbox.* configuration keys bind (an override test or
+      startup assertion proves OUTBOX_MAX_ATTEMPTS reaches the dispatcher);
+      the seed-reset documented invocation works as written or the javadoc is
+      corrected to the working invocation; a failure injected after the
+      outbox append rolls back both seed data and outbox rows.
+    authorityReferences:
+      - "Review findings m2, m4, m6, m7"
+    evidenceRequired:
+      - "unit/integration test output; corrected docs"
+    testTypes: ["unit", "integration"]
+
+tests:
+  focusedCommands:
+    - "./mvnw -pl services/station-operations-service -am test"
+  requiredSuites:
+    - "./mvnw test"
+    - "npm run contracts:verify"
+    - "node scripts/delivery/validate.mjs"
+    - "npm run contracts:secrets"
+    - "git diff --check"
+  positiveCases:
+    - "Existing POC-04 suite remains green (no regression)."
+  negativeCases:
+    - "Unroutable publish → not PUBLISHED → QUARANTINED; duplicate delivery → single effect; seed failure → full rollback."
+  boundaryCases: []
+  concurrencyCases:
+    - "Two dispatcher instances: single publish/marked outcome per fact (or recorded deviation)."
+  securityCases:
+    - "Secret scan green; no new literals; no tokens/personal data in messages."
+  contractCases:
+    - "Emitted envelope+payload validate against the executable JSON Schemas."
+  migrationCases:
+    - "V4 fresh install + V3→V4 upgrade on real PostgreSQL 18."
+  accessibilityCases: []
+
+persistence:
+  affected: true
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: false
+  threatChanges:
+    - "None — no new message content, endpoints, or privilege surfaces."
+  dataClassifications:
+    - "Public station reference metadata (unchanged)"
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements:
+    - "audit_event append-only unchanged and still proven"
+  prohibitedData:
+    - "Tokens, credentials, personal data in broker messages or audit rows"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: false
+  dataReviewer: true
+  securityReviewer: false
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L3)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-MSG-002/messaging-fix-round.md"
+  requiredCiChecks:
+    - "Service Tests workflow green on the PR (JDK 25)"
+    - "Database Migrations workflow green on the PR"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "The V4 migration is purely additive (renames + index); no destructive
+    operation, no data transformation."
+  - "Claim protocol choice (SKIP LOCKED vs CAS) is an implementation detail
+    within the approved architecture; no ADR required."
+  - "If the owner selects the M3 deviation path, AC-03 converts to a recorded
+    deviation and the two-instance test is waived with justification."
+
+openQuestions:
+  - "M3 disposition (claim protocol vs deviation) — owner decision at packet
+    approval; default is implement."
