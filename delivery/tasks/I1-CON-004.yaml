@@ -102,14 +102,16 @@ blockers: []
 scope:
   allowedFiles:
     - "contracts/asyncapi/**"
+    - "contracts/registries/messages-v1.yaml"
+    - "contracts/schemas/events/capacity-restriction-created-event.json"
+    - "contracts/schemas/events/device-online-event.json"
     - "delivery/handoffs/I1-CON-004/**"
     - "delivery/evidence/I1-CON-004/**"
     - "delivery/deviations/I1-CON-004/**"
 
   prohibitedFiles:
     - "contracts/openapi/**"
-    - "contracts/schemas/**"
-    - "contracts/registries/**"
+    - "contracts/registries/traceability-v1.yaml"
     - "docs/**"
     - "services/**"
     - "apps/**"
@@ -125,9 +127,11 @@ scope:
     - "delivery/iterations/**"
 
   maximumExpectedDiff: >
-    Bounded document correction: exchange bindings and channel/routing-key
-    alignment inside platform-messaging-v1.yaml. No payload schema changes,
-    no registry changes, no code changes.
+    Bounded correction: exchange bindings + routing keys inside
+    platform-messaging-v1.yaml; two registry entries added
+    (CapacityRestrictionCreated, DeviceOnline) with two new executable
+    schemas promoted from the AsyncAPI inline payloads; AsyncAPI $refs
+    repointed to them. No code changes.
 
   generatedFilesPolicy: >
     Hand-edited AsyncAPI document; must pass G3 AsyncAPI validation and the
@@ -242,3 +246,7 @@ openQuestions: []
 recordedDecisions:
   - "Owner approved closing the AsyncAPI drift before I1-DSC-001 (interactive
     session, 2026-09-12)."
+  - "Owner approved registering CapacityRestrictionCreated and DeviceOnline
+    (registry entries + executable schemas promoted from AsyncAPI inline
+    payloads) during implementation planning (interactive session,
+    2026-09-12); channel-key style kept as-is."

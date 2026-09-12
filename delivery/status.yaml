@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T17:40:00Z"
+updatedAt: "2026-09-12T18:20:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -532,17 +532,16 @@ tasks:
       paths: []
 
   I1-CON-004:
-    state: "READY"
-    assignedAgent: null
-    claimedAt: null
+    state: "CLAIMED"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-12T18:20:00Z"
 
-    baselineCommit: null
-    branch: null
+    baselineCommit: "2e33e01d3e5a5c6362c269289dc84ccdd72b6087"
+    branch: "task/i1-con-004-asyncapi"
     candidateCommit: null
     pullRequest: null
 
-    blockers:
-      - "none — I1-CON-003 VERIFIED; owner approved closing the drift before I1-DSC-001"
+    blockers: []
 
     deviations: []
     unresolvedFindings: []
@@ -617,8 +616,8 @@ tasks:
 summary:
   counts:
     BACKLOG: 0
-    READY: 2
-    CLAIMED: 0
+    READY: 1
+    CLAIMED: 1
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
@@ -634,5 +633,5 @@ summary:
     SUPERSEDED: 0
     CANCELLED: 0
 
-  activeTask: "I1-MSG-003"
+  activeTask: "I1-CON-004"
   nextRecommendedTask: "I1-MSG-003"
