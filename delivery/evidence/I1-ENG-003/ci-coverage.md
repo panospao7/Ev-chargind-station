@@ -37,12 +37,16 @@
 
 ## Authoritative CI status
 
-`NOT_RUN at evidence time — CI_PENDING on push.` The PR's Service Tests
-workflow now runs BOTH jobs (STA + Discovery) — this PR is itself the proof
-of AC-01/AC-02. Run references to be appended at closeout:
+**GREEN — verified via GitHub API:**
 
-- Service Tests (STA job): PENDING
-- Service Tests (Discovery job): PENDING
+- PR run (head 2f6a4315): both jobs **success** — first CI execution of
+  the Discovery suite (AC-01 proof)
+- Merge commit run (ded6a06d, main): both jobs **success** — Station
+  Operations Service (S1-01 seed): success; Discovery Insights Service
+  (first slice): success (AC-02 no-regression proof)
+
+AC-01/AC-02 satisfied by CI evidence; AC-03 by the consumer correction + STA
+verification note; AC-04 by diff review (path filters + jobs only).
 
 ## Residual notes
 
