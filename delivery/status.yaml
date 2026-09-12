@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T19:55:00Z"
+updatedAt: "2026-09-12T21:00:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -574,14 +574,15 @@ tasks:
       paths: []
 
   I1-DSC-001:
-    state: "CLAIMED"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-12T19:55:00Z"
 
     baselineCommit: "5a2ff4c576d9731758f368c0f73c16b56bbaacc0"
     branch: "task/i1-dsc-001-discovery"
-    candidateCommit: null
-    pullRequest: null
+    candidateCommit: "8c9236bd0b4a83631e9681f2c7c46e21bb0eb070"
+    mergeCommit: "2c7e5f86e3dc5badd11e4e37e4cc0fa4d9406369"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/31"
 
     blockers: []
 
@@ -617,7 +618,7 @@ summary:
   counts:
     BACKLOG: 0
     READY: 0
-    CLAIMED: 1
+    CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
@@ -626,7 +627,7 @@ summary:
     CI_PENDING: 0
     HUMAN_REVIEW: 0
     MERGED: 0
-    VERIFIED: 12
+    VERIFIED: 13
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
