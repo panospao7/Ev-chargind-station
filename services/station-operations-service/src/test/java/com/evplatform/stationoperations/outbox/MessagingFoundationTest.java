@@ -37,6 +37,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
@@ -67,6 +68,24 @@ class MessagingFoundationTest {
     private static final String SCHEMA = "station_operations";
     private static final String POC_QUEUE = "poc.station.published";
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /**
+     * message_type → (dataschema $id, routing key) for every family the seed
+     * emits; mirrors the registry and the dispatcher's map/derivation.
+     */
+    private static final Map<String, List<String>> FAMILY_BY_TYPE = Map.of(
+            "com.evplatform.station.published.v1",
+            List.of("https://schema-registry.example.com/events/station-published-event.json",
+                    "station.published"),
+            "com.evplatform.station.evse-configuration-changed.v1",
+            List.of("https://schema-registry.example.com/events/evse-configuration-changed-event.json",
+                    "station.evse-configuration-changed"),
+            "com.evplatform.station.connector-configuration-changed.v1",
+            List.of("https://schema-registry.example.com/events/connector-configuration-changed-event.json",
+                    "station.connector-configuration-changed"),
+            "com.evplatform.station.tariff-published.v1",
+            List.of("https://schema-registry.example.com/events/tariff-published-event.json",
+                    "station.tariff-published"));
 
     static final PostgreSQLContainer PG = StartOnce.PG;
     static final GenericContainer<?> RABBIT = StartOnce.RABBIT;
@@ -298,18 +317,24 @@ class MessagingFoundationTest {
                 java.util.Map.of("x-queue-type", "quorum",
                         "x-dead-letter-exchange", "",
                         "x-dead-letter-routing-key", POC_QUEUE + ".dlq")));
-        admin.declareBinding(new Binding(POC_QUEUE, Binding.DestinationType.QUEUE,
-                "ev.domain.v1", "station.published", java.util.Map.of()));
+        // one binding per seeded fact family: the dispatcher derives routing
+        // keys from the message types, so every family must be bound or the
+        // mandatory publishes would be returned as unroutable
+        for (List<String> family : FAMILY_BY_TYPE.values()) {
+            admin.declareBinding(new Binding(POC_QUEUE, Binding.DestinationType.QUEUE,
+                    "ev.domain.v1", family.get(1), java.util.Map.of()));
+        }
 
         OutboxDispatcher dispatcher = dispatcherFor(rabbit);
         int published = dispatcher.dispatchOnce();
-        assertEquals(2, published, "both StationPublished facts must confirm");
+        assertEquals(15, published, "all 15 seed facts must confirm in one batch");
 
         // PUBLISHED markers (confirms)
-        assertEquals(2, count("outbox_message", "state = 'PUBLISHED'"));
+        assertEquals(15, count("outbox_message", "state = 'PUBLISHED'"));
 
-        // consume both messages (manual acknowledgement via explicit channel)
+        // consume all 15 messages (manual acknowledgement via explicit channel)
         int received = 0;
+        var seenFamilies = new LinkedHashSet<String>();
         var cf = new CachingConnectionFactory(RABBIT.getHost(), RABBIT.getMappedPort(5672));
         cf.setUsername("guest");
         cf.setPassword("guest");
@@ -321,15 +346,20 @@ class MessagingFoundationTest {
                 if (delivery == null) break;
                 JsonNode envelope = MAPPER.readTree(delivery.getBody());
                 assertEquals("1.0", envelope.get("specversion").asText());
-                assertEquals("com.evplatform.station.published.v1",
-                        envelope.get("type").asText());
+                String messageType = envelope.get("type").asText();
+                List<String> family = FAMILY_BY_TYPE.get(messageType);
+                assertNotNull(family, "every delivered type must be a seeded family: "
+                        + messageType);
 
                 // I1-MSG-003: the wire envelope must carry the ARC-014 §2
-                // extension attributes derived from the outbox columns.
-                UUID consumedId = UUID.fromString(envelope.get("id").asText());
-                assertEquals("https://schema-registry.example.com/events/station-published-event.json",
-                        envelope.get("dataschema").asText(),
+                // extension attributes derived from the outbox columns,
+                // including the per-family dataschema and the routing key
+                // derived from the message type (registry naming).
+                assertEquals(family.get(0), envelope.get("dataschema").asText(),
                         "dataschema must map the message type to the event schema $id");
+                assertEquals(family.get(1), delivery.getEnvelope().getRoutingKey(),
+                        "routing key must be derived from the message type per the registry");
+                UUID consumedId = UUID.fromString(envelope.get("id").asText());
                 OutboxColumns columns = outboxColumns(consumedId);
                 assertEquals(columns.correlationId().toString(),
                         envelope.get("correlationid").asText(),
@@ -361,14 +391,17 @@ class MessagingFoundationTest {
                                 """)
                         .param(consumer)
                         .param(UUID.fromString(envelope.get("id").asText()))
-                        .param(envelope.get("type").asText())
+                        .param(messageType)
                         .update() > 0);
                 assertTrue(first, "at-least-once duplicates must be deduplicated by the inbox");
                 channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                seenFamilies.add(messageType);
                 received++;
             }
         }
-        assertEquals(2, received, "both published events must reach the quorum queue");
+        assertEquals(15, received, "all 15 seed facts must reach the quorum queue");
+        assertEquals(FAMILY_BY_TYPE.keySet(), seenFamilies,
+                "all four seeded fact families must be observed on the wire");
     }
 
     @Test
@@ -849,6 +882,80 @@ class MessagingFoundationTest {
             return field.getInt(dispatcher);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
+        }
+    }
+
+    /**
+     * MINOR-7: an outbox row whose message_type has no dataschema mapping
+     * must never be published — dispatch marks it DATASCHEMA_UNMAPPED
+     * (fail-fast, I1-MSG-003 closure) and, after the max attempt budget, the
+     * row is QUARANTINED instead of shipping a schema-less fact.
+     *
+     * The row is inserted directly (a bare INSERT, not OutboxWriter, whose
+     * envelope validation would refuse nothing here but whose fact-identity
+     * conflict target is irrelevant for an unmapped type) so the test
+     * exercises exactly the dispatcher's unmapped-type branch. Backoff is 0
+     * so three dispatchOnce() passes exhaust the budget deterministically;
+     * the POC topology is untouched because nothing is ever sent.
+     */
+    @Test
+    @Order(13)
+    void unmappedMessageTypeIsNeverPublishedAndQuarantines() throws Exception {
+        UUID fact = UUID.fromString("00000000-0000-0000-0000-000000000901");
+        ObjectNode envelope = MAPPER.createObjectNode();
+        envelope.put("specversion", "1.0");
+        envelope.put("type", "com.evplatform.station.unknown.v1");
+        envelope.put("source", "//station-operations-service");
+        envelope.put("id", fact.toString());
+        envelope.set("data", MAPPER.createObjectNode());
+
+        try {
+            jdbc(RUNTIME).sql("""
+                            INSERT INTO station_operations.outbox_message
+                                (message_id, kind, message_type, aggregate_type, aggregate_ref,
+                                 aggregate_version, workflow_ref, correlation_id, causation_id,
+                                 classification, payload, available_at)
+                            VALUES (?, 'EVENT', 'com.evplatform.station.unknown.v1', 'Station',
+                                    ?, 0, NULL, ?, NULL, 'BUSINESS', ?::jsonb, now() - interval '1 second')
+                            """)
+                    .param(fact)
+                    .param(fact)
+                    .param(fact)
+                    .param(envelope.toString())
+                    .update();
+
+            // backoff 0 → every pass is immediately due again
+            OutboxDispatcher dispatcher = new OutboxDispatcher(
+                    jdbc(RUNTIME), rabbitTemplate(RABBIT.getHost(), RABBIT.getMappedPort(5672)),
+                    3, 0, 2000, 30);
+
+            // pass 1: unmapped → attempt 1, still PENDING, never published
+            assertEquals(0, dispatcher.dispatchOnce(),
+                    "an unmapped message type must not be published");
+            assertEquals("PENDING", rowState(fact),
+                    "pass 1 must leave the unmapped row PENDING");
+            assertEquals(1, outboxCount("message_id = '" + fact
+                            + "' AND attempt_count = 1 AND failure_category = 'DATASCHEMA_UNMAPPED'"),
+                    "pass 1 must record attempt 1 with the DATASCHEMA_UNMAPPED category");
+
+            // pass 2: attempt 2, still PENDING
+            dispatcher.dispatchOnce();
+            assertEquals("PENDING", rowState(fact), "pass 2 must leave the row PENDING");
+            assertEquals(1, outboxCount("message_id = '" + fact
+                            + "' AND attempt_count = 2 AND failure_category = 'DATASCHEMA_UNMAPPED'"),
+                    "pass 2 must record attempt 2 with the DATASCHEMA_UNMAPPED category");
+
+            // pass 3: budget exhausted → QUARANTINED, never PUBLISHED
+            dispatcher.dispatchOnce();
+            assertEquals("QUARANTINED", rowState(fact),
+                    "exhausted retries must quarantine the unmapped row");
+            assertEquals(1, outboxCount("message_id = '" + fact
+                            + "' AND attempt_count = 3 AND failure_category = 'DATASCHEMA_UNMAPPED'"),
+                    "quarantined row records three DATASCHEMA_UNMAPPED attempts");
+            assertEquals(0, outboxCount("message_id = '" + fact + "' AND state = 'PUBLISHED'"),
+                    "the unmapped fact must never reach PUBLISHED");
+        } finally {
+            deleteOutboxRow(fact);
         }
     }
 

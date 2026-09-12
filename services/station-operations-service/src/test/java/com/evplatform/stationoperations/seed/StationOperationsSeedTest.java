@@ -72,6 +72,20 @@ class StationOperationsSeedTest {
         }
     }
 
+    /** Outbox facts of one message type (seed-emitted fact families). */
+    private static long outboxFacts(String messageType) throws Exception {
+        try (Connection c = connect(RUNTIME);
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT count(*) FROM " + SCHEMA + ".outbox_message "
+                             + "WHERE message_type = ?")) {
+            ps.setString(1, messageType);
+            try (ResultSet rs = ps.executeQuery()) {
+                rs.next();
+                return rs.getLong(1);
+            }
+        }
+    }
+
     private static StationOperationsSeeder seeder() throws Exception {
         var ds = new org.springframework.jdbc.datasource.SimpleDriverDataSource(
                 new org.postgresql.Driver(),
@@ -147,7 +161,18 @@ class StationOperationsSeedTest {
         assertEquals(1, count("booking_policy"));
         assertEquals(1, count("booking_policy_version"));
         assertEquals(4, count("simulator_assignment"), "one assignment per EVSE");
-        assertEquals(2, count("outbox_message"), "one StationPublished fact per published station");
+        // one fact per published station, one per EVSE, one per connector,
+        // one for the active tariff version — all in the seed transaction
+        assertEquals(2, outboxFacts("com.evplatform.station.published.v1"),
+                "one StationPublished fact per published station");
+        assertEquals(4, outboxFacts("com.evplatform.station.evse-configuration-changed.v1"),
+                "one EVSEConfigurationChanged fact per EVSE");
+        assertEquals(8, outboxFacts("com.evplatform.station.connector-configuration-changed.v1"),
+                "one ConnectorConfigurationChanged fact per connector");
+        assertEquals(1, outboxFacts("com.evplatform.station.tariff-published.v1"),
+                "one TariffPublished fact for the active tariff version");
+        assertEquals(15, count("outbox_message"),
+                "2 published + 4 evse + 8 connector + 1 tariff = 15 facts");
 
         try (Connection c = connect(RUNTIME);
              PreparedStatement ps = c.prepareStatement(
@@ -242,6 +267,8 @@ class StationOperationsSeedTest {
         assertEquals(8, count("connector"));
         assertEquals(4, count("simulator_assignment"));
         assertEquals(1, count("booking_policy_version"));
+        assertEquals(15, count("outbox_message"),
+                "re-seed after reset must restore all 15 facts (2+4+8+1)");
     }
 
     /**

@@ -19,9 +19,12 @@ import java.util.UUID;
  * schema; the runner connects with the STA runtime role, which provably
  * cannot reach other databases (I1-DAT-001 role separation).
  *
- * The whole seed — data plus one StationPublished outbox fact per published
- * station — commits in a single transaction: the business change and the
- * outbox record commit together (AGENTS.md §4; FR-PLT-01).
+ * The whole seed — data plus the outbox facts (one StationPublished fact per
+ * published station, one EVSEConfigurationChanged fact per EVSE, one
+ * ConnectorConfigurationChanged fact per connector, one TariffPublished fact
+ * for the active tariff version) — commits in a single transaction: the
+ * business change and the outbox records commit together (AGENTS.md §4;
+ * FR-PLT-01).
  *
  * Idempotency: fixed identifiers + ON CONFLICT DO NOTHING and the §8.1
  * unique event-fact constraint — re-running never duplicates or mutates.
@@ -31,7 +34,13 @@ public class StationOperationsSeeder {
 
     private static final String STATION_PUBLISHED_TYPE =
             "com.evplatform.station.published.v1";
-    private static final String STATION_PUBLISHED_SOURCE =
+    private static final String EVSE_CONFIGURATION_CHANGED_TYPE =
+            "com.evplatform.station.evse-configuration-changed.v1";
+    private static final String CONNECTOR_CONFIGURATION_CHANGED_TYPE =
+            "com.evplatform.station.connector-configuration-changed.v1";
+    private static final String TARIFF_PUBLISHED_TYPE =
+            "com.evplatform.station.tariff-published.v1";
+    private static final String EVENT_SOURCE =
             "//station-operations-service";
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -88,6 +97,42 @@ public class StationOperationsSeeder {
                     SeedDataset.STATION_B_POSTAL, SeedDataset.STATION_B_LAT,
                     SeedDataset.STATION_B_LON,
                     UUID.fromString("00000000-0000-0000-0000-000000000302"));
+            // deterministic fact order within the transaction: published
+            // facts first, then EVSEs, then connectors, then the tariff
+            emitEvseConfigurationChanged(SeedDataset.EVSE_A1,
+                    UUID.fromString("00000000-0000-0000-0000-000000000303"));
+            emitEvseConfigurationChanged(SeedDataset.EVSE_A2,
+                    UUID.fromString("00000000-0000-0000-0000-000000000304"));
+            emitEvseConfigurationChanged(SeedDataset.EVSE_B1,
+                    UUID.fromString("00000000-0000-0000-0000-000000000305"));
+            emitEvseConfigurationChanged(SeedDataset.EVSE_B2,
+                    UUID.fromString("00000000-0000-0000-0000-000000000306"));
+            emitConnectorConfigurationChanged(SeedDataset.EVSE_A1,
+                    SeedDataset.CONNECTOR_DC, SeedDataset.CONNECTOR_DC_POWER_W,
+                    UUID.fromString("00000000-0000-0000-0000-000000000307"));
+            emitConnectorConfigurationChanged(SeedDataset.EVSE_A1,
+                    SeedDataset.CONNECTOR_AC, SeedDataset.CONNECTOR_AC_POWER_W,
+                    UUID.fromString("00000000-0000-0000-0000-000000000308"));
+            emitConnectorConfigurationChanged(SeedDataset.EVSE_A2,
+                    SeedDataset.CONNECTOR_DC, SeedDataset.CONNECTOR_DC_POWER_W,
+                    UUID.fromString("00000000-0000-0000-0000-000000000309"));
+            emitConnectorConfigurationChanged(SeedDataset.EVSE_A2,
+                    SeedDataset.CONNECTOR_AC, SeedDataset.CONNECTOR_AC_POWER_W,
+                    UUID.fromString("00000000-0000-0000-0000-000000000310"));
+            emitConnectorConfigurationChanged(SeedDataset.EVSE_B1,
+                    SeedDataset.CONNECTOR_DC, SeedDataset.CONNECTOR_DC_POWER_W,
+                    UUID.fromString("00000000-0000-0000-0000-000000000311"));
+            emitConnectorConfigurationChanged(SeedDataset.EVSE_B1,
+                    SeedDataset.CONNECTOR_AC, SeedDataset.CONNECTOR_AC_POWER_W,
+                    UUID.fromString("00000000-0000-0000-0000-000000000312"));
+            emitConnectorConfigurationChanged(SeedDataset.EVSE_B2,
+                    SeedDataset.CONNECTOR_DC, SeedDataset.CONNECTOR_DC_POWER_W,
+                    UUID.fromString("00000000-0000-0000-0000-000000000313"));
+            emitConnectorConfigurationChanged(SeedDataset.EVSE_B2,
+                    SeedDataset.CONNECTOR_AC, SeedDataset.CONNECTOR_AC_POWER_W,
+                    UUID.fromString("00000000-0000-0000-0000-000000000314"));
+            emitTariffPublished(
+                    UUID.fromString("00000000-0000-0000-0000-000000000315"));
         });
     }
 
@@ -109,7 +154,7 @@ public class StationOperationsSeeder {
         ObjectNode envelope = MAPPER.createObjectNode();
         envelope.put("specversion", "1.0");
         envelope.put("type", STATION_PUBLISHED_TYPE);
-        envelope.put("source", STATION_PUBLISHED_SOURCE);
+        envelope.put("source", EVENT_SOURCE);
         envelope.put("id", messageId.toString());
         envelope.put("time", Instant.now().toString());
         envelope.put("datacontenttype", "application/json");
@@ -119,6 +164,106 @@ public class StationOperationsSeeder {
         outbox.append(messageId, "EVENT", STATION_PUBLISHED_TYPE, "Station",
                 stationRef, 0, messageId, null, "BUSINESS",
                 (JsonNode) envelope, Instant.now());
+    }
+
+    /**
+     * EVSE configuration fact (ARC-020 §6): the public EVSE identity — ref,
+     * owning station, provider-side UID. Aggregate version 0: the seed
+     * publishes the initial configuration once, and the §8.1 event-fact
+     * uniqueness keeps re-seeds idempotent.
+     */
+    private void emitEvseConfigurationChanged(SeedDataset.Evse evse, UUID messageId) {
+        ObjectNode data = MAPPER.createObjectNode();
+        data.put("evseRef", evse.ref().toString());
+        data.put("stationRef", evse.stationRef().toString());
+        data.put("evseUid", evse.uid());
+
+        ObjectNode envelope = MAPPER.createObjectNode();
+        envelope.put("specversion", "1.0");
+        envelope.put("type", EVSE_CONFIGURATION_CHANGED_TYPE);
+        envelope.put("source", EVENT_SOURCE);
+        envelope.put("id", messageId.toString());
+        envelope.put("time", Instant.now().toString());
+        envelope.put("datacontenttype", "application/json");
+        envelope.put("subject", "evse/" + evse.uid());
+        envelope.set("data", data);
+
+        outbox.append(messageId, "EVENT", EVSE_CONFIGURATION_CHANGED_TYPE,
+                "EVSE", evse.ref(), 0, messageId, null, "BUSINESS",
+                (JsonNode) envelope, Instant.now());
+    }
+
+    /**
+     * Connector configuration fact (ARC-020 §6): type and maximum power for
+     * one connector of the given EVSE. The connector ref is derived exactly
+     * as {@link #insertConnectors(SeedDataset.Evse)} derives it, so the fact
+     * can never reference a connector the seed did not persist.
+     */
+    private void emitConnectorConfigurationChanged(SeedDataset.Evse evse,
+                                                   String connectorType,
+                                                   int maxPowerW, UUID messageId) {
+        UUID connectorRef = connectorRef(evse.uid(), connectorType);
+        ObjectNode data = MAPPER.createObjectNode();
+        data.put("connectorRef", connectorRef.toString());
+        data.put("evseRef", evse.ref().toString());
+        data.put("connectorType", connectorType);
+        data.put("maxPowerW", maxPowerW);
+
+        ObjectNode envelope = MAPPER.createObjectNode();
+        envelope.put("specversion", "1.0");
+        envelope.put("type", CONNECTOR_CONFIGURATION_CHANGED_TYPE);
+        envelope.put("source", EVENT_SOURCE);
+        envelope.put("id", messageId.toString());
+        envelope.put("time", Instant.now().toString());
+        envelope.put("datacontenttype", "application/json");
+        envelope.put("subject", "connector/" + connectorRef);
+        envelope.set("data", data);
+
+        outbox.append(messageId, "EVENT", CONNECTOR_CONFIGURATION_CHANGED_TYPE,
+                "Connector", connectorRef, 0, messageId, null, "BUSINESS",
+                (JsonNode) envelope, Instant.now());
+    }
+
+    /**
+     * TariffPublished fact (ARC-020 §6): the seed's single ACTIVE tariff
+     * version with its two components. Emitted once per seed dataset; the
+     * §8.1 uniqueness keys it on the immutable tariff version.
+     */
+    private void emitTariffPublished(UUID messageId) {
+        ObjectNode energy = MAPPER.createObjectNode();
+        energy.put("componentKind", SeedDataset.COMPONENT_ENERGY_KIND);
+        energy.put("unit", SeedDataset.COMPONENT_ENERGY_UNIT);
+        energy.put("amountMinor", SeedDataset.COMPONENT_ENERGY_AMOUNT_MINOR);
+        ObjectNode occupancy = MAPPER.createObjectNode();
+        occupancy.put("componentKind", SeedDataset.COMPONENT_OCCUPANCY_KIND);
+        occupancy.put("unit", SeedDataset.COMPONENT_OCCUPANCY_UNIT);
+        occupancy.put("amountMinor", SeedDataset.COMPONENT_OCCUPANCY_AMOUNT_MINOR);
+        ObjectNode data = MAPPER.createObjectNode();
+        data.put("tariffRef", SeedDataset.TARIFF_REF.toString());
+        data.put("tariffVersionRef", SeedDataset.TARIFF_VERSION_REF.toString());
+        data.put("versionNumber", SeedDataset.TARIFF_VERSION_NUMBER);
+        data.put("currency", SeedDataset.TARIFF_CURRENCY);
+        data.set("components", MAPPER.createArrayNode().add(energy).add(occupancy));
+
+        ObjectNode envelope = MAPPER.createObjectNode();
+        envelope.put("specversion", "1.0");
+        envelope.put("type", TARIFF_PUBLISHED_TYPE);
+        envelope.put("source", EVENT_SOURCE);
+        envelope.put("id", messageId.toString());
+        envelope.put("time", Instant.now().toString());
+        envelope.put("datacontenttype", "application/json");
+        envelope.put("subject", "tariff/" + SeedDataset.TARIFF_VERSION_REF);
+        envelope.set("data", data);
+
+        outbox.append(messageId, "EVENT", TARIFF_PUBLISHED_TYPE,
+                "TariffVersion", SeedDataset.TARIFF_VERSION_REF, 0, messageId,
+                null, "BUSINESS", (JsonNode) envelope, Instant.now());
+    }
+
+    /** Connector ref derivation shared by persistence and event emission. */
+    static UUID connectorRef(String evseUid, String connectorType) {
+        return UUID.nameUUIDFromBytes(
+                (evseUid + "|" + connectorType).getBytes());
     }
 
     private void insertOrganization() {
@@ -184,12 +329,10 @@ public class StationOperationsSeeder {
                 VALUES (?, ?, ?, ?), (?, ?, ?, ?)
                 ON CONFLICT (connector_ref) DO NOTHING
                 """)
-                .param(UUID.nameUUIDFromBytes(
-                        (evse.uid() + "|CCS").getBytes()))
+                .param(connectorRef(evse.uid(), SeedDataset.CONNECTOR_DC))
                 .param(evse.ref()).param(SeedDataset.CONNECTOR_DC)
                 .param(SeedDataset.CONNECTOR_DC_POWER_W)
-                .param(UUID.nameUUIDFromBytes(
-                        (evse.uid() + "|TYPE2").getBytes()))
+                .param(connectorRef(evse.uid(), SeedDataset.CONNECTOR_AC))
                 .param(evse.ref()).param(SeedDataset.CONNECTOR_AC)
                 .param(SeedDataset.CONNECTOR_AC_POWER_W)
                 .update();

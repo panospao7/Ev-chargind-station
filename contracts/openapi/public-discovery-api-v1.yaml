@@ -29,6 +29,22 @@ paths:
           schema:
             type: integer
             default: 20
+        - name: connectorType
+          in: query
+          description: >
+            Depth filter: only stations with at least one ACTIVE EVSE having
+            an ACTIVE connector of exactly this type (e.g. CCS, TYPE2).
+          schema:
+            type: string
+        - name: minPowerW
+          in: query
+          description: >
+            Depth filter: only stations with at least one ACTIVE EVSE having
+            an ACTIVE connector with maxPowerW greater than or equal to this
+            value in watts. Combinable with connectorType.
+          schema:
+            type: integer
+            minimum: 1
       responses:
         '200':
           description: List of stations
@@ -66,6 +82,29 @@ paths:
                 countryCode: "GR"
                 updatedAt: "2026-09-12T00:00:00Z"
                 sourceVersion: 0
+                totalEvses: 2
+                evses:
+                  - uid: "GR*SEED*A1"
+                    connectors:
+                      - type: "CCS"
+                        maxPowerW: 150000
+                      - type: "TYPE2"
+                        maxPowerW: 22000
+                  - uid: "GR*SEED*A2"
+                    connectors:
+                      - type: "CCS"
+                        maxPowerW: 150000
+                      - type: "TYPE2"
+                        maxPowerW: 22000
+                tariff:
+                  currency: "EUR"
+                  components:
+                    - kind: "ENERGY_PER_KWH"
+                      unit: "KWH"
+                      amountMinor: 480
+                    - kind: "OCCUPANCY_PER_MINUTE"
+                      unit: "MINUTE"
+                      amountMinor: 10
         '404':
           description: Station not found
           content:
@@ -162,12 +201,89 @@ components:
         sourceVersion:
           type: integer
           description: Source aggregate version of the last applied event
+        totalEvses:
+          type: integer
+          description: Number of ACTIVE EVSEs projected for this station
+        evses:
+          type: array
+          description: >
+            The station's ACTIVE EVSEs with their ACTIVE connectors (public
+            provider-side identities only).
+          items:
+            $ref: '#/components/schemas/EvseView'
+        tariff:
+          description: >
+            The highest-version ACTIVE published tariff version (nullable —
+            absent when no tariff is projected). Organization-scoped in the
+            source domain: the platform-published version, not a per-station
+            price.
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/TariffView'
       required:
         - ref
         - name
         - latitude
         - longitude
         - updatedAt
+    EvseView:
+      type: object
+      properties:
+        uid:
+          type: string
+          description: Provider-side EVSE UID (public identity)
+        connectors:
+          type: array
+          description: The EVSE's ACTIVE connectors ordered by type
+          items:
+            $ref: '#/components/schemas/ConnectorView'
+      required:
+        - uid
+        - connectors
+    ConnectorView:
+      type: object
+      properties:
+        type:
+          type: string
+          description: Connector type (e.g. CCS, TYPE2)
+        maxPowerW:
+          type: integer
+          description: Maximum power in watts (positive)
+      required:
+        - type
+        - maxPowerW
+    TariffView:
+      type: object
+      properties:
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: ISO 4217 currency code
+        components:
+          type: array
+          description: Price components of this tariff version
+          items:
+            $ref: '#/components/schemas/ComponentView'
+      required:
+        - currency
+        - components
+    ComponentView:
+      type: object
+      properties:
+        kind:
+          type: string
+          description: Component kind (e.g. ENERGY_PER_KWH, OCCUPANCY_PER_MINUTE)
+        unit:
+          type: string
+          description: Unit the amount applies to (e.g. KWH, MINUTE)
+        amountMinor:
+          type: integer
+          description: Amount in minor currency units
+      required:
+        - kind
+        - unit
+        - amountMinor
     StationAvailability:
       type: object
       properties:

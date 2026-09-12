@@ -18,29 +18,33 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * I1-MSG-002 AC-04 (review finding M4): the StationPublished envelopes the
- * service actually emits into the outbox must validate against the
- * authoritative executable schemas — contracts/schemas/common/cloud-event.json
- * for the envelope and contracts/schemas/events/station-published-event.json
- * for the payload's data. Executable-schema validation, not shape assertion.
+ * I1-MSG-002 AC-04 (review finding M4): the event envelopes the service
+ * actually emits into the outbox must validate against the authoritative
+ * executable schemas — contracts/schemas/common/cloud-event.json for the
+ * envelope and the per-family event schema (station-published,
+ * evse-configuration-changed, connector-configuration-changed,
+ * tariff-published) for the payload's data. Executable-schema validation,
+ * not shape assertion. Every outbox row is validated: rows are grouped by
+ * message_type and each group is validated against its own schema.
  *
  * I1-MSG-003: the WIRE envelope (what the dispatcher actually sends) is the
  * stored payload plus the ARC-014 §2 extension attributes derived from the
  * outbox columns at send time via OutboxDispatcher.enrichedPayload. The
  * enriched envelope must still validate against cloud-event.json (extensions
- * are additional properties) and its data against
- * station-published-event.json, with correlationid/aggregateid/
- * aggregateversion/dataschema equal to the authoritative columns and
- * causationid absent for NULL causation_id.
+ * are additional properties) and its data against the family schema, with
+ * correlationid/aggregateid/aggregateversion/dataschema equal to the
+ * authoritative columns and causationid absent for NULL causation_id.
  *
  * The negative control proves the harness can fail: an envelope missing the
  * required id attribute must produce validation errors.
@@ -53,6 +57,33 @@ class ContractSchemaValidationTest {
     private static final String RUNTIME = "station_operations_runtime";
     private static final String SCHEMA = "station_operations";
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    /** message_type → event schema file, mirroring the registry schemaPath. */
+    private static final Map<String, String> SCHEMA_FILE_BY_TYPE = Map.of(
+            "com.evplatform.station.published.v1", "station-published-event.json",
+            "com.evplatform.station.evse-configuration-changed.v1",
+            "evse-configuration-changed-event.json",
+            "com.evplatform.station.connector-configuration-changed.v1",
+            "connector-configuration-changed-event.json",
+            "com.evplatform.station.tariff-published.v1", "tariff-published-event.json");
+
+    /** message_type → the $id of the family's executable event schema. */
+    private static final Map<String, String> SCHEMA_ID_BY_TYPE = Map.of(
+            "com.evplatform.station.published.v1",
+            "https://schema-registry.example.com/events/station-published-event.json",
+            "com.evplatform.station.evse-configuration-changed.v1",
+            "https://schema-registry.example.com/events/evse-configuration-changed-event.json",
+            "com.evplatform.station.connector-configuration-changed.v1",
+            "https://schema-registry.example.com/events/connector-configuration-changed-event.json",
+            "com.evplatform.station.tariff-published.v1",
+            "https://schema-registry.example.com/events/tariff-published-event.json");
+
+    /** Per-family expected fact counts for the canonical seed dataset. */
+    private static final Map<String, Integer> EXPECTED_FACTS_BY_TYPE = Map.of(
+            "com.evplatform.station.published.v1", 2,
+            "com.evplatform.station.evse-configuration-changed.v1", 4,
+            "com.evplatform.station.connector-configuration-changed.v1", 8,
+            "com.evplatform.station.tariff-published.v1", 1);
 
     private static final PostgreSQLContainer PG = StartOnce.PG;
 
@@ -79,26 +110,29 @@ class ContractSchemaValidationTest {
     }
 
     @Test
-    void emittedStationPublishedEnvelopesValidateAgainstExecutableSchemas() throws Exception {
+    void emittedEnvelopesValidateAgainstExecutableSchemas() throws Exception {
         JsonSchemaFactory factory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
         JsonSchema cloudEventSchema = factory.getSchema(
                 Files.newInputStream(contractsDir()
                         .resolve("schemas").resolve("common").resolve("cloud-event.json")));
-        JsonSchema stationPublishedSchema = factory.getSchema(
-                Files.newInputStream(contractsDir()
-                        .resolve("schemas").resolve("events")
-                        .resolve("station-published-event.json")));
+        Map<String, JsonSchema> eventSchemas = new java.util.HashMap<>();
+        for (String schemaFile : SCHEMA_FILE_BY_TYPE.values()) {
+            eventSchemas.put(schemaFile, factory.getSchema(
+                    Files.newInputStream(contractsDir()
+                            .resolve("schemas").resolve("events").resolve(schemaFile))));
+        }
 
+        // every outbox row, grouped by message_type, validated against its
+        // own family schema — no row is exempt from contract validation
         try (Connection c = connect(RUNTIME);
              PreparedStatement ps = c.prepareStatement(
                      "SELECT message_id, message_type, payload, attempt_count, "
                              + "correlation_id, causation_id, aggregate_ref, aggregate_version, "
                              + "classification "
                              + "FROM " + SCHEMA + ".outbox_message "
-                             + "WHERE message_type = 'com.evplatform.station.published.v1' "
                              + "ORDER BY message_id");
              ResultSet rs = ps.executeQuery()) {
-            int validated = 0;
+            Map<String, Integer> validatedByType = new java.util.HashMap<>();
             while (rs.next()) {
                 UUID messageId = rs.getObject("message_id", UUID.class);
                 String messageType = rs.getString("message_type");
@@ -110,7 +144,11 @@ class ContractSchemaValidationTest {
                 long aggregateVersion = rs.getLong("aggregate_version");
                 String classification = rs.getString("classification");
 
-                // raw stored payload validations (unchanged, I1-MSG-002)
+                JsonSchema eventSchema = eventSchemas.get(SCHEMA_FILE_BY_TYPE.get(messageType));
+                assertNotNull(eventSchema, "every outbox message_type must map to a family schema: "
+                        + messageType);
+
+                // raw stored payload validations (I1-MSG-002, now all families)
                 JsonNode envelope = MAPPER.readTree(payload);
                 Set<ValidationMessage> envelopeErrors =
                         cloudEventSchema.validate(envelope);
@@ -118,10 +156,10 @@ class ContractSchemaValidationTest {
                         "emitted envelope must validate against cloud-event.json: "
                                 + envelopeErrors + " in " + envelope);
                 Set<ValidationMessage> payloadErrors =
-                        stationPublishedSchema.validate(envelope.get("data"));
+                        eventSchema.validate(envelope.get("data"));
                 assertTrue(payloadErrors.isEmpty(),
                         "emitted payload data must validate against "
-                                + "station-published-event.json: " + payloadErrors);
+                                + SCHEMA_FILE_BY_TYPE.get(messageType) + ": " + payloadErrors);
 
                 // I1-MSG-003: validate the ENRICHED wire envelope the
                 // dispatcher derives at send time
@@ -137,10 +175,11 @@ class ContractSchemaValidationTest {
                                 + "(ARC-014 §2 extensions are additional properties): "
                                 + enrichedEnvelopeErrors + " in " + enriched);
                 Set<ValidationMessage> enrichedPayloadErrors =
-                        stationPublishedSchema.validate(enriched.get("data"));
+                        eventSchema.validate(enriched.get("data"));
                 assertTrue(enrichedPayloadErrors.isEmpty(),
                         "enriched envelope data must validate against "
-                                + "station-published-event.json: " + enrichedPayloadErrors);
+                                + SCHEMA_FILE_BY_TYPE.get(messageType) + ": "
+                                + enrichedPayloadErrors);
                 assertEquals(correlationId.toString(),
                         enriched.get("correlationid").asText(),
                         "correlationid must equal the correlation_id column");
@@ -150,9 +189,9 @@ class ContractSchemaValidationTest {
                 assertEquals(aggregateVersion,
                         enriched.get("aggregateversion").asLong(),
                         "aggregateversion must equal the aggregate_version column as a number");
-                assertEquals("https://schema-registry.example.com/events/station-published-event.json",
+                assertEquals(SCHEMA_ID_BY_TYPE.get(messageType),
                         enriched.get("dataschema").asText(),
-                        "dataschema must be the event schema $id");
+                        "dataschema must be the event schema $id for the message type");
                 assertEquals(classification,
                         enriched.get("classification").asText(),
                         "classification must equal the outbox classification column");
@@ -160,10 +199,10 @@ class ContractSchemaValidationTest {
                         "causationid must be absent for NULL causation_id, not null-valued");
                 assertNull(enriched.get("traceparent"),
                         "traceparent must never be emitted");
-                validated++;
+                validatedByType.merge(messageType, 1, Integer::sum);
             }
-            assertEquals(2, validated,
-                    "the seed must have emitted one StationPublished fact per station");
+            assertEquals(EXPECTED_FACTS_BY_TYPE, validatedByType,
+                    "the seed must emit the canonical fact inventory (2+4+8+1 = 15)");
         }
 
         // negative control: removing the required id attribute must fail
@@ -171,7 +210,6 @@ class ContractSchemaValidationTest {
         try (Connection c = connect(RUNTIME);
              PreparedStatement ps = c.prepareStatement(
                      "SELECT payload FROM " + SCHEMA + ".outbox_message "
-                             + "WHERE message_type = 'com.evplatform.station.published.v1' "
                              + "ORDER BY message_id LIMIT 1");
              ResultSet rs = ps.executeQuery()) {
             assertTrue(rs.next(), "a seed-emitted envelope must exist");

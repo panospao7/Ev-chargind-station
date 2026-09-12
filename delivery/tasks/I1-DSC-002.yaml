@@ -396,6 +396,9 @@ assumptions:
 openQuestions: []
 
 recordedDecisions:
+  - "Tariff projection named tariff_public_projection (owner-approved 2026-09-12): ARC-022 s9 Discovery table list names no tariff table (confirmed gap); s7.1 tariff_version_projection is Booking-owned for snapshots; the packet mandates a tariff projection — new distinct table recorded via deviation note."
+  - "Opening hours deferred with disclosure (owner-approved 2026-09-12): no allowed path carries hours to Discovery (wire payloads lack hours; schemas/registry prohibited this task; hours live only in station_operations_db). Details response omits openingHours this slice; fix path = future schema/registry task adding hours to a station event family."
+  - "Dataschema map becomes fail-fast (closes the I1-MSG-003 tracked finding): unmapped message types are quarantined with category DATASCHEMA_UNMAPPED instead of silently shipping schema-less facts; map extended with the three new family $ids."
   - "Owner selected the Discovery-depth slice over the Angular app (2026-09-12)."
   - "Owner approved the L2 public-discovery-api extension (filters + richer
     details) (2026-09-12)."
