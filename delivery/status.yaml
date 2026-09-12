@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T12:10:00Z"
+updatedAt: "2026-09-12T13:20:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -444,17 +444,17 @@ tasks:
         - "delivery/evidence/I1-MSG-001/messaging-foundation.md"
 
   I1-MSG-002:
-    state: "READY"
-    assignedAgent: null
-    claimedAt: null
+    state: "CLAIMED"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-12T13:20:00Z"
 
-    baselineCommit: null
-    branch: null
+    baselineCommit: "1372d8182b1a9747ed1c662117445d78d5ee0c3b"
+    branch: "task/i1-msg-002-fix-round"
     candidateCommit: null
     pullRequest: null
 
     blockers:
-      - "Owner packet approval pending (L3; planning-PR merge = approval precedent)"
+      - "none — packet approved via owner merge of PR #25; M3 disposition: implement claim protocol (default, no owner objection recorded)"
 
     deviations: []
     unresolvedFindings: []
@@ -478,7 +478,7 @@ tasks:
 
     humanApproval:
       required: true
-      reference: "L3 fix round; owner approval via planning-PR merge"
+      reference: "L3 packet approved via owner merge of PR #25 (2026-09-12); fix-PR merge remains the human gate"
       approvedCandidateCommit: null
 
     evidence:
@@ -488,7 +488,7 @@ summary:
   counts:
     BACKLOG: 0
     READY: 0
-    CLAIMED: 0
+    CLAIMED: 1
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
