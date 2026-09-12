@@ -67,6 +67,13 @@
       <artifactId>flyway-database-postgresql</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- M4 (I1-MSG-002): CloudEvents envelope JSON Schema validation in tests -->
+    <dependency>
+      <groupId>com.networknt</groupId>
+      <artifactId>json-schema-validator</artifactId>
+      <version>1.5.9</version>
+      <scope>test</scope>
+    </dependency>
     <!-- test-scope only: production code must not depend on test-support
          (ENG-001 doc §4.1 rule 9) -->
     <dependency>

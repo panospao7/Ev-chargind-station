@@ -244,6 +244,143 @@ class StationOperationsSeedTest {
         assertEquals(1, count("booking_policy_version"));
     }
 
+    /**
+     * AC-05 (review findings m1+m5): V4 gives the integration-table
+     * constraints explicit stable names and adds the idempotency expiry
+     * index. The catalogue must show the new names and must no longer carry
+     * the auto-generated constraint names from V3.
+     */
+    @Test
+    @Order(8)
+    void integrationConstraintsCarryExplicitStableNames() throws Exception {
+        try (Connection c = connect(MIGRATOR);
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT conname FROM pg_constraint "
+                             + "WHERE conrelid = 'station_operations.outbox_message'::regclass "
+                             + "AND conname = 'uq_outbox_event_fact'")) {
+            try (ResultSet rs = ps.executeQuery()) {
+                assertTrue(rs.next(), "outbox_message must carry uq_outbox_event_fact");
+            }
+        }
+        try (Connection c = connect(MIGRATOR);
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT conname FROM pg_constraint "
+                             + "WHERE conrelid = 'station_operations.idempotency_record'::regclass "
+                             + "AND conname = 'uq_idempotency_scope'")) {
+            try (ResultSet rs = ps.executeQuery()) {
+                assertTrue(rs.next(), "idempotency_record must carry uq_idempotency_scope");
+            }
+        }
+        try (Connection c = connect(MIGRATOR);
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT indexname FROM pg_indexes "
+                             + "WHERE schemaname = ? AND tablename = 'idempotency_record' "
+                             + "AND indexname = 'ix_idempotency_expiry'")) {
+            ps.setString(1, SCHEMA);
+            try (ResultSet rs = ps.executeQuery()) {
+                assertTrue(rs.next(), "idempotency_record.expires_at must be indexed");
+            }
+        }
+        // the auto-generated V3 names must be gone (renamed, not duplicated)
+        try (Connection c = connect(MIGRATOR);
+             PreparedStatement ps = c.prepareStatement(
+                     "SELECT count(*) FROM pg_constraint "
+                             + "WHERE conname IN ("
+                             + "'outbox_message_aggregate_type_aggregate_ref_aggregate_versi_key', "
+                             + "'idempotency_record_principal_identity_operation_target_reso_key')")) {
+            try (ResultSet rs = ps.executeQuery()) {
+                assertTrue(rs.next());
+                assertEquals(0, rs.getInt(1),
+                        "the auto-generated V3 constraint names must be absent after V4");
+            }
+        }
+    }
+
+    /**
+     * AC-05 upgrade path: a fresh database migrated to V3 first, then to the
+     * latest version, must end in the same explicitly-named state as a fresh
+     * install — proving the V4 rename applies cleanly on top of V3.
+     */
+    @Test
+    @Order(9)
+    void v4UpgradePathFromV3ProducesExplicitNames() throws Exception {
+        PostgreSQLContainer upgrade = LocalDependencies.newPostgresWithProvisioning(
+                Path.of("..", "..", "infra", "local", "postgres"));
+        upgrade.start();
+        String url = "jdbc:postgresql://" + upgrade.getHost() + ":"
+                + upgrade.getMappedPort(5432) + "/" + DB;
+        String location = "filesystem:" + Path.of("..", "..",
+                "services", "station-operations-service",
+                "src", "main", "resources", "db", "migration").normalize();
+        try {
+            // migrate to V3 only
+            org.flywaydb.core.api.output.MigrateResult toV3 = Flyway.configure()
+                    .dataSource(url, MIGRATOR, PW)
+                    .locations(location)
+                    .schemas(SCHEMA)
+                    .defaultSchema(SCHEMA)
+                    .target("3")
+                    .load()
+                    .migrate();
+            assertEquals("3", toV3.targetSchemaVersion,
+                    "the upgrade fixture must stop at V3");
+            // then upgrade to latest (V4)
+            Flyway.configure()
+                    .dataSource(url, MIGRATOR, PW)
+                    .locations(location)
+                    .schemas(SCHEMA)
+                    .defaultSchema(SCHEMA)
+                    .load()
+                    .migrate();
+            try (Connection c = DriverManager.getConnection(url, MIGRATOR, PW);
+                 PreparedStatement ps = c.prepareStatement(
+                         "SELECT count(*) FROM pg_constraint "
+                                 + "WHERE conname IN ('uq_outbox_event_fact', 'uq_idempotency_scope')")) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    assertTrue(rs.next());
+                    assertEquals(2, rs.getInt(1),
+                            "V3→V4 upgrade must produce both explicit constraint names");
+                }
+            }
+        } finally {
+            upgrade.stop();
+        }
+    }
+
+    @Test
+    @Order(10)
+    void seedRollsBackAtomicallyWhenFailureIsInjectedAfterSeed() throws Exception {
+        // start from a clean slate so the assertion is unambiguous
+        new StationOperationsReset(jdbc(MIGRATOR)).reset();
+        // The seeder joins the ambient transaction: it is constructed on the
+        // SAME DataSource instance as this test's TransactionTemplate, so its
+        // internal TransactionOperations (REQUIRED propagation) reuses the
+        // ambient connection instead of opening an independent one. A failure
+        // thrown after seed() inside the SAME transaction must therefore roll
+        // back both the business data and the outbox facts — no partial commit.
+        var ds = new org.springframework.jdbc.datasource.SimpleDriverDataSource(
+                new org.postgresql.Driver(),
+                "jdbc:postgresql://" + PG.getHost() + ":" + PG.getMappedPort(5432) + "/" + DB,
+                RUNTIME, PW);
+        var tx = new org.springframework.transaction.support.TransactionTemplate(
+                new org.springframework.jdbc.datasource.DataSourceTransactionManager(ds));
+        var writer = new com.evplatform.stationoperations.outbox.OutboxWriter(
+                org.springframework.jdbc.core.simple.JdbcClient.create(ds));
+        var seeder = new StationOperationsSeeder(
+                org.springframework.jdbc.core.simple.JdbcClient.create(ds), writer, tx);
+        assertThrows(IllegalStateException.class, () -> tx.executeWithoutResult(status -> {
+            seeder.seed();
+            throw new IllegalStateException("injected failure after seed");
+        }));
+        for (String table : TABLES) {
+            assertEquals(0, count(table),
+                    table + " must be rolled back with the outbox (atomic seed)");
+        }
+        // restore the canonical dataset for any later orders
+        seeder().seed();
+        assertEquals(2, count("station"), "re-seed after rollback must restore the dataset");
+    }
+
     /** Single provisioned container shared by the ordered suite. */
     private static class StartOnce {
         static final PostgreSQLContainer PG = start();
