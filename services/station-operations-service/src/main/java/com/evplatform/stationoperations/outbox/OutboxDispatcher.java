@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
@@ -35,16 +37,26 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class OutboxDispatcher {
 
+    private static final Logger log = LoggerFactory.getLogger(OutboxDispatcher.class);
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     /**
      * ARC-020 §2 / ARC-004 §4 dataschema mapping: message_type → the $id of
-     * the executable event schema. Unmapped message types emit no dataschema
-     * attribute (disclosed behavior; no fail-fast).
+     * the executable event schema. A message type missing from this map is
+     * never sent to the broker: dispatch marks it DATASCHEMA_UNMAPPED and
+     * after max attempts it is QUARANTINED (fail-fast; closes the I1-MSG-003
+     * tracked finding — schema-less facts must not ship silently).
      */
-    private static final Map<String, String> DATASCHEMA_BY_MESSAGE_TYPE = Map.of(
-            "com.evplatform.station.published.v1",
-            "https://schema-registry.example.com/events/station-published-event.json");
+    private static final Map<String, String> DATASCHEMA_BY_MESSAGE_TYPE = Map.ofEntries(
+            Map.entry("com.evplatform.station.published.v1",
+                    "https://schema-registry.example.com/events/station-published-event.json"),
+            Map.entry("com.evplatform.station.evse-configuration-changed.v1",
+                    "https://schema-registry.example.com/events/evse-configuration-changed-event.json"),
+            Map.entry("com.evplatform.station.connector-configuration-changed.v1",
+                    "https://schema-registry.example.com/events/connector-configuration-changed-event.json"),
+            Map.entry("com.evplatform.station.tariff-published.v1",
+                    "https://schema-registry.example.com/events/tariff-published-event.json"));
 
     private final JdbcClient jdbc;
     private final RabbitTemplate rabbit;
@@ -129,8 +141,9 @@ public class OutboxDispatcher {
      *
      * <ul>
      *   <li>{@code dataschema} — from {@link #DATASCHEMA_BY_MESSAGE_TYPE};
-     *       omitted for unmapped message types (disclosed behavior, no
-     *       fail-fast)</li>
+     *       unmapped message types never reach this point (dispatch marks
+     *       them DATASCHEMA_UNMAPPED before sending — fail-fast, I1-MSG-003
+     *       closure)</li>
      *   <li>{@code correlationid} — correlation_id column (NOT NULL)</li>
      *   <li>{@code aggregateid} — aggregate_ref column</li>
      *   <li>{@code aggregateversion} — aggregate_version column, as a JSON
@@ -177,6 +190,16 @@ public class OutboxDispatcher {
         int published = 0;
         for (OutboxRow row : claimBatch()) {
             String routingKey = routingKeyFor(row.messageType());
+            if (!DATASCHEMA_BY_MESSAGE_TYPE.containsKey(row.messageType())) {
+                // fail-fast (I1-MSG-003 closure): an unmapped message type
+                // must not ship without its dataschema attribute — it is
+                // quarantined after the normal attempt budget instead.
+                log.warn("Outbox message {} has unmapped message_type {}; "
+                                + "marking DATASCHEMA_UNMAPPED instead of sending",
+                        row.messageId(), row.messageType());
+                markAttempt(row.messageId(), "DATASCHEMA_UNMAPPED");
+                continue;
+            }
             try {
                 CorrelationData correlation = new CorrelationData(row.messageId().toString());
                 rabbit.convertAndSend(RabbitTopologyConfiguration.DOMAIN_EXCHANGE, routingKey,
