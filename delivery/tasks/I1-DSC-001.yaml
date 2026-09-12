@@ -1,0 +1,414 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-DSC-001"
+  title: "Discovery first slice — StationPublished consumer, station_search_projection, public stations list + details API"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-09"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L2"
+  owner: "Backend/Data Architect and Project Owner"
+  createdAt: "2026-09-12"
+  baselineCommit: null
+
+objective: >
+  Deliver the first user-visible slice of the S1 journey (GOV-007 §3 S1-02
+  minimal core): discovery-insights-service consumes the real StationPublished
+  events from station-operations-service (at-least-once, inbox-deduplicated,
+  version/sequence-validated per S1-09) into the service-owned
+  station_search_projection (ARC-022 §9) with a projection_checkpoint for
+  rebuild/resume, and exposes the public, unauthenticated read API:
+  GET /api/v1/stations (geo-bounded list per the existing
+  public-discovery-api-v1.yaml listStations operation) and the
+  owner-approved NEW operation GET /api/v1/stations/{stationRef} (station
+  details per FR-DIS-02 — station fields from the projection; EVSE/connector/
+  tariff/freshness content limited to what this slice's data provides, with
+  the honest shape the existing StationSummary schema supports plus the
+  approved details extension). Advisory availability, EVSE/connector
+  projections, map tiles, filters beyond the contract's existing parameters,
+  and Booking capacity events are OUT OF SCOPE (later slices). Search remains
+  non-authoritative (FR-PLT-06): projection unavailability never blocks core
+  operations. Projections contain no account, driver, or vehicle identifiers
+  (ARC-022 §9 invariant).
+
+origin: >
+  GOV-007 §3 S1 journey step 2; the S1 critical path after the messaging
+  foundation (I1-MSG-001/002 VERIFIED) and its prerequisites approved by the
+  owner on 2026-09-12: I1-MSG-003 (wire envelope extensions enabling
+  S1-09 version/sequence validation) and I1-CON-004 (AsyncAPI alignment
+  closing the exchange drift before consumer binding).
+
+requirements:
+  - "FR-DIS-01 — public discovery browse/search (list view this slice)."
+  - "FR-DIS-02 — station details (approved contract extension)."
+  - "FR-PLT-02 — idempotent consumption (inbox dedup)."
+  - "FR-PLT-06 — projection isolation (non-authoritative, non-blocking)."
+  - "GOV-007 §3 S1-02 (minimal: list + details) and S1-09 (version/sequence
+    validation, bounded retry, quarantine, rebuild/reset procedure)."
+
+useCases:
+  - "UC-DR-001 (browse/search stations) — list + details portions."
+
+authority:
+  governance:
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§3 S1-02, S1-09"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "FR-DIS-01, FR-DIS-02, FR-PLT-02, FR-PLT-06"
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "§9 Discovery and Insights Service tables (station_search_projection,
+        projection_checkpoint), §8 common integration tables (Discovery owns
+        its own copies), §10 index baseline (projection source version)"
+    - path: "docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md"
+      section: "§2 envelope, §4 delivery semantics, §5 ordering (aggregate
+        version ordering detection, gap handling, idempotent rebuilds), §6
+        StationPublished"
+    - path: "docs/05_architecture/08_technology_selection_adr_set_v1.0.md"
+      section: "Spring AMQP approved; Angular public app later (API-first here)"
+  contracts:
+    - path: "contracts/openapi/public-discovery-api-v1.yaml"
+      identifiers: ["listStations (existing); getStationDetails (NEW — owner
+        approved L2 extension, added by this task)"]
+    - path: "contracts/registries/messages-v1.yaml"
+      identifiers: ["StationPublished (producer station-operations-service,
+        consumer discovery-insights-service, exchange ev.domain.v1, routing
+        key station.published)"]
+    - path: "contracts/schemas/events/station-published-event.json"
+      identifiers: ["payload validation target"]
+    - path: "contracts/schemas/common/cloud-event.json"
+      identifiers: ["envelope validation target"]
+
+invariants:
+  - "Discovery projections contain no account, driver, or vehicle identifiers
+    (AGENTS.md §4; ARC-022 §9)."
+  - "Discovery availability is advisory; projections are non-authoritative
+    (AGENTS.md §4; FR-PLT-06)."
+  - "Consumers are idempotent and assume at-least-once delivery (AGENTS.md
+    §4) — Discovery owns its own inbox_message copy (ARC-022 §8: every
+    consuming service owns its own copies)."
+  - "Each service owns its database and migrations; no cross-service reads
+    (AGENTS.md §4)."
+  - "Applied migrations immutable; new forward migrations with unique
+    numbering in discovery_insights_db."
+  - "Errors use the approved Problem Details and problem-code registry
+    (AGENTS.md §10)."
+
+ownership:
+  owningService: "discovery-insights-service"
+  dataOwner: "Discovery and Insights Service (discovery_insights_db)"
+  supportingServices:
+    - "station-operations-service (event producer — not modified here except
+      via the already-approved I1-MSG-003)"
+  prohibitedOwners:
+    - "Browser runtime"
+
+affectedArtifacts:
+  services:
+    - "discovery-insights-service (V1 schema extension/migration for
+      projections + integration tables, StationPublished consumer, projection
+      updater, public read API, seed/rebuild procedure)"
+    - "contracts/openapi/public-discovery-api-v1.yaml (NEW
+      getStationDetails operation + details schema — owner-approved L2)"
+  modules:
+    - "services/discovery-insights-service/** (main + test)"
+    - "contracts/openapi/public-discovery-api-v1.yaml"
+  tables:
+    - "station_search_projection, projection_checkpoint (ARC-022 §9);
+      discovery-owned outbox/inbox/idempotency/audit common tables (ARC-022
+      §8 — Discovery is a consuming service)"
+  projections:
+    - "station_search_projection (public station reference data only)"
+  migrations:
+    - "New forward migration(s) in discovery_insights_db (unique numbering
+      after its V1 baseline)"
+  apiOperations:
+    - "GET /api/v1/stations (listStations — implement existing contract)"
+    - "GET /api/v1/stations/{stationRef} (getStationDetails — NEW, owner-
+      approved contract extension)"
+  commands: []
+  events:
+    - "StationPublished consumed (the only event with a W1 producer emission
+      today)"
+  schemas:
+    - "contracts/openapi/public-discovery-api-v1.yaml details response schema"
+  registries:
+    - "contracts/registries/traceability-v1.yaml rows for implemented
+      FR-DIS-01/02 portions move PLANNED → IMPLEMENTED only with CI evidence
+      (iteration exit rule)"
+  screens: []
+  infrastructure:
+    - "Discovery consumes via its own quorum queue bound to ev.domain.v1 /
+      station.published (per the registry and the aligned AsyncAPI from
+      I1-CON-004); local compose core profile broker"
+
+dependencies:
+  tasks:
+    - "I1-MSG-003 (READY — wire envelope extensions; REQUIRED before consumer
+      version validation)"
+    - "I1-CON-004 (READY — AsyncAPI alignment; REQUIRED before consumer
+      queue binding)"
+    - "I1-MSG-001/002 (VERIFIED — producer-side foundation)"
+    - "I1-DAT-001 (VERIFIED — discovery_insights_db + roles exist)"
+    - "I1-ENG-002 (VERIFIED — shared kernel libraries)"
+  contracts:
+    - "contracts/schemas/events/station-published-event.json"
+    - "contracts/schemas/common/cloud-event.json"
+    - "contracts/openapi/public-discovery-api-v1.yaml"
+  infrastructure:
+    - "Local RabbitMQ (compose core profile); Docker for Testcontainers"
+  humanDecisions:
+    - "Owner approved the minimal first slice, the L2 details-endpoint
+      extension, and the two prerequisite tasks (interactive session,
+      2026-09-12). L2 approval of this packet via planning-PR merge."
+
+blockers:
+  - "I1-MSG-003 and I1-CON-004 must reach VERIFIED before this task's
+    implementation begins (claim gate)."
+
+scope:
+  allowedFiles:
+    - "services/discovery-insights-service/**"
+    - "contracts/openapi/public-discovery-api-v1.yaml"
+    - "contracts/registries/traceability-v1.yaml"
+    - "delivery/handoffs/I1-DSC-001/**"
+    - "delivery/evidence/I1-DSC-001/**"
+    - "delivery/deviations/I1-DSC-001/**"
+
+  prohibitedFiles:
+    - "contracts/asyncapi/**"
+    - "contracts/schemas/**"
+    - "contracts/registries/messages-v1.yaml"
+    - "docs/**"
+    - "services/account-service/**"
+    - "services/booking-session-service/**"
+    - "services/device-integration-service/**"
+    - "services/station-operations-service/**"
+    - "services/notification-service/**"
+    - "services/governance-support-service/**"
+    - "apps/**"
+    - "simulator/**"
+    - "infra/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+
+  maximumExpectedDiff: >
+    Vertical slice: one discovery migration (projection + checkpoint +
+    Discovery's common integration tables), consumer + projection updater +
+    public API controller/service, OpenAPI details-operation extension,
+    traceability row updates, integration tests on real PG18+RabbitMQ.
+    No other services touched; no registry/schema changes.
+
+  generatedFilesPolicy: >
+    Hand-authored sources; OpenAPI hand-edited with G3 validation; generated
+    clients not introduced this slice (contract tests validate the API
+    directly).
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      Discovery consumes StationPublished from ev.domain.v1/station.published
+      with inbox deduplication ((consumer_name, message_id) PK on
+      Discovery's own inbox copy): forced duplicate delivery produces a
+      single projection effect; processing is idempotent.
+    authorityReferences:
+      - "FR-PLT-02; ARC-022 §8.2; AGENTS.md §4"
+    evidenceRequired:
+      - "integration test with forced duplicate delivery"
+    testTypes: ["integration", "negative"]
+
+  - id: "AC-02"
+    statement: >
+      Version/sequence validation per S1-09/ARC-014 §5: the consumer reads
+      aggregateid/aggregateversion from the wire envelope (delivered by
+      I1-MSG-003), stores last-applied version in the projection/checkpoint,
+      detects out-of-order arrival, and applies the documented strategy
+      (hold/retry or request snapshot; for this slice: hold-and-retry with
+      bounded attempts then skip-with-recorded-gap, honestly disclosed) —
+      critical correctness never depends on arrival order.
+    authorityReferences:
+      - "GOV-007 §3 S1-09; ARC-014 §5"
+    evidenceRequired:
+      - "integration test with out-of-order delivery"
+    testTypes: ["integration", "negative"]
+
+  - id: "AC-03"
+    statement: >
+      station_search_projection rows exist for every published station with
+      exactly the public fields (stationRef, publicRef, displayName, address,
+      city, postalCode, countryCode, latitude, longitude) and a source
+      version; NO account/driver/vehicle identifiers in any projection
+      column (asserted by test and by the G3 privacy scan).
+    authorityReferences:
+      - "ARC-022 §9; AGENTS.md §4"
+    evidenceRequired:
+      - "integration test; G3 privacy checks green"
+    testTypes: ["integration", "contract"]
+
+  - id: "AC-04"
+    statement: >
+      GET /api/v1/stations implements the existing listStations contract
+      (lat/long/radius/limit) returning StationSummary shapes from the
+      projection; GET /api/v1/stations/{stationRef} returns the approved
+      details shape; unknown stationRef → 404 Problem Details per the
+      approved problem-code registry; responses are unauthenticated (public
+      API security scheme per the contract).
+    authorityReferences:
+      - "public-discovery-api-v1.yaml; FR-DIS-01/02; AGENTS.md §10"
+    evidenceRequired:
+      - "API integration tests (positive + 404 + contract conformance)"
+    testTypes: ["integration", "contract"]
+
+  - id: "AC-05"
+    statement: >
+      Projection rebuild/reset procedure exists (S1-09): the checkpoint
+      records the last-applied source version; a documented rebuild path
+      re-derives the projection (from re-emitted events or the deterministic
+      seed) idempotently; test proves rebuild produces the same projection
+      state.
+    authorityReferences:
+      - "GOV-007 §3 S1-09; ARC-014 §5 (idempotent projection rebuilds)"
+    evidenceRequired:
+      - "integration test (rebuild idempotency)"
+    testTypes: ["integration"]
+
+  - id: "AC-06"
+    statement: >
+      Consumer failure handling: transient consumption failure uses bounded
+      retry then dead-letter/quarantine per the approved topology (quorum
+      queue + DLQ); a poison message does not block the stream; projection
+      unavailability does not affect Station Operations (FR-PLT-06
+      demonstrated by the producer's tests remaining green with no consumer
+      running).
+    authorityReferences:
+      - "FR-PLT-06; GOV-007 §3 S1-09; ENG doc §6.4"
+    evidenceRequired:
+      - "integration test (poison message → DLQ); existing producer suite"
+    testTypes: ["integration", "negative"]
+
+  - id: "AC-07"
+    statement: >
+      Contracts stay executable and green: G3 validation passes with the
+      extended public-discovery-api-v1.yaml (examples validate; compatibility
+      NON_BREAKING — additive operation); traceability rows updated only for
+      implemented portions.
+    authorityReferences:
+      - "ARC-022 §19; AGENTS.md §10"
+    evidenceRequired:
+      - "G3 output exit 0; traceability diff"
+    testTypes: ["contract", "ci"]
+
+tests:
+  focusedCommands:
+    - "./mvnw -pl services/discovery-insights-service -am test"
+  requiredSuites:
+    - "./mvnw test"
+    - "npm run contracts:verify"
+    - "node scripts/delivery/validate.mjs"
+    - "npm run contracts:secrets"
+    - "git diff --check"
+  positiveCases:
+    - "Seed → StationPublished → projection row → list + details API responses correct."
+  negativeCases:
+    - "Duplicate delivery → single effect; out-of-order version → held/retried not misapplied; unknown stationRef → 404 Problem Details; poison message → DLQ."
+  boundaryCases:
+    - "Geo search at radius boundary; limit bounds per contract."
+  concurrencyCases:
+    - "Consumer idempotency under redelivery; checkpoint update is single-writer safe (single consumer instance W1-S1)."
+  securityCases:
+    - "No auth on public reads per contract; no subject identifiers in projections or responses; secret scan green."
+  contractCases:
+    - "API responses validate against the OpenAPI schemas; G3 green."
+  migrationCases:
+    - "Discovery migration fresh install + role separation (runtime DML-only) on real PostgreSQL 18."
+  accessibilityCases: []
+
+persistence:
+  affected: true
+
+contracts:
+  affected: true
+  compatibilityClassification: "NON_BREAKING"
+  requiredUpdates:
+    - "public-discovery-api-v1.yaml: add getStationDetails operation +
+      details response schema (additive; owner-approved)"
+  requiredExamples:
+    - "Example for the details response (G3 example validation)"
+  requiredConsumerTests:
+    - "API contract conformance tests for both operations"
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "New public unauthenticated read endpoint — rate limiting posture per
+      the contract's anonymous scheme; no personal data in scope."
+  dataClassifications:
+    - "Public station reference data only (no account/driver/vehicle
+      identifiers — invariant, test-asserted)"
+  authorizationPolicies:
+    - "Public reads unauthenticated per the contract's security schemes;
+      no privileged data exposed"
+  rateLimitPolicies:
+    - "Anonymous rate limiting noted as deployment-stage configuration
+      (gateway), not enforced in-service this slice"
+  auditRequirements:
+    - "Discovery's own audit_event copy for consumer/administrative actions
+      (append-only per §8.4)"
+  prohibitedData:
+    - "Account, driver, vehicle identifiers; tokens; personal data in
+      projections, messages, or responses"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: true
+  dataReviewer: true
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L2 + public API exposure)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-DSC-001/discovery-first-slice.md"
+  requiredCiChecks:
+    - "Service Tests workflow green on the PR (JDK 25)"
+    - "Database Migrations workflow green on the PR"
+    - "G3 Contract Validation green on the PR (contract change)"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "The details response shape this slice is bounded by available data
+    (station fields + freshness timestamp); EVSE/connector/tariff content
+    arrives with their events in a later slice — the contract extension is
+    drafted so those fields can be added non-breakingly."
+  - "Single consumer instance for W1-S1 (checkpoint is single-writer);
+    multi-instance consumption is a later scaling task."
+  - "Map tiles/geocoding adapters are NOT in this slice (backend data only);
+    the Angular public app consumes the API in a later task."
+  - "Out-of-order handling this slice: hold-and-retry with bounded attempts,
+    then skip-with-recorded-gap (honest, disclosed); full snapshot-request
+    machinery is a later slice."
+
+openQuestions: []
+
+recordedDecisions:
+  - "Owner approved the minimal first slice (station projection + list +
+    details; EVSE/connector/availability deferred) — interactive session,
+    2026-09-12."
+  - "Owner approved the L2 getStationDetails contract extension — interactive
+    session, 2026-09-12."
+  - "Owner approved I1-MSG-003 and I1-CON-004 as prerequisites — interactive
+    session, 2026-09-12."

@@ -1,0 +1,244 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-CON-004"
+  title: "AsyncAPI alignment — exchange bindings and channel definitions vs executable registry (close I1-CON-003 drift)"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-06"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L2"
+  owner: "Contract Architecture and Project Owner"
+  createdAt: "2026-09-12"
+  baselineCommit: null
+
+objective: >
+  Align contracts/asyncapi/platform-messaging-v1.yaml with the executable
+  message registry (contracts/registries/messages-v1.yaml) as the canonical
+  authority: fix the exchange bindings (the AsyncAPI currently binds
+  station.* channels to exchange "station" while the registry and the
+  implemented topology use "ev.domain.v1" and the other registry anchors),
+  align channel keys/routing keys with the registry routingKey values, and
+  ensure message references resolve to the registered schemaPath targets.
+  This closes the drift flagged since I1-CON-003 ("pre-existing asyncapi
+  exchange drift") BEFORE Discovery's consumer is built — the consumer will
+  bind queues against the real topology, and the AsyncAPI must describe the
+  same reality. No business semantics change: event names, payload schemas,
+  and producer/consumer assignments are already aligned; this is a
+  bindings/channels document correction.
+
+origin: >
+  I1-CON-003 flagged the drift (evidence: registry-alignment.md §drift;
+  status unresolvedFindings); I1-MSG-001's contract review confirmed the
+  code correctly follows the registry and the AsyncAPI is the stale side
+  ("MINOR — must be closed before any consumer is built against the AsyncAPI
+  bindings"). Owner approved closing it before I1-DSC-001 (interactive
+  session decision 2026-09-12).
+
+requirements:
+  - "GOV-007 §3 S1-09 — messaging and projections foundations (accurate
+    executable contracts are part of the foundation)."
+
+useCases:
+  - "Enabling infrastructure; no direct use-case behavior."
+
+authority:
+  governance:
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§3 S1-09"
+  requirements: []
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md"
+      section: "§3 (durable exchanges), §6 (Station Operations event family)"
+  contracts:
+    - path: "contracts/registries/messages-v1.yaml"
+      identifiers: ["canonical exchange anchors + routingKeys (authority)"]
+    - path: "contracts/asyncapi/platform-messaging-v1.yaml"
+      identifiers: ["document under correction"]
+
+invariants:
+  - "Executable registries are authoritative over derived documents (AGENTS
+    precedence: approved executable OpenAPI/AsyncAPI/registries — the
+    registry anchors and routingKeys win)."
+  - "Operation/message IDs remain stable (ARC-016 §13)."
+  - "No breaking payload/schema change (payloads untouched)."
+
+ownership:
+  owningService: "contracts (platform-level document)"
+  dataOwner: "n/a (contract document only)"
+  supportingServices: []
+  prohibitedOwners: []
+
+affectedArtifacts:
+  services: []
+  modules: []
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations: []
+  commands: []
+  events: []
+  schemas: []
+  registries:
+    - "contracts/asyncapi/platform-messaging-v1.yaml (channel bindings,
+      exchange names, routing keys; message $ref payloads untouched)"
+  screens: []
+  infrastructure: []
+
+dependencies:
+  tasks:
+    - "I1-CON-003 (VERIFIED — registry is the aligned authority)"
+  contracts:
+    - "contracts/registries/messages-v1.yaml (authority)"
+  infrastructure: []
+  humanDecisions:
+    - "Owner approved closing the drift before I1-DSC-001 (interactive
+      session decision 2026-09-12); L2 approval via planning-PR merge."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "contracts/asyncapi/**"
+    - "delivery/handoffs/I1-CON-004/**"
+    - "delivery/evidence/I1-CON-004/**"
+    - "delivery/deviations/I1-CON-004/**"
+
+  prohibitedFiles:
+    - "contracts/openapi/**"
+    - "contracts/schemas/**"
+    - "contracts/registries/**"
+    - "docs/**"
+    - "services/**"
+    - "apps/**"
+    - "simulator/**"
+    - "infra/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+
+  maximumExpectedDiff: >
+    Bounded document correction: exchange bindings and channel/routing-key
+    alignment inside platform-messaging-v1.yaml. No payload schema changes,
+    no registry changes, no code changes.
+
+  generatedFilesPolicy: >
+    Hand-edited AsyncAPI document; must pass G3 AsyncAPI validation and the
+    registry consistency checks.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      Every channel in platform-messaging-v1.yaml binds to the exchange named
+      by the registry for that message (ev.domain.v1 for the Station
+      Operations domain events; the other registry anchors for their
+      families); no channel binds to an exchange name absent from the
+      registry.
+    authorityReferences:
+      - "messages-v1.yaml (authority); I1-CON-003 drift record"
+    evidenceRequired:
+      - "G3 AsyncAPI + registry consistency validation output"
+    testTypes: ["contract"]
+
+  - id: "AC-02"
+    statement: >
+      Channel routing keys / operation ids match the registry routingKey
+      values (e.g. station.published, station.updated, station.status-changed,
+      station.evse-configuration-changed, station.tariff-published); message
+      $refs resolve to the registered schemaPath targets.
+    authorityReferences:
+      - "messages-v1.yaml (authority)"
+    evidenceRequired:
+      - "validation output; cross-check listing"
+    testTypes: ["contract"]
+
+  - id: "AC-03"
+    statement: >
+      npm run contracts:verify passes fully (AsyncAPI validation, registry
+      consistency, schemas, privacy/secret scans, docs consistency) — the
+      previously-flagged drift finding is no longer reported.
+    authorityReferences:
+      - "ARC-022 §19; G3 definition"
+    evidenceRequired:
+      - "full G3 output with exit 0"
+    testTypes: ["contract", "ci"]
+
+tests:
+  focusedCommands:
+    - "npm run contracts:verify"
+  requiredSuites:
+    - "npm run contracts:verify"
+    - "node scripts/delivery/validate.mjs"
+    - "npm run contracts:secrets"
+  positiveCases:
+    - "AsyncAPI validates; registry consistency green with aligned bindings."
+  negativeCases:
+    - "Validator fails if a channel binds an unregistered exchange (self-test coverage)."
+  boundaryCases: []
+  concurrencyCases: []
+  securityCases:
+    - "Secret scan green; no credentials in the document (amqps placeholder stays credential-free)."
+  contractCases:
+    - "Full G3 green."
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: true
+  compatibilityClassification: "NON_BREAKING"
+  requiredUpdates:
+    - "AsyncAPI channel bindings only; payload schemas and message ids
+      unchanged; no consumer code exists yet against the stale bindings"
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: false
+  threatChanges: []
+  dataClassifications: []
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData: []
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: true
+  dataReviewer: false
+  securityReviewer: false
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L2)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-CON-004/asyncapi-alignment.md"
+  requiredCiChecks:
+    - "G3 Contract Validation workflow green on the PR"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "The registry is the canonical authority for exchange anchors and
+    routing keys; where the AsyncAPI disagrees, the AsyncAPI is corrected."
+  - "Channels for messages with no W1 producer emission yet (e.g. capacity
+    events) may remain declared as long as their bindings are registry-
+    consistent."
+
+openQuestions: []
+
+recordedDecisions:
+  - "Owner approved closing the AsyncAPI drift before I1-DSC-001 (interactive
+    session, 2026-09-12)."

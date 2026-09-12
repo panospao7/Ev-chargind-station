@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T15:10:00Z"
+updatedAt: "2026-09-12T15:40:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -454,7 +454,7 @@ tasks:
     baselineCommit: "1372d8182b1a9747ed1c662117445d78d5ee0c3b"
     branch: "task/i1-msg-002-fix-round"
     candidateCommit: "16da686339ea688f5a45a4c5aaf432ed22386a74"
-    mergeCommit: "1afa126e"
+    mergeCommit: "1afa126ea425795be78deee724486a8ae2dabe01"
     pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/26"
 
     blockers:
@@ -489,15 +489,140 @@ tasks:
       status: "SELF_TEST_PASS"
       paths:
         - "delivery/evidence/I1-MSG-002/messaging-fix-round.md"
+  I1-MSG-003:
+    state: "READY"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    candidateCommit: null
+    pullRequest: null
+
+    blockers:
+      - "none — prerequisites VERIFIED; owner approved as I1-DSC-001 prerequisite"
+
+    deviations: []
+    unresolvedFindings: []
+
+    handoffSequence: 0
+    latestHandoff: null
+    reviews:
+      planner: "NOT_STARTED"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_STARTED"
+      dataReviewer: "NOT_REQUIRED"
+      securityReviewer: "NOT_REQUIRED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "L2; owner approval via planning-PR merge"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
+
+  I1-CON-004:
+    state: "READY"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    candidateCommit: null
+    pullRequest: null
+
+    blockers:
+      - "none — I1-CON-003 VERIFIED; owner approved closing the drift before I1-DSC-001"
+
+    deviations: []
+    unresolvedFindings: []
+
+    handoffSequence: 0
+    latestHandoff: null
+    reviews:
+      planner: "NOT_STARTED"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_STARTED"
+      dataReviewer: "NOT_REQUIRED"
+      securityReviewer: "NOT_REQUIRED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "L2; owner approval via planning-PR merge"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
+
+  I1-DSC-001:
+    state: "READY"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    candidateCommit: null
+    pullRequest: null
+
+    blockers:
+      - "I1-MSG-003 and I1-CON-004 must reach VERIFIED before implementation (claim gate)"
+
+    deviations: []
+    unresolvedFindings: []
+
+    handoffSequence: 0
+    latestHandoff: null
+    reviews:
+      planner: "NOT_STARTED"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_STARTED"
+      dataReviewer: "NOT_STARTED"
+      securityReviewer: "NOT_STARTED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "L2 + public API exposure; owner approval via planning-PR merge"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
 summary:
   counts:
     BACKLOG: 0
-    READY: 0
+    READY: 3
     CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
-    FIX_REQUIRED: 1
+    FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
     HUMAN_REVIEW: 0
@@ -510,4 +635,4 @@ summary:
     CANCELLED: 0
 
   activeTask: "I1-MSG-002"
-  nextRecommendedTask: "I1-DSC-001"
+  nextRecommendedTask: "I1-MSG-003"
