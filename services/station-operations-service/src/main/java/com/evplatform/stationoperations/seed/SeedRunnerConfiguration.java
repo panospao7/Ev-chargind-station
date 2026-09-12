@@ -19,6 +19,12 @@ import org.springframework.context.annotation.Profile;
  *
  * Both runners exit the JVM when finished — the service process itself is
  * not started in seed mode.
+ *
+ * <p><b>Role requirement:</b> seed-reset must run with the migrator role
+ * (STA_DB_USER=station_operations_migrator), not the runtime role. The
+ * runtime role is blocked by the audit_event REVOKE (UPDATE/DELETE) from
+ * performing the reset's truncation/delete work, and lacks the ALTER TABLE
+ * privilege needed to disable triggers during the reset.</p>
  */
 @Configuration
 public class SeedRunnerConfiguration {

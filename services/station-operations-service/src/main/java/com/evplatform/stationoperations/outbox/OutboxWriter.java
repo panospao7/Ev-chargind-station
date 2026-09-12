@@ -28,7 +28,14 @@ public class OutboxWriter {
     /**
      * Appends one event fact. Idempotent per the §8.1 unique event-fact
      * constraint (aggregate_type, aggregate_ref, aggregate_version,
-     * message_type) — conflicting re-inserts are silently ignored.
+     * message_type), now the explicitly named uq_outbox_event_fact
+     * (V4__integration_table_naming): conflicting re-inserts of the SAME
+     * fact are silently ignored via the targeted ON CONFLICT clause.
+     *
+     * A primary-key collision (same message_id reused for a DIFFERENT
+     * fact) no longer matches the conflict target and therefore raises a
+     * constraint violation instead of being silently masked by the
+     * previous bare ON CONFLICT DO NOTHING.
      */
     public void append(UUID messageId, String kind, String messageType,
                        String aggregateType, UUID aggregateRef, long aggregateVersion,
@@ -41,7 +48,7 @@ public class OutboxWriter {
                      aggregate_version, workflow_ref, correlation_id, causation_id,
                      classification, payload, available_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?)
-                ON CONFLICT DO NOTHING
+                ON CONFLICT (aggregate_type, aggregate_ref, aggregate_version, message_type) DO NOTHING
                 """)
                 .param(messageId).param(kind).param(messageType)
                 .param(aggregateType).param(aggregateRef).param(aggregateVersion)

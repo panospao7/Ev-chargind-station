@@ -309,6 +309,10 @@ assumptions:
   - "If the owner selects the M3 deviation path, AC-03 converts to a recorded
     deviation and the two-instance test is waived with justification."
 
+recordedDecisions:
+  - "Owner approved com.networknt:json-schema-validator (test scope, station-operations-service pom) for AC-04 on 2026-09-12 (interactive session decision)."
+  - "M3 disposition: implement claim protocol (default, no owner objection; recorded at claim 2026-09-12)."
+
 openQuestions:
   - "M3 disposition (claim protocol vs deviation) — owner decision at packet
     approval; default is implement."

@@ -13,14 +13,19 @@ spring:
     password: ${RABBITMQ_PASSWORD:evplatform_dev_only}
     publisher-confirm-type: correlated
     publisher-returns: true
-  outbox:
-    poll-interval-ms: ${OUTBOX_POLL_MS:2000}
-    max-attempts: ${OUTBOX_MAX_ATTEMPTS:3}
-    backoff-ms: ${OUTBOX_BACKOFF_MS:2000}
   flyway:
     # Migrations run through the delivery pipeline (migrator role), not at
     # application boot; the seed profiles assume migrated schema.
     enabled: false
+
+# Top level, NOT under spring: — @Value("${outbox.*}") binds against
+# top-level configuration properties only.
+outbox:
+  poll-interval-ms: ${OUTBOX_POLL_MS:2000}
+  max-attempts: ${OUTBOX_MAX_ATTEMPTS:3}
+  backoff-ms: ${OUTBOX_BACKOFF_MS:2000}
+  claim-lease-seconds: ${OUTBOX_CLAIM_LEASE_SECONDS:30}
+  confirm-timeout-ms: ${OUTBOX_CONFIRM_TIMEOUT_MS:5000}
 
 management:
   endpoints:
