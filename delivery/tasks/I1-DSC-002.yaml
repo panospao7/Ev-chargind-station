@@ -1,0 +1,401 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-DSC-002"
+  title: "Discovery depth — EVSE/connector/tariff events, projections, and public API filters + richer details (completes FR-DIS-02 W1-S1 MUST)"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-09"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L2"
+  owner: "Backend/Data Architect and Project Owner"
+  createdAt: "2026-09-12"
+  baselineCommit: null
+
+objective: >
+  Complete the W1-S1 MUST depth of FR-DIS-02: station, EVSE, connector,
+  power, tariff and operational-freshness information visible through the
+  public API. Producer side: the STA seed emits EVSEConfigurationChanged,
+  ConnectorConfigurationChanged and TariffPublished facts (plus StationUpdated
+  family wiring readiness) in the SAME transaction as the seed data and the
+  existing StationPublished facts (AGENTS.md §4 atomicity invariant), using
+  the existing transactional outbox and dispatcher unchanged. Consumer side:
+  Discovery consumes the three new event families into
+  evse_search_projection, connector_search_projection and a tariff
+  projection (per ARC-022 §9's table list), with per-aggregate version
+  gates, inbox dedup and the §7.1 SQL guard — extending the proven
+  I1-DSC-001 consumer pattern. Public API side (owner-approved L2 contract
+  extension): listStations gains connectorType + minPowerW filter params;
+  StationDetails gains EVSE/connector/tariff/opening-hours/freshness
+  content; StationSummary gains totalEvses (availableEvses stays omitted —
+  advisory availability is a later slice per S1-03 separation).
+
+origin: >
+  Owner decision 2026-09-12 (interactive session): "Discovery depth" slice
+  selected to complete FR-DIS-02's MUST with real prices and filters before
+  the Angular app; L2 contract extension approved (same pattern as
+  getStationDetails in I1-DSC-001).
+
+requirements:
+  - "FR-DIS-01 — public discovery browse/search (filters deepen this slice)."
+  - "FR-DIS-02 — infrastructure details: EVSE, connector, power, tariff,
+    opening-hours, operational freshness (this task completes the W1-S1
+    MUST portion)."
+  - "FR-PLT-02 — idempotent consumption (per-aggregate, per event family)."
+  - "FR-PLT-06 — projection isolation (non-authoritative, non-blocking)."
+
+useCases:
+  - "UC-DR-001 (browse/search stations) — filters and details portions."
+
+authority:
+  governance:
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§3 S1-02 (station details, EVSE and connector details, tariff
+        and opening-hours display, operational freshness display)"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "FR-DIS-01, FR-DIS-02, FR-PLT-02, FR-PLT-06"
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "§9 Discovery tables (evse_search_projection,
+        connector_search_projection), §8 consumer integration tables,
+        §7.1 projection record fields, §10 constraint/index naming"
+    - path: "docs/05_architecture/14_domain_events_and_async_contracts_v1.0.md"
+      section: "§2 envelope, §4 delivery semantics, §5 ordering, §6 event
+        catalogue (EVSEConfigurationChanged, ConnectorConfigurationChanged,
+        TariffPublished, StationUpdated)"
+  contracts:
+    - path: "contracts/openapi/public-discovery-api-v1.yaml"
+      identifiers: ["listStations (+connectorType, minPowerW params — NEW),
+        getStationDetails (StationDetails schema extended — NEW fields)"]
+    - path: "contracts/registries/messages-v1.yaml"
+      identifiers: ["EVSEConfigurationChanged (station.evse-configuration-changed),
+        ConnectorConfigurationChanged (station.connector-configuration-changed),
+        TariffPublished (station.tariff-published) — all registry-declared,
+        Discovery-consumer"]
+    - path: "contracts/schemas/events/evse-configuration-changed-event.json"
+      identifiers: ["payload validation target"]
+    - path: "contracts/schemas/events/connector-configuration-changed-event.json"
+      identifiers: ["payload validation target"]
+    - path: "contracts/schemas/events/tariff-published-event.json"
+      identifiers: ["payload validation target"]
+    - path: "contracts/schemas/common/cloud-event.json"
+      identifiers: ["envelope validation target"]
+
+invariants:
+  - "Business change and outbox record commit atomically (AGENTS.md §4)."
+  - "Consumers are idempotent and assume at-least-once delivery (AGENTS.md §4)."
+  - "Discovery projections contain no account, driver, or vehicle identifiers
+    (AGENTS.md §4; ARC-022 §9)."
+  - "Discovery availability is advisory; projections are non-authoritative
+    (FR-PLT-06)."
+  - "Each service owns its database and migrations; no cross-service reads."
+  - "Applied migrations immutable; new forward migrations with unique
+    numbering in both databases."
+  - "Errors use the approved Problem Details and problem-code registry."
+
+ownership:
+  owningService: "discovery-insights-service (consumer/API) and
+    station-operations-service (producer emission)"
+  dataOwner: "Discovery and Insights Service (discovery_insights_db) for
+    projections; Station Operations Service (station_operations_db) for the
+    emitted facts"
+  supportingServices: []
+  prohibitedOwners:
+    - "Browser runtime"
+
+affectedArtifacts:
+  services:
+    - "station-operations-service (seed emits 3 new fact families atomically;
+      dispatcher dataschema map extended)"
+    - "discovery-insights-service (new consumers or extended consumer, new
+      projections, API filters + richer details, V3 migration)"
+  modules:
+    - "services/station-operations-service/** (seed, dispatcher dataschema map)"
+    - "services/discovery-insights-service/** (consumer, projections, API)"
+    - "contracts/openapi/public-discovery-api-v1.yaml"
+  tables:
+    - "evse_search_projection, connector_search_projection, tariff projection
+      (per ARC-022 §9 naming), Discovery integration tables unchanged"
+  projections:
+    - "evse_search_projection, connector_search_projection, tariff projection"
+  migrations:
+    - "Discovery V3 (new projection tables); STA none expected (outbox table
+      already generic)"
+  apiOperations:
+    - "GET /api/v1/stations (listStations — 2 NEW filter params)"
+    - "GET /api/v1/stations/{stationRef} (StationDetails — NEW EVSE/connector/
+      tariff/hours/freshness fields)"
+  commands: []
+  events:
+    - "EVSEConfigurationChanged, ConnectorConfigurationChanged,
+      TariffPublished — NEW producer emission (registry-declared)"
+  schemas: []
+  registries:
+    - "contracts/registries/traceability-v1.yaml (FR-DIS rows updated only
+      with CI evidence at closeout)"
+  screens: []
+  infrastructure: []
+
+dependencies:
+  tasks:
+    - "I1-DSC-001 (VERIFIED — consumer foundation, projections, API)"
+    - "I1-MSG-003 (VERIFIED — wire envelope extensions)"
+    - "I1-CON-004 (VERIFIED — AsyncAPI alignment)"
+    - "I1-ENG-003 (VERIFIED — CI covers Discovery)"
+  contracts:
+    - "contracts/schemas/events/evse-configuration-changed-event.json"
+    - "contracts/schemas/events/connector-configuration-changed-event.json"
+    - "contracts/schemas/events/tariff-published-event.json"
+  infrastructure:
+    - "Local RabbitMQ (compose core profile); Docker for Testcontainers"
+  humanDecisions:
+    - "Owner approved the Discovery-depth slice and the L2 contract extension
+      (interactive session, 2026-09-12); L2 approval of this packet via
+      planning-PR merge."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "services/station-operations-service/**"
+    - "services/discovery-insights-service/**"
+    - "contracts/openapi/public-discovery-api-v1.yaml"
+    - "contracts/registries/traceability-v1.yaml"
+    - "delivery/handoffs/I1-DSC-002/**"
+    - "delivery/evidence/I1-DSC-002/**"
+    - "delivery/deviations/I1-DSC-002/**"
+
+  prohibitedFiles:
+    - "contracts/asyncapi/**"
+    - "contracts/schemas/**"
+    - "contracts/registries/messages-v1.yaml"
+    - "contracts/registries/problem-codes-v1.yaml"
+    - "docs/**"
+    - "services/account-service/**"
+    - "services/booking-session-service/**"
+    - "services/device-integration-service/**"
+    - "services/notification-service/**"
+    - "services/governance-support-service/**"
+    - "apps/**"
+    - "simulator/**"
+    - "infra/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+
+  maximumExpectedDiff: >
+    Vertical slice: STA seed emission of 3 fact families + dispatcher
+    dataschema map entries (~150 lines), Discovery V3 migration (2-3 new
+    projection tables), consumer extension (new event-type branches or
+    parallel listeners, reusing the proven pipeline), API filter + details
+    extension, OpenAPI change, integration tests. No other services, no
+    registry/schema changes (all already exist).
+
+  generatedFilesPolicy: >
+    Hand-authored sources; OpenAPI hand-edited with G3 validation.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      The STA seed emits EVSEConfigurationChanged (2 facts: EVSE_A1, EVSE_A2,
+      EVSE_B1, EVSE_B2 — one per EVSE), ConnectorConfigurationChanged (8
+      facts: 2 connectors per EVSE, CCS 150000W + TYPE2 22000W) and
+      TariffPublished (1 fact: Seed Standard Tariff v1, EUR, ENERGY_PER_KWH
+      480 minor + OCCUPANCY_PER_MINUTE 10 minor) in the SAME transaction as
+      the seed data and StationPublished facts; event-fact uniqueness makes
+      re-seeds idempotent; wire envelopes carry the full ARC-020 §2/ARC-004
+      §4 extension set with correct per-type dataschema values.
+    authorityReferences:
+      - "AGENTS.md §4; ARC-022 §8.1; ARC-020 §6"
+    evidenceRequired:
+      - "integration test asserting fact counts + atomicity + dataschema map"
+    testTypes: ["integration", "contract"]
+
+  - id: "AC-02"
+    statement: >
+      Discovery consumes all three new families with per-aggregate version
+      gates (EVSE keyed by evseRef, connector by connectorRef, tariff by
+      tariffVersionRef), inbox dedup, and the §7.1 SQL guard; forced
+      duplicate delivery of each family produces a single effect; out-of-
+      order versions follow the approved gap strategy (DEV-I1-DSC-001-01
+      semantics extended to the new families).
+    authorityReferences:
+      - "FR-PLT-02; ARC-014 §5; DEV-I1-DSC-001-01"
+    evidenceRequired:
+      - "integration tests (duplicate + out-of-order per family)"
+    testTypes: ["integration", "negative"]
+
+  - id: "AC-03"
+    statement: >
+      evse_search_projection and connector_search_projection contain the
+      seeded EVSEs (4 rows) and connectors (8 rows) with public fields only
+      (no subject identifiers); the tariff projection contains the active
+      version with its components; no account/driver/vehicle identifiers in
+      any new column (test-asserted + G3 privacy scan).
+    authorityReferences:
+      - "ARC-022 §9; AGENTS.md §4"
+    evidenceRequired:
+      - "integration test; G3 privacy checks green"
+    testTypes: ["integration", "contract"]
+
+  - id: "AC-04"
+    statement: >
+      listStations supports connectorType and minPowerW filters: a station
+      matching the filter appears only if it has an EVSE with a connector of
+      the requested type and power >= minPowerW (via the projections);
+      filtering works combined with geo params; responses remain
+      StationSummary-shaped (plus totalEvses).
+    authorityReferences:
+      - "public-discovery-api-v1.yaml (owner-approved extension); FR-DIS-01"
+    evidenceRequired:
+      - "API integration tests (filter positive/negative/combined)"
+    testTypes: ["integration", "contract"]
+
+  - id: "AC-05"
+    statement: >
+      getStationDetails returns the extended StationDetails: EVSEs with
+      their connectors (type + maxPowerW), the active tariff with its
+      components (display-ready), opening hours, and the operational
+      freshness timestamp (projection updated_at); unknown stationRef → 404
+      unchanged; the shape is honest (no invented availability data).
+    authorityReferences:
+      - "FR-DIS-02; GOV-007 §3 S1-02; public-discovery-api-v1.yaml"
+    evidenceRequired:
+      - "API integration test (full details shape for SEEDSTA0001)"
+    testTypes: ["integration", "contract"]
+
+  - id: "AC-06"
+    statement: >
+      Producer isolation holds: the new emission paths keep Station
+      Operations green with no consumer running (FR-PLT-06), and the
+      existing suites (STA 24, Discovery 11) remain green without
+      weakening.
+    authorityReferences:
+      - "FR-PLT-06; AGENTS.md §11"
+    evidenceRequired:
+      - "both full suites green; CI workflow runs"
+    testTypes: ["integration"]
+
+  - id: "AC-07"
+    statement: >
+      Contracts stay executable and green: G3 passes with the extended
+      OpenAPI (additive, NON_BREAKING, examples validate); traceability rows
+      updated only for implemented portions with CI evidence at closeout.
+    authorityReferences:
+      - "ARC-022 §19; AGENTS.md §10"
+    evidenceRequired:
+      - "G3 output exit 0; traceability diff"
+    testTypes: ["contract", "ci"]
+
+tests:
+  focusedCommands:
+    - "./mvnw -pl services/station-operations-service -am test"
+    - "./mvnw -pl services/discovery-insights-service -am test"
+  requiredSuites:
+    - "./mvnw test"
+    - "npm run contracts:verify"
+    - "node scripts/delivery/validate.mjs"
+    - "npm run contracts:secrets"
+    - "git diff --check"
+  positiveCases:
+    - "Seed → 11 facts total (2 published + 4 evse + 8 connector + 1 tariff —
+      note: 2+4+8+1 = 15; adjust count in test design) → projections → API
+      filters + details."
+  negativeCases:
+    - "Duplicate delivery per family → single effect; out-of-order → gap
+      strategy; malformed payload per family → DLQ; unknown type on the
+      binding → DLQ."
+  boundaryCases:
+    - "minPowerW boundary (22000 vs 150000); combined geo+connector filters."
+  concurrencyCases:
+    - "Inbox dedup under redelivery (per family)."
+  securityCases:
+    - "No subject identifiers in new projections/responses; secret scan green."
+  contractCases:
+    - "G3 green with extended OpenAPI; emitted payloads validate against the
+      executable schemas."
+  migrationCases:
+    - "Discovery V3 fresh install + role separation on real PostgreSQL 18."
+  accessibilityCases: []
+
+persistence:
+  affected: true
+
+contracts:
+  affected: true
+  compatibilityClassification: "NON_BREAKING"
+  requiredUpdates:
+    - "public-discovery-api-v1.yaml: listStations +connectorType +minPowerW
+      params; StationSummary +totalEvses; StationDetails +evses/connectors/
+      tariff/openingHours/freshness (additive)"
+  requiredExamples:
+    - "Updated details example with EVSE/connector/tariff content (fixture
+      data)"
+  requiredConsumerTests:
+    - "API contract conformance tests for the extended shapes"
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "Same public unauthenticated read posture; no new personal data; tariff
+      amounts are public pricing data."
+  dataClassifications:
+    - "Public station/EVSE/connector/tariff reference data only"
+  authorizationPolicies: []
+  rateLimitPolicies:
+    - "Anonymous rate limiting remains a gateway-stage concern (unchanged)"
+  auditRequirements:
+    - "Discovery audit_event rows for the new fact applications"
+  prohibitedData:
+    - "Account, driver, vehicle identifiers; tokens; personal data"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: true
+  dataReviewer: true
+  securityReviewer: false
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L2 + public API exposure)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-DSC-002/discovery-depth.md"
+  requiredCiChecks:
+    - "Service Tests workflow green on the PR (both services)"
+    - "Database Migrations workflow green on the PR"
+    - "G3 Contract Validation green on the PR"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "Tariff projection shape: one active version per tariff with components;
+    TariffRetired handling is registered but out of this slice's emission
+    scope (seed emits only the active version)."
+  - "Opening hours are read from the StationPublished/StationUpdated payload
+    family OR — if the payload lacks hours — the details response derives
+    them from a new station-hours projection fed by StationUpdated; the
+    planner decides the minimal honest path (the seed's hours are 24/7 for
+    all days)."
+  - "availableEvses stays omitted (advisory availability is S1-03, Booking-
+    owned capacity events — separate slice)."
+  - "StationUpdated emission is NOT required this slice (no station field
+    changes in the seed); its wiring-readiness is noted but the family is
+    consumed only if needed for hours."
+
+openQuestions: []
+
+recordedDecisions:
+  - "Owner selected the Discovery-depth slice over the Angular app (2026-09-12)."
+  - "Owner approved the L2 public-discovery-api extension (filters + richer
+    details) (2026-09-12)."
