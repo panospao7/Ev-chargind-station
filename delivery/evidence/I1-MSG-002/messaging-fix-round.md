@@ -33,13 +33,14 @@
 
 ## Authoritative CI status
 
-`NOT_RUN at evidence time — CI_PENDING on push.` The PR's required checks
-(Service Tests, JDK 25 temurin; Database Migrations, PostgreSQL 18) are the
-authoritative execution for this task. Run references to be appended below
-once green:
+**GREEN at merge commit 1afa126e (PR #26, owner merge 2026-09-12), verified
+via GitHub API check-runs:**
 
-- Service Tests: PENDING
-- Database Migrations: PENDING
+- Service Tests (Station Operations Service, S1-01 seed, JDK 25 temurin): **success**
+- Flyway Migrations and Role Separation (PostgreSQL 18): **success**
+
+These are the authoritative Java-25 executions for AC-01..AC-06. Local
+release-21 run was diagnostic only.
 
 ## Residual disclosures
 

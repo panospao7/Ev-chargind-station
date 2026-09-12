@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T13:20:00Z"
+updatedAt: "2026-09-12T15:10:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -155,9 +155,9 @@ tasks:
       humanReview: "PASS"
 
     ci:
-      status: "NOT_REQUIRED"
-      candidateRunReference: null
-      mergeRunReference: null
+      status: "PASS"
+      candidateRunReference: "PR #26 checks (Service Tests + Database Migrations, JDK 25 temurin)"
+      mergeRunReference: "Both scoped workflows SUCCESS at merge commit 1afa126e (verified via GitHub API check-runs)"
       requiredChecks: []
 
     humanApproval:
@@ -302,8 +302,9 @@ tasks:
       approvedCandidateCommit: "0035478b82fe5c70cafb9d1592859268e659459f"
 
     evidence:
-      status: "NOT_STARTED"
-      paths: []
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I1-MSG-002/messaging-fix-round.md"
 
 
   I1-STA-001:
@@ -346,8 +347,9 @@ tasks:
       approvedCandidateCommit: "1c05c59e5e394e12e9d8d1c943aaab91a88b47f1"
 
     evidence:
-      status: "NOT_STARTED"
-      paths: []
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I1-MSG-002/messaging-fix-round.md"
 
   I1-CON-003:
     state: "VERIFIED"
@@ -389,11 +391,12 @@ tasks:
       approvedCandidateCommit: "5fa7a0bc81d89d28ee6e3aeae5bf3b459842269b"
 
     evidence:
-      status: "NOT_STARTED"
-      paths: []
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I1-MSG-002/messaging-fix-round.md"
 
   I1-MSG-001:
-    state: "FIX_REQUIRED"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-12T08:00:00Z"
 
@@ -444,14 +447,15 @@ tasks:
         - "delivery/evidence/I1-MSG-001/messaging-foundation.md"
 
   I1-MSG-002:
-    state: "CLAIMED"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-12T13:20:00Z"
 
     baselineCommit: "1372d8182b1a9747ed1c662117445d78d5ee0c3b"
     branch: "task/i1-msg-002-fix-round"
-    candidateCommit: null
-    pullRequest: null
+    candidateCommit: "16da686339ea688f5a45a4c5aaf432ed22386a74"
+    mergeCommit: "1afa126e"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/26"
 
     blockers:
       - "none — packet approved via owner merge of PR #25; M3 disposition: implement claim protocol (default, no owner objection recorded)"
@@ -462,33 +466,34 @@ tasks:
     handoffSequence: 0
     latestHandoff: null
     reviews:
-      planner: "NOT_STARTED"
-      tester: "NOT_STARTED"
-      generalReviewer: "NOT_STARTED"
+      planner: "PASS"
+      tester: "PASS"
+      generalReviewer: "PASS_WITH_FINDINGS (MINORs fixed in c6acfd59)"
       contractReviewer: "NOT_REQUIRED"
-      dataReviewer: "NOT_STARTED"
+      dataReviewer: "PASS_WITH_FINDINGS (claim protocol verified; MINOR fixed)"
       securityReviewer: "NOT_REQUIRED"
-      humanReview: "NOT_STARTED"
+      humanReview: "PASS (owner merged PR #26)"
 
     ci:
-      status: "NOT_REQUIRED"
-      candidateRunReference: null
-      mergeRunReference: null
+      status: "PASS"
+      candidateRunReference: "PR #26 checks (Service Tests + Database Migrations, JDK 25 temurin)"
+      mergeRunReference: "Both scoped workflows SUCCESS at merge commit 1afa126e (verified via GitHub API check-runs)"
       requiredChecks: []
 
     humanApproval:
       required: true
-      reference: "L3 packet approved via owner merge of PR #25 (2026-09-12); fix-PR merge remains the human gate"
-      approvedCandidateCommit: null
+      reference: "Owner reviewed and merged PR #26 (candidate 16da6863) on 2026-09-12; both required CI checks success at merge commit 1afa126e (Service Tests JDK 25, Flyway Migrations PG18)"
+      approvedCandidateCommit: "16da686339ea688f5a45a4c5aaf432ed22386a74"
 
     evidence:
-      status: "NOT_STARTED"
-      paths: []
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I1-MSG-002/messaging-fix-round.md"
 summary:
   counts:
     BACKLOG: 0
     READY: 0
-    CLAIMED: 1
+    CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
@@ -497,7 +502,7 @@ summary:
     CI_PENDING: 0
     HUMAN_REVIEW: 0
     MERGED: 0
-    VERIFIED: 8
+    VERIFIED: 10
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
@@ -505,4 +510,4 @@ summary:
     CANCELLED: 0
 
   activeTask: "I1-MSG-002"
-  nextRecommendedTask: "I1-MSG-002"
+  nextRecommendedTask: "I1-DSC-001"
