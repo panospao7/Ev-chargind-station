@@ -1,27 +1,45 @@
 package com.evplatform.discoveryinsights.projection;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
- * Read-side queries over discovery_insights.station_search_projection
+ * Read-side queries over the discovery_insights search projections
  * (public reference data only — ARC-022 §9: no account/driver/vehicle
- * identifiers in this projection).
+ * identifiers in these projections).
  *
  * <p>Geo listing: SQL bounding-box prefilter (coarse lat/lon window from
  * the radius in degrees, backed by ix_station_search_location) plus an
- * exact haversine filter and distance ordering in Java. Non-geo listing
- * orders by display_name. Limit clamped to 1..100, default 20
- * (public-discovery-api-v1.yaml listStations).</p>
+ * exact haversine filter and distance ordering in Java. Depth filtering
+ * (I1-DSC-002): connectorType/minPowerW are applied as an EXISTS subquery
+ * over evse_search_projection × connector_search_projection (ACTIVE states
+ * on both, exact type match when provided, max_power_w &gt;= when provided;
+ * backed by ix_connector_search_type_power). totalEvses counts the
+ * station's ACTIVE EVSE rows. Non-geo listing orders by display_name.
+ * Limit clamped to 1..100, default 20 (public-discovery-api-v1.yaml
+ * listStations).</p>
+ *
+ * <p>getStation returns the station's ACTIVE EVSEs (public uid + their
+ * ACTIVE connectors, ordered by uid then connector type) and the
+ * highest-version ACTIVE tariff_public_projection row (nullable; the
+ * tariff is ORGANIZATION-SCOPED in the source domain — see
+ * {@link TariffView} for the disclosed simplification).</p>
  */
 @Component
 public class StationSearchProjectionReader {
 
     /** Mean Earth radius in kilometres (haversine). */
     private static final double EARTH_RADIUS_KM = 6371.0088;
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final org.springframework.jdbc.core.simple.JdbcClient jdbc;
 
@@ -30,32 +48,84 @@ public class StationSearchProjectionReader {
     }
 
     public List<StationSummary> listStations(BigDecimal latitude, BigDecimal longitude,
-                                             Integer radiusKm, Integer limit) {
+                                             Integer radiusKm, Integer limit,
+                                             String connectorType, Integer minPowerW) {
         int effectiveLimit = clampLimit(limit);
         boolean geo = latitude != null && longitude != null && radiusKm != null && radiusKm > 0;
+        boolean filterType = connectorType != null;
+        boolean filterPower = minPowerW != null;
 
-        List<Row> rows;
+        // Depth EXISTS clause (parameter order: connectorType first, then
+        // minPowerW — must match the binding order below)
+        StringBuilder depth = new StringBuilder();
+        if (filterType || filterPower) {
+            depth.append("AND EXISTS (SELECT 1 ")
+                    .append("FROM discovery_insights.evse_search_projection e ")
+                    .append("JOIN discovery_insights.connector_search_projection c ")
+                    .append("ON c.evse_ref = e.evse_ref ")
+                    .append("WHERE e.station_ref = s.station_ref ")
+                    .append("AND e.projection_state = 'ACTIVE' ")
+                    .append("AND c.projection_state = 'ACTIVE'");
+            if (filterType) {
+                depth.append(" AND c.connector_type = ?");
+            }
+            if (filterPower) {
+                depth.append(" AND c.max_power_w >= ?");
+            }
+            depth.append(") ");
+        }
+        String depthFilter = depth.toString();
+
+        List<Object> params = new ArrayList<>();
+        String sql;
         if (geo) {
             double[] box = boundingBoxDegrees(latitude.doubleValue(), longitude.doubleValue(),
                     radiusKm);
-            rows = jdbc.sql("""
-                            SELECT public_ref, display_name, address_line, latitude, longitude
-                            FROM discovery_insights.station_search_projection
-                            WHERE projection_state = 'ACTIVE'
-                              AND latitude BETWEEN ? AND ?
-                              AND longitude BETWEEN ? AND ?
-                            ORDER BY display_name
-                            LIMIT ?
-                            """)
-                    .param(box[0]).param(box[1]).param(box[2]).param(box[3])
-                    .param(effectiveLimit)
-                    .query((rs, i) -> new Row(
-                            rs.getString("public_ref"),
-                            rs.getString("display_name"),
-                            rs.getString("address_line"),
-                            rs.getBigDecimal("latitude"),
-                            rs.getBigDecimal("longitude")))
-                    .list();
+            sql = """
+                    SELECT s.public_ref, s.display_name, s.address_line,
+                           s.latitude, s.longitude
+                    FROM discovery_insights.station_search_projection s
+                    WHERE s.projection_state = 'ACTIVE'
+                      AND s.latitude BETWEEN ? AND ?
+                      AND s.longitude BETWEEN ? AND ?
+                      %s
+                    ORDER BY s.display_name
+                    LIMIT ?
+                    """.formatted(depthFilter);
+            params.add(box[0]);
+            params.add(box[1]);
+            params.add(box[2]);
+            params.add(box[3]);
+        } else {
+            sql = """
+                    SELECT s.public_ref, s.display_name, s.address_line,
+                           s.latitude, s.longitude
+                    FROM discovery_insights.station_search_projection s
+                    WHERE s.projection_state = 'ACTIVE'
+                      %s
+                    ORDER BY s.display_name
+                    LIMIT ?
+                    """.formatted(depthFilter);
+        }
+        if (filterType) {
+            params.add(connectorType);
+        }
+        if (filterPower) {
+            params.add(minPowerW);
+        }
+        params.add(effectiveLimit);
+
+        List<Row> rows = jdbc.sql(sql)
+                .params(params.toArray())
+                .query((rs, i) -> new Row(
+                        rs.getString("public_ref"),
+                        rs.getString("display_name"),
+                        rs.getString("address_line"),
+                        rs.getBigDecimal("latitude"),
+                        rs.getBigDecimal("longitude")))
+                .list();
+
+        if (geo) {
             // exact distance filter + ordering in Java (bounding box is only
             // a prefilter)
             rows = rows.stream()
@@ -65,22 +135,6 @@ public class StationSearchProjectionReader {
                     .filter(r -> distanceKm(r.latitude().doubleValue(), r.longitude().doubleValue(),
                             latitude.doubleValue(), longitude.doubleValue()) <= radiusKm)
                     .toList();
-        } else {
-            rows = jdbc.sql("""
-                            SELECT public_ref, display_name, address_line, latitude, longitude
-                            FROM discovery_insights.station_search_projection
-                            WHERE projection_state = 'ACTIVE'
-                            ORDER BY display_name
-                            LIMIT ?
-                            """)
-                    .param(effectiveLimit)
-                    .query((rs, i) -> new Row(
-                            rs.getString("public_ref"),
-                            rs.getString("display_name"),
-                            rs.getString("address_line"),
-                            rs.getBigDecimal("latitude"),
-                            rs.getBigDecimal("longitude")))
-                    .list();
         }
 
         return rows.stream()
@@ -109,8 +163,99 @@ public class StationSearchProjectionReader {
                         rs.getTimestamp("updated_at",
                                 java.util.Calendar.getInstance(
                                         java.util.TimeZone.getTimeZone("UTC"))).toInstant(),
-                        rs.getLong("source_version")))
-                .optional();
+                        rs.getLong("source_version"),
+                        0,         // totalEvses, filled by withDepth
+                        List.of(), // evses, filled by withDepth
+                        null))     // tariff, filled by withDepth
+                .optional()
+                .map(this::withDepth);
+    }
+
+    /**
+     * Depth enrichment for one station row: totalEvses (COUNT of ACTIVE EVSE
+     * rows), evses (public uid + their ACTIVE connectors, ordered by uid then
+     * connector type), and the tariff (highest version_number among ACTIVE
+     * rows; null when none is projected).
+     */
+    private StationDetails withDepth(StationDetails base) {
+        Integer totalEvses = jdbc.sql("""
+                        SELECT count(*) FROM discovery_insights.evse_search_projection
+                        WHERE station_ref = (
+                            SELECT station_ref FROM discovery_insights.station_search_projection
+                            WHERE public_ref = ?)
+                          AND projection_state = 'ACTIVE'
+                        """)
+                .param(base.ref())
+                .query((rs, i) -> rs.getInt(1))
+                .single();
+
+        Map<String, List<ConnectorView>> connectorsByUid = new LinkedHashMap<>();
+        jdbc.sql("""
+                        SELECT e.evse_uid, c.connector_type, c.max_power_w
+                        FROM discovery_insights.evse_search_projection e
+                        JOIN discovery_insights.station_search_projection s
+                          ON s.station_ref = e.station_ref
+                        LEFT JOIN discovery_insights.connector_search_projection c
+                          ON c.evse_ref = e.evse_ref AND c.projection_state = 'ACTIVE'
+                        WHERE s.public_ref = ?
+                          AND e.projection_state = 'ACTIVE'
+                        ORDER BY e.evse_uid, c.connector_type
+                        """)
+                .param(base.ref())
+                .query((rs, i) -> {
+                    connectorsByUid.computeIfAbsent(rs.getString("evse_uid"),
+                            k -> new ArrayList<>()).add(new ConnectorView(
+                            rs.getString("connector_type"), rs.getInt("max_power_w")));
+                    return Boolean.TRUE;
+                })
+                .list();
+        List<EvseView> evses = connectorsByUid.entrySet().stream()
+                .map(entry -> new EvseView(entry.getKey(), entry.getValue()))
+                .toList();
+
+        return new StationDetails(base.ref(), base.name(), base.address(),
+                base.latitude(), base.longitude(), base.city(), base.postalCode(),
+                base.countryCode(), base.updatedAt(), base.sourceVersion(),
+                totalEvses, evses, readTariff());
+    }
+
+    /**
+     * The highest-version ACTIVE tariff_public_projection row, or null when
+     * none is projected. Organization-scoped: see {@link TariffView}.
+     */
+    private TariffView readTariff() {
+        return jdbc.sql("""
+                        SELECT currency, components
+                        FROM discovery_insights.tariff_public_projection
+                        WHERE projection_state = 'ACTIVE'
+                        ORDER BY version_number DESC
+                        LIMIT 1
+                        """)
+                .query((rs, i) -> toTariffView(rs.getString("currency"),
+                        rs.getString("components")))
+                .optional()
+                .orElse(null);
+    }
+
+    /** JSON parse isolated from the row mapper (readTree is checked). */
+    private static TariffView toTariffView(String currency, String componentsJson) {
+        List<ComponentView> components = new ArrayList<>();
+        try {
+            JsonNode array = MAPPER.readTree(componentsJson);
+            for (JsonNode component : array) {
+                components.add(new ComponentView(
+                        component.path("componentKind").asText(null),
+                        component.path("unit").asText(null),
+                        component.path("amountMinor").asLong()));
+            }
+        } catch (com.fasterxml.jackson.core.JsonProcessingException malformedProjection) {
+            // the projection row was written by the consumer from a
+            // validated payload; a malformed row is an operational defect,
+            // not a request failure — surface it as an unchecked error
+            throw new IllegalStateException(
+                    "tariff_public_projection.components is not valid JSON", malformedProjection);
+        }
+        return new TariffView(currency, components);
     }
 
     static int clampLimit(Integer limit) {

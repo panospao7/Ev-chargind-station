@@ -17,9 +17,11 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * Public discovery API (public-discovery-api-v1.yaml): listStations and
- * getStationDetails. Anonymous access per the contract's security schemes
- * — no Spring Security in this slice (task packet decision).
+ * Public discovery API (public-discovery-api-v1.yaml): listStations (geo +
+ * depth filters: connectorType/minPowerW over the EVSE/connector
+ * projections) and getStationDetails (with totalEvses/evses/tariff depth).
+ * Anonymous access per the contract's security schemes — no Spring Security
+ * in this slice (task packet decision).
  *
  * <p>404 problem placement (disclosed): the problem-details.json schema has
  * no top-level "code" property, so the stable code RESOURCE_NOT_FOUND is
@@ -46,8 +48,11 @@ public class PublicStationController {
             @RequestParam(required = false) BigDecimal latitude,
             @RequestParam(required = false) BigDecimal longitude,
             @RequestParam(required = false) Integer radius,
-            @RequestParam(required = false) Integer limit) {
-        return reader.listStations(latitude, longitude, radius, limit);
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String connectorType,
+            @RequestParam(required = false) Integer minPowerW) {
+        return reader.listStations(latitude, longitude, radius, limit,
+                connectorType, minPowerW);
     }
 
     @GetMapping("/{stationRef}")

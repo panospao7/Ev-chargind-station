@@ -39,15 +39,23 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * I1-DSC-001 phase 2: discovery first slice on real PostgreSQL 18 and
- * RabbitMQ 4.3 — consumer pipeline (inbox dedup, checkpoint version
- * discipline, §7.1 older-cannot-replace guard), poison → DLQ, public API
- * (list/details/404 problem+json), rebuild procedure, and the ARC-022 §9
- * privacy assertion (public reference data only).
+ * I1-DSC-001 phase 2 + I1-DSC-002 phase 2: discovery slice on real
+ * PostgreSQL 18 and RabbitMQ 4.3 — consumer pipeline (inbox dedup,
+ * checkpoint version discipline, §7.1 older-cannot-replace guard), poison →
+ * DLQ, public API (list/details/404 problem+json), rebuild procedure, the
+ * ARC-022 §9 privacy assertion, and the depth families (EVSE/connector/
+ * tariff projections, per-family version gates, orphan handling, depth
+ * filters, details enrichment).
  *
  * Ordered single-suite run against shared containers; the Spring context
  * boots once (@SpringBootTest, random port) with lazy topology so the
  * listener connects only after the containers are up.
+ *
+ * ORDER RENUMBERING DISCLOSURE (I1-DSC-002): the four depth-family tests
+ * run BEFORE the existing API order so the depth projections are populated
+ * when the extended API assertions execute. The original orders 6/7/8/9/10
+ * keep their relative sequence and were renumbered 7/8/9/10/11 honestly —
+ * no assertion was weakened or removed.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DiscoverySliceIntegrationTest {
@@ -62,7 +70,7 @@ class DiscoverySliceIntegrationTest {
     static final PostgreSQLContainer PG = StartOnce.PG;
     static final GenericContainer<?> RABBIT = StartOnce.RABBIT;
 
-    // ---- Spring context (booted lazily by Order 2 via the static holder) ----
+    // ---- Spring context (booted lazily by the first consumer test) ----
     static org.springframework.context.ConfigurableApplicationContext CTX;
     static RabbitTemplate RABBIT_TEMPLATE;
     static org.springframework.web.client.RestTemplate REST;
@@ -77,6 +85,29 @@ class DiscoverySliceIntegrationTest {
     static UUID FACT_V1_ID = UUID.fromString("00000000-0000-0000-0000-00000000d003");
     static ObjectNode FACT_V5_ENVELOPE;
     static ObjectNode FACT_V1_ENVELOPE;
+
+    // ---- depth-family fixture facts (I1-DSC-002) ----
+    // stations ...0010 (SEEDSTA0001, Athens) and ...0011 (SEEDSTA0002,
+    // Thessaloniki); EVSEs ...00a1/00a2 (station A) and ...00b1/00b2
+    // (station B); connectorRef = nameUUIDFromBytes((uid + "|" + type))
+    // — the same derivation the STA seed uses, so the facts reference
+    // connectors the seed itself persists.
+    static final UUID DEPTH_STA_A = UUID.fromString("00000000-0000-0000-0000-000000000010");
+    static final UUID DEPTH_STA_B = UUID.fromString("00000000-0000-0000-0000-000000000011");
+    static final UUID EVSE_A1 = UUID.fromString("00000000-0000-0000-0000-0000000000a1");
+    static final UUID EVSE_A2 = UUID.fromString("00000000-0000-0000-0000-0000000000a2");
+    static final UUID EVSE_B1 = UUID.fromString("00000000-0000-0000-0000-0000000000b1");
+    static final UUID EVSE_B2 = UUID.fromString("00000000-0000-0000-0000-0000000000b2");
+    static final String UID_A1 = "GR*SEED*A1";
+    static final String UID_A2 = "GR*SEED*A2";
+    static final String UID_B1 = "GR*SEED*B1";
+    static final String UID_B2 = "GR*SEED*B2";
+    static final UUID TARIFF_REF = UUID.fromString("00000000-0000-0000-0000-0000000000e1");
+    static final UUID TARIFF_VERSION_REF = UUID.fromString("00000000-0000-0000-0000-0000000000f1");
+
+    static UUID connectorRef(String uid, String type) {
+        return UUID.nameUUIDFromBytes((uid + "|" + type).getBytes());
+    }
 
     private static Connection connect(String user) throws Exception {
         return DriverManager.getConnection(
@@ -153,6 +184,95 @@ class DiscoverySliceIntegrationTest {
         return envelope;
     }
 
+    /** evse-configuration-changed envelope (full extension set). */
+    private static ObjectNode evseEnvelope(UUID messageId, UUID evseRef, UUID stationRef,
+                                           String evseUid, long version) {
+        ObjectNode data = MAPPER.createObjectNode();
+        data.put("evseRef", evseRef.toString());
+        data.put("stationRef", stationRef.toString());
+        data.put("evseUid", evseUid);
+
+        ObjectNode envelope = MAPPER.createObjectNode();
+        envelope.put("specversion", "1.0");
+        envelope.put("type", "com.evplatform.station.evse-configuration-changed.v1");
+        envelope.put("source", "//station-operations-service");
+        envelope.put("id", messageId.toString());
+        envelope.put("time", Instant.now().toString());
+        envelope.put("datacontenttype", "application/json");
+        envelope.put("subject", "evse/" + evseUid);
+        envelope.set("data", data);
+        envelope.put("dataschema",
+                "https://schema-registry.example.com/events/evse-configuration-changed-event.json");
+        envelope.put("correlationid", messageId.toString());
+        envelope.put("aggregateid", evseRef.toString());
+        envelope.put("aggregateversion", version);
+        envelope.put("classification", "BUSINESS");
+        return envelope;
+    }
+
+    /** connector-configuration-changed envelope (full extension set). */
+    private static ObjectNode connectorEnvelope(UUID messageId, UUID connectorRef,
+                                                UUID evseRef, String connectorType,
+                                                int maxPowerW, long version) {
+        ObjectNode data = MAPPER.createObjectNode();
+        data.put("connectorRef", connectorRef.toString());
+        data.put("evseRef", evseRef.toString());
+        data.put("connectorType", connectorType);
+        data.put("maxPowerW", maxPowerW);
+
+        ObjectNode envelope = MAPPER.createObjectNode();
+        envelope.put("specversion", "1.0");
+        envelope.put("type", "com.evplatform.station.connector-configuration-changed.v1");
+        envelope.put("source", "//station-operations-service");
+        envelope.put("id", messageId.toString());
+        envelope.put("time", Instant.now().toString());
+        envelope.put("datacontenttype", "application/json");
+        envelope.put("subject", "connector/" + connectorRef);
+        envelope.set("data", data);
+        envelope.put("dataschema",
+                "https://schema-registry.example.com/events/connector-configuration-changed-event.json");
+        envelope.put("correlationid", messageId.toString());
+        envelope.put("aggregateid", connectorRef.toString());
+        envelope.put("aggregateversion", version);
+        envelope.put("classification", "BUSINESS");
+        return envelope;
+    }
+
+    /** tariff-published envelope (full extension set). */
+    private static ObjectNode tariffEnvelope(UUID messageId, long version) {
+        ObjectNode energy = MAPPER.createObjectNode();
+        energy.put("componentKind", "ENERGY_PER_KWH");
+        energy.put("unit", "KWH");
+        energy.put("amountMinor", 480);
+        ObjectNode occupancy = MAPPER.createObjectNode();
+        occupancy.put("componentKind", "OCCUPANCY_PER_MINUTE");
+        occupancy.put("unit", "MINUTE");
+        occupancy.put("amountMinor", 10);
+        ObjectNode data = MAPPER.createObjectNode();
+        data.put("tariffRef", TARIFF_REF.toString());
+        data.put("tariffVersionRef", TARIFF_VERSION_REF.toString());
+        data.put("versionNumber", 1);
+        data.put("currency", "EUR");
+        data.set("components", MAPPER.createArrayNode().add(energy).add(occupancy));
+
+        ObjectNode envelope = MAPPER.createObjectNode();
+        envelope.put("specversion", "1.0");
+        envelope.put("type", "com.evplatform.station.tariff-published.v1");
+        envelope.put("source", "//station-operations-service");
+        envelope.put("id", messageId.toString());
+        envelope.put("time", Instant.now().toString());
+        envelope.put("datacontenttype", "application/json");
+        envelope.put("subject", "tariff/" + TARIFF_VERSION_REF);
+        envelope.set("data", data);
+        envelope.put("dataschema",
+                "https://schema-registry.example.com/events/tariff-published-event.json");
+        envelope.put("correlationid", messageId.toString());
+        envelope.put("aggregateid", TARIFF_VERSION_REF.toString());
+        envelope.put("aggregateversion", version);
+        envelope.put("classification", "BUSINESS");
+        return envelope;
+    }
+
     private static void publish(ObjectNode envelope) {
         RABBIT_TEMPLATE.convertAndSend("ev.domain.v1", "station.published",
                 envelope.toString());
@@ -197,12 +317,32 @@ class DiscoverySliceIntegrationTest {
         throw new AssertionError("projection row for " + publicRef + " did not appear within 15s");
     }
 
+    /** Waits until the EVSE projection row for evseRef exists. */
+    private static void awaitEvse(UUID evseRef) throws Exception {
+        long deadline = System.currentTimeMillis() + 15_000;
+        while (System.currentTimeMillis() < deadline) {
+            Integer n = jdbc(RUNTIME).sql("""
+                            SELECT count(*) FROM discovery_insights.evse_search_projection
+                            WHERE evse_ref = ?
+                            """)
+                    .param(evseRef)
+                    .query((rs, i) -> rs.getInt(1))
+                    .single();
+            if (n == 1) {
+                return;
+            }
+            Thread.sleep(150);
+        }
+        throw new AssertionError("evse projection row for " + evseRef + " did not appear within 15s");
+    }
+
     @Test
     @Order(1)
     void schemaAndAppendOnlyAudit() throws Exception {
-        // all 4 tables exist
+        // all 8 tables exist (4 base + 3 depth + audit)
         for (String table : List.of("station_search_projection", "projection_checkpoint",
-                "inbox_message", "audit_event")) {
+                "inbox_message", "audit_event", "evse_search_projection",
+                "connector_search_projection", "tariff_public_projection")) {
             try (Connection c = connect(MIGRATOR);
                  PreparedStatement ps = c.prepareStatement(
                          "SELECT 1 FROM information_schema.tables "
@@ -216,14 +356,22 @@ class DiscoverySliceIntegrationTest {
         }
         // named constraints: PostgreSQL auto-renames inline PRIMARY KEY to
         // <table>_pkey, so pk_* must be declared as named table constraints.
-        // V2 does exactly that; query each by its owning relation.
-        Map<String, String> constraintRelations = Map.of(
-                "pk_station_search_projection", "station_search_projection",
-                "uq_station_search_public_ref", "station_search_projection",
-                "pk_projection_checkpoint", "projection_checkpoint",
-                "pk_inbox_message", "inbox_message",
-                "ck_inbox_processing_outcome", "inbox_message",
-                "pk_audit_event", "audit_event");
+        // V2/V3 do exactly that; query each by its owning relation.
+        Map<String, String> constraintRelations = Map.ofEntries(
+                Map.entry("pk_station_search_projection", "station_search_projection"),
+                Map.entry("uq_station_search_public_ref", "station_search_projection"),
+                Map.entry("pk_projection_checkpoint", "projection_checkpoint"),
+                Map.entry("pk_inbox_message", "inbox_message"),
+                Map.entry("ck_inbox_processing_outcome", "inbox_message"),
+                Map.entry("pk_audit_event", "audit_event"),
+                Map.entry("pk_evse_search_projection", "evse_search_projection"),
+                Map.entry("uq_evse_search_uid", "evse_search_projection"),
+                Map.entry("ck_evse_search_state", "evse_search_projection"),
+                Map.entry("pk_connector_search_projection", "connector_search_projection"),
+                Map.entry("ck_connector_power", "connector_search_projection"),
+                Map.entry("ck_connector_search_state", "connector_search_projection"),
+                Map.entry("pk_tariff_public_projection", "tariff_public_projection"),
+                Map.entry("ck_tariff_public_state", "tariff_public_projection"));
         for (var entry : constraintRelations.entrySet()) {
             Integer n = jdbc(MIGRATOR).sql("""
                             SELECT count(*) FROM pg_constraint
@@ -238,7 +386,10 @@ class DiscoverySliceIntegrationTest {
         }
         // indexes
         for (String index : List.of("ix_station_search_source_version",
-                "ix_station_search_location")) {
+                "ix_station_search_location",
+                "ix_evse_search_station", "ix_evse_search_source_version",
+                "ix_connector_search_evse", "ix_connector_search_type_power",
+                "ix_tariff_public_tariff")) {
             Integer n = jdbc(MIGRATOR).sql("SELECT count(*) FROM pg_indexes WHERE indexname = ?")
                     .param(index)
                     .query((rs, i) -> rs.getInt(1))
@@ -438,7 +589,205 @@ class DiscoverySliceIntegrationTest {
     }
 
     @Test
+    @Order(6)
+    void depthFactsApplyInOrder() throws Exception {
+        // Ordered facts mirroring the STA seed emission order: the two depth
+        // station snapshots first (publicRefs DEPTHSTA-A/DEPTHSTA-B —
+        // DISTINCT from FIXSTA-A/FIXSTA-B: uq_station_search_public_ref
+        // forbids re-parenting a public_ref to another station_ref), then
+        // EVSEs, then connectors, then the tariff. 15 envelopes in total
+        // (2 parent stations + the 13 depth-family facts: 4 EVSE + 8
+        // connector + 1 tariff).
+        UUID staAId = UUID.fromString("00000000-0000-0000-0000-00000000e001");
+        UUID staBId = UUID.fromString("00000000-0000-0000-0000-00000000e002");
+        UUID evseA1Id = UUID.fromString("00000000-0000-0000-0000-00000000e003");
+        UUID evseA2Id = UUID.fromString("00000000-0000-0000-0000-00000000e004");
+        UUID evseB1Id = UUID.fromString("00000000-0000-0000-0000-00000000e005");
+        UUID evseB2Id = UUID.fromString("00000000-0000-0000-0000-00000000e006");
+        UUID conA1DcId = UUID.fromString("00000000-0000-0000-0000-00000000e007");
+        UUID conA1AcId = UUID.fromString("00000000-0000-0000-0000-00000000e008");
+        UUID conA2DcId = UUID.fromString("00000000-0000-0000-0000-00000000e009");
+        UUID conA2AcId = UUID.fromString("00000000-0000-0000-0000-00000000e00a");
+        UUID conB1DcId = UUID.fromString("00000000-0000-0000-0000-00000000e00b");
+        UUID conB1AcId = UUID.fromString("00000000-0000-0000-0000-00000000e00c");
+        UUID tariffId = UUID.fromString("00000000-0000-0000-0000-00000000e00d");
+
+        // parent stations first — the EVSE orphan check requires their rows
+        ObjectNode staA = envelope(staAId, DEPTH_STA_A.toString(), 0,
+                "DEPTHSTA-A", "Depth Fixture Station A", 37.983810, 23.727540, "Athens");
+        publish(staA);
+        ObjectNode staB = envelope(staBId, DEPTH_STA_B.toString(), 0,
+                "DEPTHSTA-B", "Depth Fixture Station B", 40.640060, 22.944420, "Thessaloniki");
+        publish(staB);
+        awaitInbox(staAId, "COMPLETED");
+        awaitInbox(staBId, "COMPLETED");
+
+        publish(evseEnvelope(evseA1Id, EVSE_A1, DEPTH_STA_A, UID_A1, 0));
+        publish(evseEnvelope(evseA2Id, EVSE_A2, DEPTH_STA_A, UID_A2, 0));
+        publish(evseEnvelope(evseB1Id, EVSE_B1, DEPTH_STA_B, UID_B1, 0));
+        publish(evseEnvelope(evseB2Id, EVSE_B2, DEPTH_STA_B, UID_B2, 0));
+        awaitInbox(evseA1Id, "COMPLETED");
+        awaitInbox(evseA2Id, "COMPLETED");
+        awaitInbox(evseB1Id, "COMPLETED");
+        awaitInbox(evseB2Id, "COMPLETED");
+
+        publish(connectorEnvelope(conA1DcId, connectorRef(UID_A1, "CCS"), EVSE_A1, "CCS", 150_000, 0));
+        publish(connectorEnvelope(conA1AcId, connectorRef(UID_A1, "TYPE2"), EVSE_A1, "TYPE2", 22_000, 0));
+        publish(connectorEnvelope(conA2DcId, connectorRef(UID_A2, "CCS"), EVSE_A2, "CCS", 150_000, 0));
+        publish(connectorEnvelope(conA2AcId, connectorRef(UID_A2, "TYPE2"), EVSE_A2, "TYPE2", 22_000, 0));
+        publish(connectorEnvelope(conB1DcId, connectorRef(UID_B1, "CCS"), EVSE_B1, "CCS", 150_000, 0));
+        publish(connectorEnvelope(conB1AcId, connectorRef(UID_B1, "TYPE2"), EVSE_B1, "TYPE2", 22_000, 0));
+        publish(connectorEnvelope(UUID.fromString("00000000-0000-0000-0000-00000000e00e"),
+                connectorRef(UID_B2, "CCS"), EVSE_B2, "CCS", 150_000, 0));
+        publish(connectorEnvelope(UUID.fromString("00000000-0000-0000-0000-00000000e00f"),
+                connectorRef(UID_B2, "TYPE2"), EVSE_B2, "TYPE2", 22_000, 0));
+        awaitInbox(conA1DcId, "COMPLETED");
+        awaitInbox(conA1AcId, "COMPLETED");
+        awaitInbox(conA2DcId, "COMPLETED");
+        awaitInbox(conA2AcId, "COMPLETED");
+        awaitInbox(conB1DcId, "COMPLETED");
+        awaitInbox(conB1AcId, "COMPLETED");
+
+        publish(tariffEnvelope(tariffId, 0));
+        awaitInbox(tariffId, "COMPLETED");
+        awaitEvse(EVSE_B2);
+
+        // the 13 depth-family inbox rows COMPLETED (plus the 2 parents)
+        for (UUID id : List.of(evseA1Id, evseA2Id, evseB1Id, evseB2Id,
+                conA1DcId, conA1AcId, conA2DcId, conA2AcId, conB1DcId, conB1AcId, tariffId)) {
+            awaitInbox(id, "COMPLETED");
+        }
+
+        // 4 evse rows, 8 connector rows, 1 tariff row
+        assertEquals(4, count("evse_search_projection", null));
+        assertEquals(8, count("connector_search_projection", null));
+        assertEquals(1, count("tariff_public_projection", null));
+
+        // audit actions per family
+        assertEquals(4, count("audit_event", "action = 'APPLY_EVSE_CONFIGURATION'"));
+        assertEquals(8, count("audit_event", "action = 'APPLY_CONNECTOR_CONFIGURATION'"));
+        assertEquals(1, count("audit_event", "action = 'APPLY_TARIFF_PUBLISHED' "
+                + "AND target = 'tariff/" + TARIFF_VERSION_REF + "'"));
+
+        // evse row content
+        Map<String, Object> evseRow = jdbc(RUNTIME).sql("""
+                        SELECT evse_uid, station_ref, source_version, projection_state
+                        FROM discovery_insights.evse_search_projection
+                        WHERE evse_ref = ?
+                        """)
+                .param(EVSE_A1)
+                .query((rs, i) -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("evse_uid", rs.getString("evse_uid"));
+                    m.put("station_ref", rs.getString("station_ref"));
+                    m.put("source_version", rs.getLong("source_version"));
+                    m.put("projection_state", rs.getString("projection_state"));
+                    return m;
+                })
+                .single();
+        assertEquals(UID_A1, evseRow.get("evse_uid"));
+        assertEquals(DEPTH_STA_A.toString(), evseRow.get("station_ref"));
+        assertEquals(0L, evseRow.get("source_version"));
+        assertEquals("ACTIVE", evseRow.get("projection_state"));
+
+        // connector row content
+        assertEquals(150_000, Integer.parseInt(scalar(
+                "SELECT max_power_w FROM " + SCHEMA + ".connector_search_projection "
+                        + "WHERE connector_ref = '" + connectorRef(UID_A1, "CCS") + "'")));
+        assertEquals("CCS", scalar(
+                "SELECT connector_type FROM " + SCHEMA + ".connector_search_projection "
+                        + "WHERE connector_ref = '" + connectorRef(UID_A1, "CCS") + "'"));
+
+        // tariff row content: components stored as the JSON array
+        String components = scalar(
+                "SELECT components::text FROM " + SCHEMA + ".tariff_public_projection "
+                        + "WHERE tariff_version_ref = '" + TARIFF_VERSION_REF + "'");
+        JsonNode componentsNode = MAPPER.readTree(components);
+        assertTrue(componentsNode.isArray());
+        assertEquals(2, componentsNode.size());
+        assertEquals("ENERGY_PER_KWH", componentsNode.get(0).get("componentKind").asText());
+        assertEquals(480, componentsNode.get(0).get("amountMinor").asInt());
+        assertEquals("OCCUPANCY_PER_MINUTE", componentsNode.get(1).get("componentKind").asText());
+        assertEquals(10, componentsNode.get(1).get("amountMinor").asInt());
+        assertEquals("EUR", scalar(
+                "SELECT currency FROM " + SCHEMA + ".tariff_public_projection "
+                        + "WHERE tariff_version_ref = '" + TARIFF_VERSION_REF + "'"));
+    }
+
+    @Test
+    @Order(7)
+    void duplicateEvseFactHasSingleEffect() throws Exception {
+        // republish the SAME evse envelope (same message_id): inbox dedup
+        // must keep a single effect
+        UUID evseA1Id = UUID.fromString("00000000-0000-0000-0000-00000000e003");
+        int evseRowsBefore = count("evse_search_projection", null);
+        int auditBefore = count("audit_event", "action = 'APPLY_EVSE_CONFIGURATION'");
+
+        publish(evseEnvelope(evseA1Id, EVSE_A1, DEPTH_STA_A, UID_A1, 0));
+        Thread.sleep(2_000); // allow any (wrong) reprocessing to land
+
+        assertEquals(evseRowsBefore, count("evse_search_projection", null),
+                "duplicate EVSE fact must not add rows");
+        assertEquals(auditBefore, count("audit_event", "action = 'APPLY_EVSE_CONFIGURATION'"),
+                "duplicate EVSE fact must not add audit rows");
+        assertEquals(1, count("inbox_message", "message_id = '" + evseA1Id + "'"),
+                "exactly one inbox row for the duplicate EVSE fact");
+    }
+
+    @Test
+    @Order(8)
+    void outOfOrderEvseVersionsAreGuarded() throws Exception {
+        // v2 first (applied is 0, so v2 is a gap; gap-apply advances to 2),
+        // then late v1 → SKIPPED, guard keeps v2. The extra EVSE hangs off
+        // DEPTH_STA_B (not A) so Order 13's totalEvses=2 for station A is
+        // unaffected.
+        UUID evseV2Id = UUID.fromString("00000000-0000-0000-0000-00000000e011");
+        UUID evseV1Id = UUID.fromString("00000000-0000-0000-0000-00000000e012");
+        UUID evseC1 = UUID.fromString("00000000-0000-0000-0000-0000000000c1");
+
+        publish(evseEnvelope(evseV2Id, evseC1, DEPTH_STA_B, "GR*SEED*C1", 2));
+        awaitInbox(evseV2Id, "COMPLETED");
+        assertEquals(2L, Long.parseLong(scalar(
+                "SELECT source_version FROM " + SCHEMA + ".evse_search_projection "
+                        + "WHERE evse_ref = '" + evseC1 + "'")));
+
+        publish(evseEnvelope(evseV1Id, evseC1, DEPTH_STA_B, "GR*SEED*C1", 1));
+        awaitInbox(evseV1Id, "SKIPPED");
+        assertEquals(2L, Long.parseLong(scalar(
+                "SELECT source_version FROM " + SCHEMA + ".evse_search_projection "
+                        + "WHERE evse_ref = '" + evseC1 + "'")),
+                "older EVSE version must not downgrade the projection");
+    }
+
+    @Test
     @Order(9)
+    void orphanEvseFactFailsAndDeadLetters() throws Exception {
+        // EVSE fact for a station with no projection row: ORPHAN_FACT →
+        // FAILED inbox rows with attempt accounting → after the attempt
+        // budget, requeue=false → DLQ; no evse row may exist.
+        UUID orphanEvse = UUID.fromString("00000000-0000-0000-0000-0000000000c9");
+        UUID orphanStation = UUID.fromString("00000000-0000-0000-0000-000000000099");
+        UUID orphanId = UUID.fromString("00000000-0000-0000-0000-00000000e013");
+
+        publish(evseEnvelope(orphanId, orphanEvse, orphanStation, "GR*SEED*ORPHAN", 0));
+
+        String dlqBody = pollDlq(30_000);
+        assertNotNull(dlqBody, "orphan EVSE fact must eventually be dead-lettered");
+        JsonNode dlqEnvelope = MAPPER.readTree(dlqBody);
+        assertEquals("com.evplatform.station.evse-configuration-changed.v1",
+                dlqEnvelope.get("type").asText());
+        assertEquals(orphanId.toString(), dlqEnvelope.get("id").asText());
+        assertEquals(0, count("evse_search_projection", "evse_ref = '" + orphanEvse + "'"),
+                "orphan fact must not be projected");
+        // the inbox row records the orphan failure
+        String category = scalar(
+                "SELECT failure_category FROM " + SCHEMA + ".inbox_message "
+                        + "WHERE message_id = '" + orphanId + "'");
+        assertEquals("ORPHAN_FACT", category);
+    }
+
+    @Test
+    @Order(10)
     void aggregatePayloadMismatchGoesToDlq() throws Exception {
         // envelope aggregateid points at one station, payload stationRef at
         // another → poison-classified (AGGREGATE_PAYLOAD_MISMATCH) → DLQ;
@@ -459,7 +808,7 @@ class DiscoverySliceIntegrationTest {
     }
 
     @Test
-    @Order(10)
+    @Order(11)
     void malformedNumericPayloadGoesToDlq() throws Exception {
         // security finding 1 companion (documented current behavior; full
         // JSON-schema validation is the booked hardening follow-up): a
@@ -490,7 +839,7 @@ class DiscoverySliceIntegrationTest {
              com.rabbitmq.client.Channel channel = conn.createChannel()) {
             long deadline = System.currentTimeMillis() + timeoutMs;
             while (System.currentTimeMillis() < deadline) {
-                var delivery = channel.basicGet("discovery.station.published.dlq", false);
+                var delivery = channel.basicGet("discovery.sta.domain.dlq", false);
                 if (delivery != null) {
                     String body = new String(delivery.getBody(), java.nio.charset.StandardCharsets.UTF_8);
                     channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
@@ -503,7 +852,7 @@ class DiscoverySliceIntegrationTest {
     }
 
     @Test
-    @Order(6)
+    @Order(12)
     void publicApiServesProjectionRows() throws Exception {
         // list: both fixtures visible
         ResponseEntity<String> list = REST.getForEntity(BASE_URL + "/api/v1/stations",
@@ -551,9 +900,9 @@ class DiscoverySliceIntegrationTest {
         // Privacy absence assertions (ARC-022 §9): the details response must
         // not expose the internal station identity. Checked explicitly here —
         // (a) no "stationRef" field anywhere in the body, (b) no UUID-shaped
-        // value anywhere in the body (the fixture aggregate UUIDs are
-        // FACT_A_AGG and FACT_B's aggregate; DTOs carry no such field, this
-        // asserts the wire representation too).
+        // value anywhere in the body (the DTOs carry no such field; the
+        // depth view carries only the public evse uid). This asserts the
+        // wire representation.
         String detailsBody = details.getBody();
         assertFalse(detailsBody.contains("\"stationRef\""),
                 "details response must not contain a stationRef field");
@@ -599,7 +948,79 @@ class DiscoverySliceIntegrationTest {
     }
 
     @Test
-    @Order(7)
+    @Order(13)
+    void depthFiltersAndEnrichedDetails() throws Exception {
+        // connectorType=CCS → both depth stations (each has a CCS connector)
+        JsonNode ccs = listJson("connectorType=CCS");
+        assertNotNull(findByName(ccs, "Depth Fixture Station A"), "A has CCS");
+        assertNotNull(findByName(ccs, "Depth Fixture Station B"), "B has CCS");
+
+        // +minPowerW=100000 → still both (CCS 150000 >= 100000)
+        JsonNode ccsPower = listJson("connectorType=CCS&minPowerW=100000");
+        assertNotNull(findByName(ccsPower, "Depth Fixture Station A"));
+        assertNotNull(findByName(ccsPower, "Depth Fixture Station B"));
+
+        // minPowerW=200000 → none
+        JsonNode none = listJson("minPowerW=200000");
+        assertTrue(none.isArray());
+        assertEquals(0, none.size(), "no connector reaches 200000 W");
+
+        // details enrichment on DEPTHSTA-A: totalEvses=2, evses with
+        // connectors, tariff EUR 480/10
+        ResponseEntity<String> details = REST.getForEntity(
+                BASE_URL + "/api/v1/stations/DEPTHSTA-A", String.class);
+        assertEquals(200, details.getStatusCode().value());
+        JsonNode d = MAPPER.readTree(details.getBody());
+        assertEquals("DEPTHSTA-A", d.get("ref").asText());
+        assertEquals(2, d.get("totalEvses").asInt(), "station A must have 2 ACTIVE EVSEs");
+        JsonNode evses = d.get("evses");
+        assertTrue(evses.isArray());
+        assertEquals(2, evses.size());
+        JsonNode evseA1 = findByUid(evses, UID_A1);
+        assertNotNull(evseA1, "GR*SEED*A1 must be in the details");
+        JsonNode a1Connectors = evseA1.get("connectors");
+        assertEquals(2, a1Connectors.size());
+        assertEquals("CCS", a1Connectors.get(0).get("type").asText());
+        assertEquals(150000, a1Connectors.get(0).get("maxPowerW").asInt());
+        assertEquals("TYPE2", a1Connectors.get(1).get("type").asText());
+        assertEquals(22000, a1Connectors.get(1).get("maxPowerW").asInt());
+        JsonNode evseA2 = findByUid(evses, UID_A2);
+        assertNotNull(evseA2, "GR*SEED*A2 must be in the details");
+        assertEquals(2, evseA2.get("connectors").size());
+        JsonNode tariff = d.get("tariff");
+        assertNotNull(tariff, "the projected tariff must be surfaced");
+        assertEquals("EUR", tariff.get("currency").asText());
+        JsonNode components = tariff.get("components");
+        assertEquals(2, components.size());
+        assertEquals("ENERGY_PER_KWH", components.get(0).get("kind").asText());
+        assertEquals("KWH", components.get(0).get("unit").asText());
+        assertEquals(480, components.get(0).get("amountMinor").asInt());
+        assertEquals("OCCUPANCY_PER_MINUTE", components.get(1).get("kind").asText());
+        assertEquals("MINUTE", components.get(1).get("unit").asText());
+        assertEquals(10, components.get(1).get("amountMinor").asInt());
+
+        // no openingHours in this slice (deferred per the task packet)
+        assertNull(d.get("openingHours"), "openingHours is deferred and must not appear");
+    }
+
+    private static JsonNode listJson(String query) throws Exception {
+        ResponseEntity<String> response = REST.getForEntity(
+                BASE_URL + "/api/v1/stations?" + query, String.class);
+        assertEquals(200, response.getStatusCode().value());
+        return MAPPER.readTree(response.getBody());
+    }
+
+    private static JsonNode findByUid(JsonNode evses, String uid) {
+        for (JsonNode node : evses) {
+            if (uid.equals(node.path("uid").asText(null))) {
+                return node;
+            }
+        }
+        return null;
+    }
+
+    @Test
+    @Order(14)
     void rebuildRepopulatesProjectionIdentically() throws Exception {
         // documented rebuild procedure: clear projection + checkpoint + inbox
         exec(MIGRATOR, "DELETE FROM " + SCHEMA + ".station_search_projection");
@@ -624,7 +1045,7 @@ class DiscoverySliceIntegrationTest {
     }
 
     @Test
-    @Order(8)
+    @Order(15)
     void projectionContainsPublicReferenceDataOnly() throws Exception {
         // no column in any discovery_insights table matches privacy patterns
         List<String> forbidden = jdbc(MIGRATOR).sql("""
@@ -642,13 +1063,12 @@ class DiscoverySliceIntegrationTest {
                         "column name must not match privacy pattern '" + pattern + "': " + column);
             }
         }
-        // projection row carries only public fields. Protection is
-        // STRUCTURAL: the DTOs (StationSummary/StationDetails) have no
-        // station_ref/internal-identifier field at all, and Order 6 asserts
-        // the wire representation (no "stationRef" field, no UUID-shaped
-        // value in the details body). Here we assert the projection table
-        // itself has no unexpected non-null sensitive columns — the table
-        // simply has none by construction, verified above.
+        // projection rows carry only public fields. Protection is
+        // STRUCTURAL: the DTOs (StationSummary/StationDetails/EvseView/
+        // ConnectorView/TariffView/ComponentView) have no
+        // station_ref/evse_ref/connector_ref/internal-identifier field at
+        // all, and Orders 12–13 assert the wire representation (no
+        // "stationRef" field, no UUID-shaped value in the details body).
     }
 
     /** Boots the real application once, against the containers. */

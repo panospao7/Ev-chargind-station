@@ -41,7 +41,7 @@ spring:
 # against top-level configuration properties only (MSG-002 m4 lesson).
 discovery:
   consumer:
-    queue-name: ${DISC_CONSUMER_QUEUE:discovery.station.published}
+    queue-name: ${DISC_CONSUMER_QUEUE:discovery.sta.domain}
     dlq-suffix: .dlq
 
 management:
