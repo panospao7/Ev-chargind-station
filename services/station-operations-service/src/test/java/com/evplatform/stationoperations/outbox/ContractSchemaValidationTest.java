@@ -19,9 +19,11 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -30,6 +32,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * authoritative executable schemas — contracts/schemas/common/cloud-event.json
  * for the envelope and contracts/schemas/events/station-published-event.json
  * for the payload's data. Executable-schema validation, not shape assertion.
+ *
+ * I1-MSG-003: the WIRE envelope (what the dispatcher actually sends) is the
+ * stored payload plus the ARC-014 §2 extension attributes derived from the
+ * outbox columns at send time via OutboxDispatcher.enrichedPayload. The
+ * enriched envelope must still validate against cloud-event.json (extensions
+ * are additional properties) and its data against
+ * station-published-event.json, with correlationid/aggregateid/
+ * aggregateversion/dataschema equal to the authoritative columns and
+ * causationid absent for NULL causation_id.
  *
  * The negative control proves the harness can fail: an envelope missing the
  * required id attribute must produce validation errors.
@@ -80,13 +91,25 @@ class ContractSchemaValidationTest {
 
         try (Connection c = connect(RUNTIME);
              PreparedStatement ps = c.prepareStatement(
-                     "SELECT payload FROM " + SCHEMA + ".outbox_message "
+                     "SELECT message_id, message_type, payload, attempt_count, "
+                             + "correlation_id, causation_id, aggregate_ref, aggregate_version "
+                             + "FROM " + SCHEMA + ".outbox_message "
                              + "WHERE message_type = 'com.evplatform.station.published.v1' "
                              + "ORDER BY message_id");
              ResultSet rs = ps.executeQuery()) {
             int validated = 0;
             while (rs.next()) {
-                JsonNode envelope = MAPPER.readTree(rs.getString(1));
+                UUID messageId = rs.getObject("message_id", UUID.class);
+                String messageType = rs.getString("message_type");
+                String payload = rs.getString("payload");
+                int attemptCount = rs.getInt("attempt_count");
+                UUID correlationId = rs.getObject("correlation_id", UUID.class);
+                UUID causationId = rs.getObject("causation_id", UUID.class);
+                UUID aggregateRef = rs.getObject("aggregate_ref", UUID.class);
+                long aggregateVersion = rs.getLong("aggregate_version");
+
+                // raw stored payload validations (unchanged, I1-MSG-002)
+                JsonNode envelope = MAPPER.readTree(payload);
                 Set<ValidationMessage> envelopeErrors =
                         cloudEventSchema.validate(envelope);
                 assertTrue(envelopeErrors.isEmpty(),
@@ -97,6 +120,40 @@ class ContractSchemaValidationTest {
                 assertTrue(payloadErrors.isEmpty(),
                         "emitted payload data must validate against "
                                 + "station-published-event.json: " + payloadErrors);
+
+                // I1-MSG-003: validate the ENRICHED wire envelope the
+                // dispatcher derives at send time
+                OutboxDispatcher.OutboxRow row = new OutboxDispatcher.OutboxRow(
+                        messageId, messageType, payload, attemptCount,
+                        correlationId, causationId, aggregateRef, aggregateVersion);
+                JsonNode enriched = MAPPER.readTree(OutboxDispatcher.enrichedPayload(row));
+                Set<ValidationMessage> enrichedEnvelopeErrors =
+                        cloudEventSchema.validate(enriched);
+                assertTrue(enrichedEnvelopeErrors.isEmpty(),
+                        "enriched envelope must validate against cloud-event.json "
+                                + "(ARC-014 §2 extensions are additional properties): "
+                                + enrichedEnvelopeErrors + " in " + enriched);
+                Set<ValidationMessage> enrichedPayloadErrors =
+                        stationPublishedSchema.validate(enriched.get("data"));
+                assertTrue(enrichedPayloadErrors.isEmpty(),
+                        "enriched envelope data must validate against "
+                                + "station-published-event.json: " + enrichedPayloadErrors);
+                assertEquals(correlationId.toString(),
+                        enriched.get("correlationid").asText(),
+                        "correlationid must equal the correlation_id column");
+                assertEquals(aggregateRef.toString(),
+                        enriched.get("aggregateid").asText(),
+                        "aggregateid must equal the aggregate_ref column");
+                assertEquals(aggregateVersion,
+                        enriched.get("aggregateversion").asLong(),
+                        "aggregateversion must equal the aggregate_version column as a number");
+                assertEquals("https://schema-registry.example.com/events/station-published-event.json",
+                        enriched.get("dataschema").asText(),
+                        "dataschema must be the event schema $id");
+                assertNull(enriched.get("causationid"),
+                        "causationid must be absent for NULL causation_id, not null-valued");
+                assertNull(enriched.get("traceparent"),
+                        "traceparent must never be emitted");
                 validated++;
             }
             assertEquals(2, validated,
