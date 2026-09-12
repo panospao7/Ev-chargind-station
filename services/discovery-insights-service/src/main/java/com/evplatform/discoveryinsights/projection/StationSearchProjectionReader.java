@@ -33,7 +33,10 @@ import java.util.Optional;
  * ACTIVE connectors, ordered by uid then connector type) and the
  * highest-version ACTIVE tariff_public_projection row (nullable; the
  * tariff is ORGANIZATION-SCOPED in the source domain — see
- * {@link TariffView} for the disclosed simplification).</p>
+ * {@link TariffView} for the disclosed simplification). An ACTIVE EVSE
+ * with no ACTIVE connectors is served with an EMPTY connectors list —
+ * never a phantom connector (ConnectorView.type is contract-required
+ * non-null, AC-05 honesty).</p>
  */
 @Component
 public class StationSearchProjectionReader {
@@ -212,9 +215,20 @@ public class StationSearchProjectionReader {
                         """)
                 .param(base.ref())
                 .query((rs, i) -> {
-                    connectorsByUid.computeIfAbsent(rs.getString("evse_uid"),
-                            k -> new ArrayList<>()).add(new ConnectorView(
-                            rs.getString("connector_type"), rs.getInt("max_power_w")));
+                    // connector_type/max_power_w are NOT NULL in the projection
+                    // table, so a NULL here can only be the LEFT JOIN miss: an
+                    // ACTIVE EVSE with no ACTIVE connectors. Register the EVSE
+                    // uid with an EMPTY connectors list (do NOT skip the row —
+                    // a connector-less EVSE must still appear in evses, matching
+                    // totalEvses) and never fabricate a ConnectorView with a
+                    // null type or 0 W (contract-invalid; AC-05 honesty).
+                    String uid = rs.getString("evse_uid");
+                    List<ConnectorView> connectors = connectorsByUid
+                            .computeIfAbsent(uid, k -> new ArrayList<>());
+                    if (rs.getString("connector_type") != null) {
+                        connectors.add(new ConnectorView(
+                                rs.getString("connector_type"), rs.getInt("max_power_w")));
+                    }
                     return Boolean.TRUE;
                 })
                 .list();

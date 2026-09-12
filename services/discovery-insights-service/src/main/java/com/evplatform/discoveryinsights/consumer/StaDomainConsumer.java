@@ -361,8 +361,13 @@ public class StaDomainConsumer {
     private UUID validateStationPublished(JsonNode data) {
         if (!data.hasNonNull("stationRef") || !data.hasNonNull("publicRef")
                 || !data.hasNonNull("displayName")
-                || !data.get("latitude").isNumber()
-                || !data.get("longitude").isNumber()) {
+                // MINOR-4: hasNonNull before isNumber() — a MISSING numeric
+                // field must hit this structured PAYLOAD_INVALID path with a
+                // specific reason instead of an incidental NPE in the
+                // downstream coercion (data.get(...) → null → isNumber() NPE
+                // → catch-all, terminal behavior identical: DLQ).
+                || !data.hasNonNull("latitude") || !data.get("latitude").isNumber()
+                || !data.hasNonNull("longitude") || !data.get("longitude").isNumber()) {
             throw new PayloadValidationException(
                     "station.published payload missing required fields or non-numeric lat/lon",
                     "PAYLOAD_INVALID");
@@ -398,6 +403,9 @@ public class StaDomainConsumer {
         if (!data.hasNonNull("connectorRef") || !data.hasNonNull("evseRef")
                 || !data.hasNonNull("connectorType")
                 || data.get("connectorType").asText("").isBlank()
+                // MINOR-4: hasNonNull guard — a MISSING maxPowerW must hit
+                // the structured PAYLOAD_INVALID path, not an incidental NPE.
+                || !data.hasNonNull("maxPowerW")
                 || !data.get("maxPowerW").isNumber()
                 || data.get("maxPowerW").asLong() <= 0
                 || data.get("maxPowerW").asLong() > Integer.MAX_VALUE) {
@@ -423,6 +431,9 @@ public class StaDomainConsumer {
      */
     private UUID validateTariffPublished(JsonNode data) {
         if (!data.hasNonNull("tariffRef") || !data.hasNonNull("tariffVersionRef")
+                // MINOR-4: hasNonNull guard — a MISSING versionNumber must hit
+                // the structured PAYLOAD_INVALID path, not an incidental NPE.
+                || !data.hasNonNull("versionNumber")
                 || !data.get("versionNumber").isNumber()
                 || data.get("versionNumber").asLong() < Integer.MIN_VALUE
                 || data.get("versionNumber").asLong() > Integer.MAX_VALUE
@@ -442,6 +453,10 @@ public class StaDomainConsumer {
                     || component.get("componentKind").asText("").isBlank()
                     || !component.hasNonNull("unit")
                     || component.get("unit").asText("").isBlank()
+                    // MINOR-4: hasNonNull guard per component — a MISSING
+                    // amountMinor must hit the structured PAYLOAD_INVALID
+                    // path, not an incidental NPE.
+                    || !component.hasNonNull("amountMinor")
                     || !component.get("amountMinor").isNumber()) {
                 throw new PayloadValidationException(
                         "tariff component missing componentKind/unit or "
@@ -894,10 +909,15 @@ public class StaDomainConsumer {
     }
 
     /**
-     * Gap accounting on the inbox row (attempt bookkeeping for operators).
-     * The VERSION_GAP category set here is preserved by
-     * {@link #markInboxCompletedGap} when the gap fact completes, so the
-     * completed inbox row keeps the gap evidence for operators.
+     * Gap accounting on the inbox row: sets the VERSION_GAP category and
+     * increments attempt_count — the SINGLE increment for a gap-apply
+     * delivery (the completion step does not increment again, otherwise one
+     * delivery would be accounted twice). Keeping the increment HERE means
+     * the row's attempt_count is already meaningful at failure time, before
+     * the outcome flips to COMPLETED. The VERSION_GAP category set here is
+     * preserved by {@link #markInboxCompletedGap} when the gap fact
+     * completes, so the completed inbox row keeps the gap evidence for
+     * operators.
      */
     private void markInboxGapRecorded(UUID messageId, long gapFrom) {
         jdbc.sql("""
@@ -924,17 +944,19 @@ public class StaDomainConsumer {
     }
 
     /**
-     * Completion for a gap-apply fact: COMPLETED, but the VERSION_GAP
-     * failure_category is PRESERVED on the completed row as durable gap
+     * Completion for a gap-apply fact: COMPLETED, with the VERSION_GAP
+     * failure_category PRESERVED on the completed row as durable gap
      * evidence (clearing it would erase the operator-visible trace of the
      * gap; the checkpoint's gap_from_version/gap_recorded_at fields alone
-     * are overwritten by the next in-sequence fact).
+     * are overwritten by the next in-sequence fact). attempt_count is NOT
+     * incremented here: {@link #markInboxGapRecorded} already counted this
+     * delivery exactly once (a second increment would double-count one
+     * delivery).
      */
     private void markInboxCompletedGap(UUID messageId) {
         jdbc.sql("""
                         UPDATE discovery_insights.inbox_message
                         SET processing_outcome = 'COMPLETED', completed_at = now(),
-                            attempt_count = attempt_count + 1,
                             failure_category = 'VERSION_GAP'
                         WHERE consumer_name = ? AND message_id = ?
                         """)

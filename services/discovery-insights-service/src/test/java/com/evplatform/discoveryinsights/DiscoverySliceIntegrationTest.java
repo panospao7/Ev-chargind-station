@@ -56,6 +56,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * when the extended API assertions execute. The original orders 6/7/8/9/10
  * keep their relative sequence and were renumbered 7/8/9/10/11 honestly —
  * no assertion was weakened or removed.
+ *
+ * FIX ROUND 2 (I1-DSC-002): new assertions fold into EXISTING orders (no new
+ * test methods, count stays 16) — Order 7 gains the connector- and tariff-
+ * family duplicate cases; Order 13 gains the geo+connectorType combined
+ * filter, the minPowerW=150000 boundary, and the connector-less EVSE C1
+ * honesty assertions (empty connectors array, no phantom null-type/0 W
+ * connector in the DEPTHSTA-B details).
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DiscoverySliceIntegrationTest {
@@ -763,6 +770,41 @@ class DiscoverySliceIntegrationTest {
                 "duplicate EVSE fact must not add audit rows");
         assertEquals(1, count("inbox_message", "message_id = '" + evseA1Id + "'"),
                 "exactly one inbox row for the duplicate EVSE fact");
+
+        // MINOR-2a: connector-family duplicate case — republish the SAME
+        // connector envelope (same message_id) → single effect
+        UUID conA1DcId = UUID.fromString("00000000-0000-0000-0000-00000000e007");
+        int connectorRowsBefore = count("connector_search_projection", null);
+        int conAuditBefore = count("audit_event", "action = 'APPLY_CONNECTOR_CONFIGURATION'");
+
+        publish(connectorEnvelope(conA1DcId, connectorRef(UID_A1, "CCS"), EVSE_A1,
+                "CCS", 150_000, 0), "station.connector-configuration-changed");
+        Thread.sleep(2_000); // allow any (wrong) reprocessing to land
+
+        assertEquals(connectorRowsBefore, count("connector_search_projection", null),
+                "duplicate connector fact must not add rows");
+        assertEquals(conAuditBefore,
+                count("audit_event", "action = 'APPLY_CONNECTOR_CONFIGURATION'"),
+                "duplicate connector fact must not add audit rows");
+        assertEquals(1, count("inbox_message", "message_id = '" + conA1DcId + "'"),
+                "exactly one inbox row for the duplicate connector fact");
+
+        // MINOR-2b: tariff-family duplicate case — republish the SAME tariff
+        // envelope (same message_id) → single effect
+        UUID tariffId = UUID.fromString("00000000-0000-0000-0000-00000000e00d");
+        int tariffRowsBefore = count("tariff_public_projection", null);
+        int tariffAuditBefore = count("audit_event", "action = 'APPLY_TARIFF_PUBLISHED'");
+
+        publish(tariffEnvelope(tariffId, 0), "station.tariff-published");
+        Thread.sleep(2_000); // allow any (wrong) reprocessing to land
+
+        assertEquals(tariffRowsBefore, count("tariff_public_projection", null),
+                "duplicate tariff fact must not add rows");
+        assertEquals(tariffAuditBefore,
+                count("audit_event", "action = 'APPLY_TARIFF_PUBLISHED'"),
+                "duplicate tariff fact must not add audit rows");
+        assertEquals(1, count("inbox_message", "message_id = '" + tariffId + "'"),
+                "exactly one inbox row for the duplicate tariff fact");
     }
 
     @Test
@@ -1028,6 +1070,32 @@ class DiscoverySliceIntegrationTest {
         assertTrue(none.isArray());
         assertEquals(0, none.size(), "no connector reaches 200000 W");
 
+        // MINOR-2c: geo + connectorType COMBINED filter — radius around
+        // Thessaloniki (B's coordinates) with connectorType=CCS must return
+        // exactly station B (in-radius AND has CCS); station A (Athens, CCS)
+        // is outside the radius
+        JsonNode geoCcs = listJson("latitude=40.6401&longitude=22.9444&radius=50"
+                + "&connectorType=CCS");
+        assertNotNull(findByName(geoCcs, "Depth Fixture Station B"),
+                "station B is in-radius and has a CCS connector");
+        assertNull(findByName(geoCcs, "Depth Fixture Station A"),
+                "station A has CCS but is outside the Thessaloniki radius");
+        assertEquals(1, geoCcs.size(), "only the in-radius CCS station is listed");
+
+        // MINOR-2d: minPowerW=150000 boundary — exactly the CCS-only stations
+        // (CCS 150000 >= 150000 passes; TYPE2 22000 is excluded). TYPE2-only
+        // stations would be absent; both fixtures carry CCS → both listed.
+        JsonNode boundary = listJson("minPowerW=150000");
+        assertNotNull(findByName(boundary, "Depth Fixture Station A"),
+                "CCS 150000 >= 150000 passes the boundary");
+        assertNotNull(findByName(boundary, "Depth Fixture Station B"),
+                "CCS 150000 >= 150000 passes the boundary (station B)");
+        // and the boundary excludes TYPE2-only power levels: minPowerW=150001
+        // (just above the boundary) → none
+        JsonNode aboveBoundary = listJson("minPowerW=150001");
+        assertEquals(0, aboveBoundary.size(),
+                "no connector exceeds 150000 W; TYPE2 22000 is far below the boundary");
+
         // details enrichment on DEPTHSTA-A: totalEvses=2, evses with
         // connectors, tariff EUR 480/10
         ResponseEntity<String> details = REST.getForEntity(
@@ -1064,6 +1132,36 @@ class DiscoverySliceIntegrationTest {
 
         // no openingHours in this slice (deferred per the task packet)
         assertNull(d.get("openingHours"), "openingHours is deferred and must not appear");
+
+        // MAJOR-1 (phantom connector, round 2): DEPTHSTA-B's Order-8 EVSE C1
+        // has NO connectors — the details response must serve it with an
+        // EMPTY connectors array (never a phantom ConnectorView with a null
+        // type or maxPowerW=0, which the ConnectorView contract forbids),
+        // and C1 must still appear in evses so evses matches totalEvses=3.
+        ResponseEntity<String> detailsB = REST.getForEntity(
+                BASE_URL + "/api/v1/stations/DEPTHSTA-B", String.class);
+        assertEquals(200, detailsB.getStatusCode().value());
+        JsonNode dB = MAPPER.readTree(detailsB.getBody());
+        assertEquals("DEPTHSTA-B", dB.get("ref").asText());
+        assertEquals(3, dB.get("totalEvses").asInt(),
+                "station B has 3 ACTIVE EVSEs (B1, B2, C1)");
+        JsonNode evsesB = dB.get("evses");
+        assertTrue(evsesB.isArray());
+        assertEquals(3, evsesB.size(),
+                "evses must match totalEvses — the connector-less EVSE still appears");
+        JsonNode evseC1 = findByUid(evsesB, "GR*SEED*C1");
+        assertNotNull(evseC1, "the connector-less EVSE C1 must appear in the details");
+        assertTrue(evseC1.get("connectors").isArray(),
+                "C1's connectors must be an array");
+        assertEquals(0, evseC1.get("connectors").size(),
+                "C1 has no ACTIVE connectors → connectors must be EMPTY, not a phantom entry");
+        // no phantom entries anywhere in the body: no null type, no
+        // maxPowerW=0 connector entry
+        String detailsBodyB = detailsB.getBody();
+        assertFalse(detailsBodyB.contains("\"type\":null"),
+                "no connector entry may carry a null type (phantom connector)");
+        assertFalse(detailsBodyB.contains("\"maxPowerW\":0"),
+                "no connector entry may carry maxPowerW=0 (phantom connector)");
     }
 
     private static JsonNode listJson(String query) throws Exception {
