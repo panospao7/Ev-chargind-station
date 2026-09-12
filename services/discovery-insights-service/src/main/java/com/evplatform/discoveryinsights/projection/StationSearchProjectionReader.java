@@ -23,7 +23,9 @@ import java.util.Optional;
  * over evse_search_projection × connector_search_projection (ACTIVE states
  * on both, exact type match when provided, max_power_w &gt;= when provided;
  * backed by ix_connector_search_type_power). totalEvses counts the
- * station's ACTIVE EVSE rows. Non-geo listing orders by display_name.
+ * station's ACTIVE EVSE rows (MAJOR-1: populated on LIST responses too —
+ * a correlated count subquery in the main SQL covers both the no-filter
+ * and the connector-filtered path). Non-geo listing orders by display_name.
  * Limit clamped to 1..100, default 20 (public-discovery-api-v1.yaml
  * listStations).</p>
  *
@@ -83,7 +85,10 @@ public class StationSearchProjectionReader {
                     radiusKm);
             sql = """
                     SELECT s.public_ref, s.display_name, s.address_line,
-                           s.latitude, s.longitude
+                           s.latitude, s.longitude,
+                           (SELECT count(*) FROM discovery_insights.evse_search_projection e
+                            WHERE e.station_ref = s.station_ref
+                              AND e.projection_state = 'ACTIVE') AS total_evses
                     FROM discovery_insights.station_search_projection s
                     WHERE s.projection_state = 'ACTIVE'
                       AND s.latitude BETWEEN ? AND ?
@@ -99,7 +104,10 @@ public class StationSearchProjectionReader {
         } else {
             sql = """
                     SELECT s.public_ref, s.display_name, s.address_line,
-                           s.latitude, s.longitude
+                           s.latitude, s.longitude,
+                           (SELECT count(*) FROM discovery_insights.evse_search_projection e
+                            WHERE e.station_ref = s.station_ref
+                              AND e.projection_state = 'ACTIVE') AS total_evses
                     FROM discovery_insights.station_search_projection s
                     WHERE s.projection_state = 'ACTIVE'
                       %s
@@ -122,7 +130,8 @@ public class StationSearchProjectionReader {
                         rs.getString("display_name"),
                         rs.getString("address_line"),
                         rs.getBigDecimal("latitude"),
-                        rs.getBigDecimal("longitude")))
+                        rs.getBigDecimal("longitude"),
+                        rs.getInt("total_evses")))
                 .list();
 
         if (geo) {
@@ -139,7 +148,7 @@ public class StationSearchProjectionReader {
 
         return rows.stream()
                 .map(r -> new StationSummary(r.publicRef(), r.displayName(), r.addressLine(),
-                        r.latitude(), r.longitude()))
+                        r.latitude(), r.longitude(), r.totalEvses()))
                 .toList();
     }
 
@@ -282,6 +291,6 @@ public class StationSearchProjectionReader {
     }
 
     private record Row(String publicRef, String displayName, String addressLine,
-                       BigDecimal latitude, BigDecimal longitude) {
+                       BigDecimal latitude, BigDecimal longitude, int totalEvses) {
     }
 }

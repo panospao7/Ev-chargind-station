@@ -278,6 +278,18 @@ class DiscoverySliceIntegrationTest {
                 envelope.toString());
     }
 
+    /**
+     * MINOR-4: publishes with an explicit routing key so the depth-family
+     * facts positively exercise their REAL topology bindings
+     * (station.evse-configuration-changed / station.connector-configuration-
+     * changed / station.tariff-published) instead of riding the
+     * station.published binding. Station facts keep station.published
+     * (the single-argument overload).
+     */
+    private static void publish(ObjectNode envelope, String routingKey) {
+        RABBIT_TEMPLATE.convertAndSend("ev.domain.v1", routingKey, envelope.toString());
+    }
+
     /** Waits until the inbox row for messageId reaches the expected outcome. */
     private static void awaitInbox(UUID messageId, String outcome) throws Exception {
         long deadline = System.currentTimeMillis() + 15_000;
@@ -384,12 +396,13 @@ class DiscoverySliceIntegrationTest {
                     .single();
             assertEquals(1, n, "constraint must exist: " + entry.getKey());
         }
-        // indexes
+        // indexes (MINOR-5: V3 amended pre-application with
+        // ix_tariff_public_source_version — 7 depth/first-slice indexes now)
         for (String index : List.of("ix_station_search_source_version",
                 "ix_station_search_location",
                 "ix_evse_search_station", "ix_evse_search_source_version",
                 "ix_connector_search_evse", "ix_connector_search_type_power",
-                "ix_tariff_public_tariff")) {
+                "ix_tariff_public_tariff", "ix_tariff_public_source_version")) {
             Integer n = jdbc(MIGRATOR).sql("SELECT count(*) FROM pg_indexes WHERE indexname = ?")
                     .param(index)
                     .query((rs, i) -> rs.getInt(1))
@@ -405,6 +418,11 @@ class DiscoverySliceIntegrationTest {
                 "UPDATE " + SCHEMA + ".audit_event SET outcome = 'TAMPERED'"));
         org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () -> exec(RUNTIME,
                 "DELETE FROM " + SCHEMA + ".audit_event"));
+        // MINOR-6: the runtime role must not hold CREATE on the schema —
+        // DDL belongs to the migrator role only (mirrors STA's
+        // runtimeRoleCannotCreateTables pattern)
+        org.junit.jupiter.api.Assertions.assertThrows(Exception.class, () -> exec(RUNTIME,
+                "CREATE TABLE " + SCHEMA + ".runtime_ddl_probe (id int)"));
     }
 
     @Test
@@ -622,25 +640,37 @@ class DiscoverySliceIntegrationTest {
         awaitInbox(staAId, "COMPLETED");
         awaitInbox(staBId, "COMPLETED");
 
-        publish(evseEnvelope(evseA1Id, EVSE_A1, DEPTH_STA_A, UID_A1, 0));
-        publish(evseEnvelope(evseA2Id, EVSE_A2, DEPTH_STA_A, UID_A2, 0));
-        publish(evseEnvelope(evseB1Id, EVSE_B1, DEPTH_STA_B, UID_B1, 0));
-        publish(evseEnvelope(evseB2Id, EVSE_B2, DEPTH_STA_B, UID_B2, 0));
+        publish(evseEnvelope(evseA1Id, EVSE_A1, DEPTH_STA_A, UID_A1, 0),
+                "station.evse-configuration-changed");
+        publish(evseEnvelope(evseA2Id, EVSE_A2, DEPTH_STA_A, UID_A2, 0),
+                "station.evse-configuration-changed");
+        publish(evseEnvelope(evseB1Id, EVSE_B1, DEPTH_STA_B, UID_B1, 0),
+                "station.evse-configuration-changed");
+        publish(evseEnvelope(evseB2Id, EVSE_B2, DEPTH_STA_B, UID_B2, 0),
+                "station.evse-configuration-changed");
         awaitInbox(evseA1Id, "COMPLETED");
         awaitInbox(evseA2Id, "COMPLETED");
         awaitInbox(evseB1Id, "COMPLETED");
         awaitInbox(evseB2Id, "COMPLETED");
 
-        publish(connectorEnvelope(conA1DcId, connectorRef(UID_A1, "CCS"), EVSE_A1, "CCS", 150_000, 0));
-        publish(connectorEnvelope(conA1AcId, connectorRef(UID_A1, "TYPE2"), EVSE_A1, "TYPE2", 22_000, 0));
-        publish(connectorEnvelope(conA2DcId, connectorRef(UID_A2, "CCS"), EVSE_A2, "CCS", 150_000, 0));
-        publish(connectorEnvelope(conA2AcId, connectorRef(UID_A2, "TYPE2"), EVSE_A2, "TYPE2", 22_000, 0));
-        publish(connectorEnvelope(conB1DcId, connectorRef(UID_B1, "CCS"), EVSE_B1, "CCS", 150_000, 0));
-        publish(connectorEnvelope(conB1AcId, connectorRef(UID_B1, "TYPE2"), EVSE_B1, "TYPE2", 22_000, 0));
+        publish(connectorEnvelope(conA1DcId, connectorRef(UID_A1, "CCS"), EVSE_A1, "CCS", 150_000, 0),
+                "station.connector-configuration-changed");
+        publish(connectorEnvelope(conA1AcId, connectorRef(UID_A1, "TYPE2"), EVSE_A1, "TYPE2", 22_000, 0),
+                "station.connector-configuration-changed");
+        publish(connectorEnvelope(conA2DcId, connectorRef(UID_A2, "CCS"), EVSE_A2, "CCS", 150_000, 0),
+                "station.connector-configuration-changed");
+        publish(connectorEnvelope(conA2AcId, connectorRef(UID_A2, "TYPE2"), EVSE_A2, "TYPE2", 22_000, 0),
+                "station.connector-configuration-changed");
+        publish(connectorEnvelope(conB1DcId, connectorRef(UID_B1, "CCS"), EVSE_B1, "CCS", 150_000, 0),
+                "station.connector-configuration-changed");
+        publish(connectorEnvelope(conB1AcId, connectorRef(UID_B1, "TYPE2"), EVSE_B1, "TYPE2", 22_000, 0),
+                "station.connector-configuration-changed");
         publish(connectorEnvelope(UUID.fromString("00000000-0000-0000-0000-00000000e00e"),
-                connectorRef(UID_B2, "CCS"), EVSE_B2, "CCS", 150_000, 0));
+                connectorRef(UID_B2, "CCS"), EVSE_B2, "CCS", 150_000, 0),
+                "station.connector-configuration-changed");
         publish(connectorEnvelope(UUID.fromString("00000000-0000-0000-0000-00000000e00f"),
-                connectorRef(UID_B2, "TYPE2"), EVSE_B2, "TYPE2", 22_000, 0));
+                connectorRef(UID_B2, "TYPE2"), EVSE_B2, "TYPE2", 22_000, 0),
+                "station.connector-configuration-changed");
         awaitInbox(conA1DcId, "COMPLETED");
         awaitInbox(conA1AcId, "COMPLETED");
         awaitInbox(conA2DcId, "COMPLETED");
@@ -648,7 +678,7 @@ class DiscoverySliceIntegrationTest {
         awaitInbox(conB1DcId, "COMPLETED");
         awaitInbox(conB1AcId, "COMPLETED");
 
-        publish(tariffEnvelope(tariffId, 0));
+        publish(tariffEnvelope(tariffId, 0), "station.tariff-published");
         awaitInbox(tariffId, "COMPLETED");
         awaitEvse(EVSE_B2);
 
@@ -723,7 +753,8 @@ class DiscoverySliceIntegrationTest {
         int evseRowsBefore = count("evse_search_projection", null);
         int auditBefore = count("audit_event", "action = 'APPLY_EVSE_CONFIGURATION'");
 
-        publish(evseEnvelope(evseA1Id, EVSE_A1, DEPTH_STA_A, UID_A1, 0));
+        publish(evseEnvelope(evseA1Id, EVSE_A1, DEPTH_STA_A, UID_A1, 0),
+                "station.evse-configuration-changed");
         Thread.sleep(2_000); // allow any (wrong) reprocessing to land
 
         assertEquals(evseRowsBefore, count("evse_search_projection", null),
@@ -745,13 +776,15 @@ class DiscoverySliceIntegrationTest {
         UUID evseV1Id = UUID.fromString("00000000-0000-0000-0000-00000000e012");
         UUID evseC1 = UUID.fromString("00000000-0000-0000-0000-0000000000c1");
 
-        publish(evseEnvelope(evseV2Id, evseC1, DEPTH_STA_B, "GR*SEED*C1", 2));
+        publish(evseEnvelope(evseV2Id, evseC1, DEPTH_STA_B, "GR*SEED*C1", 2),
+                "station.evse-configuration-changed");
         awaitInbox(evseV2Id, "COMPLETED");
         assertEquals(2L, Long.parseLong(scalar(
                 "SELECT source_version FROM " + SCHEMA + ".evse_search_projection "
                         + "WHERE evse_ref = '" + evseC1 + "'")));
 
-        publish(evseEnvelope(evseV1Id, evseC1, DEPTH_STA_B, "GR*SEED*C1", 1));
+        publish(evseEnvelope(evseV1Id, evseC1, DEPTH_STA_B, "GR*SEED*C1", 1),
+                "station.evse-configuration-changed");
         awaitInbox(evseV1Id, "SKIPPED");
         assertEquals(2L, Long.parseLong(scalar(
                 "SELECT source_version FROM " + SCHEMA + ".evse_search_projection "
@@ -769,7 +802,8 @@ class DiscoverySliceIntegrationTest {
         UUID orphanStation = UUID.fromString("00000000-0000-0000-0000-000000000099");
         UUID orphanId = UUID.fromString("00000000-0000-0000-0000-00000000e013");
 
-        publish(evseEnvelope(orphanId, orphanEvse, orphanStation, "GR*SEED*ORPHAN", 0));
+        publish(evseEnvelope(orphanId, orphanEvse, orphanStation, "GR*SEED*ORPHAN", 0),
+                "station.evse-configuration-changed");
 
         String dlqBody = pollDlq(30_000);
         assertNotNull(dlqBody, "orphan EVSE fact must eventually be dead-lettered");
@@ -867,12 +901,19 @@ class DiscoverySliceIntegrationTest {
         assertEquals("FIXSTA-A", a.get("ref").asText());
         assertEquals(37.99, a.get("latitude").asDouble(), 1e-6);
         assertEquals(23.73, a.get("longitude").asDouble(), 1e-6);
-        // optional EVSE fields must be absent (no fake data)
+        // totalEvses is populated on LIST (MAJOR-1): FIXSTA stations have no
+        // EVSE facts published in this flow → 0 (honest per the test data);
+        // availableEvses stays absent (no fake data)
         assertNull(a.get("availableEvses"));
-        assertNull(a.get("totalEvses"));
+        assertNotNull(a.get("totalEvses"), "totalEvses must be populated on list");
+        assertEquals(0, a.get("totalEvses").asInt(),
+                "FIXSTA-A has no EVSE facts → totalEvses must be 0, not absent");
         JsonNode b = findByName(array, "Fixture Station B");
         assertNotNull(b);
         assertEquals("FIXSTA-B", b.get("ref").asText());
+        assertNotNull(b.get("totalEvses"));
+        assertEquals(0, b.get("totalEvses").asInt(),
+                "FIXSTA-B has no EVSE facts → totalEvses must be 0");
 
         // geo filter: radius around Athens excludes Istanbul
         ResponseEntity<String> geo = REST.getForEntity(
@@ -880,8 +921,10 @@ class DiscoverySliceIntegrationTest {
                 String.class);
         assertEquals(200, geo.getStatusCode().value());
         JsonNode geoArray = MAPPER.readTree(geo.getBody());
-        assertNotNull(findByName(geoArray, "Fixture Station A v5"),
-                "Athens station must be inside the radius");
+        JsonNode geoA = findByName(geoArray, "Fixture Station A v5");
+        assertNotNull(geoA, "Athens station must be inside the radius");
+        assertEquals(0, geoA.get("totalEvses").asInt(),
+                "the geo path must also populate totalEvses");
         assertNull(findByName(geoArray, "Fixture Station B"),
                 "Istanbul station must be outside the radius");
 
@@ -952,13 +995,33 @@ class DiscoverySliceIntegrationTest {
     void depthFiltersAndEnrichedDetails() throws Exception {
         // connectorType=CCS → both depth stations (each has a CCS connector)
         JsonNode ccs = listJson("connectorType=CCS");
-        assertNotNull(findByName(ccs, "Depth Fixture Station A"), "A has CCS");
+        JsonNode ccsA = findByName(ccs, "Depth Fixture Station A");
+        assertNotNull(ccsA, "A has CCS");
         assertNotNull(findByName(ccs, "Depth Fixture Station B"), "B has CCS");
+        // MAJOR-1: totalEvses is populated on the connector-filtered path too
+        assertEquals(2, ccsA.get("totalEvses").asInt(),
+                "the filtered list must carry station A's totalEvses=2");
+        JsonNode ccsB = findByName(ccs, "Depth Fixture Station B");
+        assertNotNull(ccsB.get("totalEvses"), "station B's totalEvses must be present");
+        // B = B1 + B2 (Order 6) + the extra C1 EVSE Order 8 hangs off B
+        // (deliberately not A, so A stays at 2) → 3
+        assertEquals(3, ccsB.get("totalEvses").asInt(),
+                "station B has 3 ACTIVE EVSEs (B1, B2, and Order 8's C1)");
 
         // +minPowerW=100000 → still both (CCS 150000 >= 100000)
         JsonNode ccsPower = listJson("connectorType=CCS&minPowerW=100000");
-        assertNotNull(findByName(ccsPower, "Depth Fixture Station A"));
+        JsonNode powerA = findByName(ccsPower, "Depth Fixture Station A");
+        assertNotNull(powerA);
         assertNotNull(findByName(ccsPower, "Depth Fixture Station B"));
+        assertEquals(2, powerA.get("totalEvses").asInt(),
+                "the power-filtered list must also carry totalEvses=2");
+
+        // unfiltered list: DEPTHSTA-A totalEvses=2 (MAJOR-1 on the no-filter path)
+        JsonNode all = listJson("");
+        JsonNode plainA = findByName(all, "Depth Fixture Station A");
+        assertNotNull(plainA, "DEPTHSTA-A must be listed");
+        assertEquals(2, plainA.get("totalEvses").asInt(),
+                "the unfiltered list must carry DEPTHSTA-A's totalEvses=2");
 
         // minPowerW=200000 → none
         JsonNode none = listJson("minPowerW=200000");

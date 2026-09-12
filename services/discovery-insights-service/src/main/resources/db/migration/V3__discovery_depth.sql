@@ -7,6 +7,10 @@
 -- Discovery owns its own copies as a message-consuming service).
 -- Explicit stable constraint names per §10; no foreign keys between the
 -- projections (each is an independently rebuilt copy of its source family).
+-- Indexes: 6 (2 EVSE + 2 connector + 2 tariff, incl. ix_tariff_public_source_version
+-- added by the MINOR-5 pre-application amendment — V3 is not yet applied in
+-- any shared environment, so it was amended directly per the expand–migrate
+-- rule for un-applied migrations).
 -- =============================================================================
 
 -- ── 9. evse_search_projection ───────────────────────────────────────────────
@@ -73,3 +77,11 @@ CREATE TABLE discovery_insights.tariff_public_projection (
 
 CREATE INDEX ix_tariff_public_tariff
     ON discovery_insights.tariff_public_projection (tariff_ref, projection_state);
+
+-- MINOR-5 (data review): the per-family version gate reads
+-- tariff_public_projection by tariff_version_ref (PK) and the §7.1 guard
+-- compares source_version on conflict; this index supports source-version
+-- scans/rebuild bookkeeping on the tariff family, mirroring the
+-- ix_*_source_version indexes on the other two depth tables.
+CREATE INDEX ix_tariff_public_source_version
+    ON discovery_insights.tariff_public_projection (source_version);

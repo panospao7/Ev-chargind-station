@@ -885,6 +885,80 @@ class MessagingFoundationTest {
         }
     }
 
+    /**
+     * MINOR-7: an outbox row whose message_type has no dataschema mapping
+     * must never be published — dispatch marks it DATASCHEMA_UNMAPPED
+     * (fail-fast, I1-MSG-003 closure) and, after the max attempt budget, the
+     * row is QUARANTINED instead of shipping a schema-less fact.
+     *
+     * The row is inserted directly (a bare INSERT, not OutboxWriter, whose
+     * envelope validation would refuse nothing here but whose fact-identity
+     * conflict target is irrelevant for an unmapped type) so the test
+     * exercises exactly the dispatcher's unmapped-type branch. Backoff is 0
+     * so three dispatchOnce() passes exhaust the budget deterministically;
+     * the POC topology is untouched because nothing is ever sent.
+     */
+    @Test
+    @Order(13)
+    void unmappedMessageTypeIsNeverPublishedAndQuarantines() throws Exception {
+        UUID fact = UUID.fromString("00000000-0000-0000-0000-000000000901");
+        ObjectNode envelope = MAPPER.createObjectNode();
+        envelope.put("specversion", "1.0");
+        envelope.put("type", "com.evplatform.station.unknown.v1");
+        envelope.put("source", "//station-operations-service");
+        envelope.put("id", fact.toString());
+        envelope.set("data", MAPPER.createObjectNode());
+
+        try {
+            jdbc(RUNTIME).sql("""
+                            INSERT INTO station_operations.outbox_message
+                                (message_id, kind, message_type, aggregate_type, aggregate_ref,
+                                 aggregate_version, workflow_ref, correlation_id, causation_id,
+                                 classification, payload, available_at)
+                            VALUES (?, 'EVENT', 'com.evplatform.station.unknown.v1', 'Station',
+                                    ?, 0, NULL, ?, NULL, 'BUSINESS', ?::jsonb, now() - interval '1 second')
+                            """)
+                    .param(fact)
+                    .param(fact)
+                    .param(fact)
+                    .param(envelope.toString())
+                    .update();
+
+            // backoff 0 → every pass is immediately due again
+            OutboxDispatcher dispatcher = new OutboxDispatcher(
+                    jdbc(RUNTIME), rabbitTemplate(RABBIT.getHost(), RABBIT.getMappedPort(5672)),
+                    3, 0, 2000, 30);
+
+            // pass 1: unmapped → attempt 1, still PENDING, never published
+            assertEquals(0, dispatcher.dispatchOnce(),
+                    "an unmapped message type must not be published");
+            assertEquals("PENDING", rowState(fact),
+                    "pass 1 must leave the unmapped row PENDING");
+            assertEquals(1, outboxCount("message_id = '" + fact
+                            + "' AND attempt_count = 1 AND failure_category = 'DATASCHEMA_UNMAPPED'"),
+                    "pass 1 must record attempt 1 with the DATASCHEMA_UNMAPPED category");
+
+            // pass 2: attempt 2, still PENDING
+            dispatcher.dispatchOnce();
+            assertEquals("PENDING", rowState(fact), "pass 2 must leave the row PENDING");
+            assertEquals(1, outboxCount("message_id = '" + fact
+                            + "' AND attempt_count = 2 AND failure_category = 'DATASCHEMA_UNMAPPED'"),
+                    "pass 2 must record attempt 2 with the DATASCHEMA_UNMAPPED category");
+
+            // pass 3: budget exhausted → QUARANTINED, never PUBLISHED
+            dispatcher.dispatchOnce();
+            assertEquals("QUARANTINED", rowState(fact),
+                    "exhausted retries must quarantine the unmapped row");
+            assertEquals(1, outboxCount("message_id = '" + fact
+                            + "' AND attempt_count = 3 AND failure_category = 'DATASCHEMA_UNMAPPED'"),
+                    "quarantined row records three DATASCHEMA_UNMAPPED attempts");
+            assertEquals(0, outboxCount("message_id = '" + fact + "' AND state = 'PUBLISHED'"),
+                    "the unmapped fact must never reach PUBLISHED");
+        } finally {
+            deleteOutboxRow(fact);
+        }
+    }
+
     private static String scalar(String sql) throws Exception {
         try (Connection c = connect(RUNTIME);
              PreparedStatement ps = c.prepareStatement(sql);

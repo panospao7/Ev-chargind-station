@@ -389,17 +389,21 @@ public class StaDomainConsumer {
 
     /**
      * connector-configuration-changed: UUID connectorRef + UUID evseRef +
-     * non-blank connectorType + numeric maxPowerW &gt; 0.
+     * non-blank connectorType + numeric maxPowerW &gt; 0 within int range.
+     * MINOR-3: maxPowerW is stored as integer — a value beyond the int range
+     * would silently wrap around through asInt(), so it is rejected
+     * (PAYLOAD_INVALID) instead of being persisted corrupted.
      */
     private UUID validateConnectorConfiguration(JsonNode data) {
         if (!data.hasNonNull("connectorRef") || !data.hasNonNull("evseRef")
                 || !data.hasNonNull("connectorType")
                 || data.get("connectorType").asText("").isBlank()
                 || !data.get("maxPowerW").isNumber()
-                || data.get("maxPowerW").asLong() <= 0) {
+                || data.get("maxPowerW").asLong() <= 0
+                || data.get("maxPowerW").asLong() > Integer.MAX_VALUE) {
             throw new PayloadValidationException(
                     "connector-configuration-changed payload missing required fields, "
-                            + "blank connectorType, or non-positive maxPowerW",
+                            + "blank connectorType, or non-positive/out-of-int-range maxPowerW",
                     "PAYLOAD_INVALID");
         }
         UUID connectorRef = uuidFamilyRef(data, "connectorRef");
@@ -409,12 +413,19 @@ public class StaDomainConsumer {
 
     /**
      * tariff-published: UUID tariffRef + UUID tariffVersionRef + numeric
-     * versionNumber + non-blank currency + non-empty components array, each
-     * with non-blank componentKind/unit and numeric amountMinor.
+     * versionNumber within int range + non-blank currency + non-empty
+     * components array, each with non-blank componentKind/unit and numeric
+     * amountMinor. MINOR-3: versionNumber is stored as integer — a value
+     * beyond the int range would silently wrap around through asInt(), so
+     * it is rejected (PAYLOAD_INVALID) instead of being persisted corrupted.
+     * (The executable schema declares versionNumber as a bare integer with
+     * no minimum, so only the int-range bound is enforced here.)
      */
     private UUID validateTariffPublished(JsonNode data) {
         if (!data.hasNonNull("tariffRef") || !data.hasNonNull("tariffVersionRef")
                 || !data.get("versionNumber").isNumber()
+                || data.get("versionNumber").asLong() < Integer.MIN_VALUE
+                || data.get("versionNumber").asLong() > Integer.MAX_VALUE
                 || !data.hasNonNull("currency")
                 || data.get("currency").asText("").isBlank()
                 || !data.hasNonNull("components")
@@ -422,6 +433,7 @@ public class StaDomainConsumer {
                 || data.get("components").isEmpty()) {
             throw new PayloadValidationException(
                     "tariff-published payload missing required fields, blank currency, "
+                            + "out-of-int-range versionNumber, "
                             + "or empty/missing components array", "PAYLOAD_INVALID");
         }
         for (JsonNode component : data.get("components")) {
