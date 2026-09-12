@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema-registry.example.com/events/capacity-restriction-created-event.json",
+  "title": "CapacityRestrictionCreatedEvent",
+  "description": "Payload for the CapacityRestrictionCreated event",
+  "type": "object",
+  "properties": {
+    "restrictionId": {
+      "type": "string",
+      "description": "Capacity restriction identifier"
+    },
+    "scopeType": {
+      "type": "string",
+      "description": "Type of the restricted scope"
+    },
+    "scopeRef": {
+      "type": "string",
+      "description": "Reference of the restricted scope"
+    },
+    "intervalStart": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Start of the restricted interval"
+    },
+    "intervalEnd": {
+      "type": "string",
+      "format": "date-time",
+      "description": "End of the restricted interval"
+    },
+    "restrictionType": {
+      "type": "string",
+      "description": "Type of the restriction"
+    },
+    "phase": {
+      "type": "string",
+      "description": "Optional restriction phase"
+    }
+  },
+  "required": ["restrictionId", "scopeType", "scopeRef", "intervalStart", "intervalEnd", "restrictionType"]
+}
