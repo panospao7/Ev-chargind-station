@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T22:00:00Z"
+updatedAt: "2026-09-12T22:30:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -655,10 +655,51 @@ tasks:
     evidence:
       status: "NOT_STARTED"
       paths: []
+  I1-DSC-002:
+    state: "READY"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    candidateCommit: null
+    pullRequest: null
+
+    blockers:
+      - "Owner packet approval pending (L2; planning-PR merge = approval precedent)"
+
+    deviations: []
+    unresolvedFindings: []
+
+    handoffSequence: 0
+    latestHandoff: null
+    reviews:
+      planner: "NOT_STARTED"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_STARTED"
+      dataReviewer: "NOT_STARTED"
+      securityReviewer: "NOT_REQUIRED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "L2 + public API exposure; owner approval via planning-PR merge"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
 summary:
   counts:
     BACKLOG: 0
-    READY: 0
+    READY: 1
     CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
@@ -676,4 +717,4 @@ summary:
     CANCELLED: 0
 
   activeTask: "I1-CON-004"
-  nextRecommendedTask: "I1-MSG-003"
+  nextRecommendedTask: "I1-DSC-002"

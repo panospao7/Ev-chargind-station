@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T15:40:00Z"
+updatedAt: "2026-09-12T22:40:00Z"
 
 authority:
   taskDefinition: "delivery/tasks/<TASK-ID>.yaml"
@@ -222,4 +222,20 @@ items:
       - w1-s1
       - l2
 
-nextRecommendedTask: "I1-MSG-003"
+  - id: "I1-DSC-002"
+    order: 41
+    priority: "P0"
+    iteration: "I1"
+    epic: "EPIC-09"
+    title: "Discovery depth — EVSE/connector/tariff projections, producer emission, public filters + richer details (FR-DIS-02 MUST completion)"
+    packet: "delivery/tasks/I1-DSC-002.yaml"
+    dependsOn:
+      - "I1-DSC-001"
+    tags:
+      - discovery
+      - projections
+      - public-api
+      - w1-s1
+      - l2
+
+nextRecommendedTask: "I1-DSC-002"
