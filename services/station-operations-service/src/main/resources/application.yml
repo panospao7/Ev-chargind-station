@@ -6,6 +6,17 @@ spring:
     url: ${STA_DB_URL:jdbc:postgresql://127.0.0.1:5432/station_operations_db}
     username: ${STA_DB_USER:station_operations_runtime}
     password: ${STA_DB_PASSWORD:evplatform_dev_only}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:127.0.0.1}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:evplatform_dev}
+    password: ${RABBITMQ_PASSWORD:evplatform_dev_only}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+  outbox:
+    poll-interval-ms: ${OUTBOX_POLL_MS:2000}
+    max-attempts: ${OUTBOX_MAX_ATTEMPTS:3}
+    backoff-ms: ${OUTBOX_BACKOFF_MS:2000}
   flyway:
     # Migrations run through the delivery pipeline (migrator role), not at
     # application boot; the seed profiles assume migrated schema.

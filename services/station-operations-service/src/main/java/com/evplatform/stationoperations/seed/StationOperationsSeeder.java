@@ -1,7 +1,12 @@
 package com.evplatform.stationoperations.seed;
 
+import com.evplatform.stationoperations.outbox.OutboxWriter;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionOperations;
 
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -14,46 +19,106 @@ import java.util.UUID;
  * schema; the runner connects with the STA runtime role, which provably
  * cannot reach other databases (I1-DAT-001 role separation).
  *
- * Idempotency: fixed identifiers + ON CONFLICT DO NOTHING — re-running never
- * duplicates or mutates.
+ * The whole seed — data plus one StationPublished outbox fact per published
+ * station — commits in a single transaction: the business change and the
+ * outbox record commit together (AGENTS.md §4; FR-PLT-01).
+ *
+ * Idempotency: fixed identifiers + ON CONFLICT DO NOTHING and the §8.1
+ * unique event-fact constraint — re-running never duplicates or mutates.
  */
 @Component
 public class StationOperationsSeeder {
 
-    private final JdbcClient jdbc;
+    private static final String STATION_PUBLISHED_TYPE =
+            "com.evplatform.station.published.v1";
+    private static final String STATION_PUBLISHED_SOURCE =
+            "//station-operations-service";
 
-    public StationOperationsSeeder(JdbcClient jdbc) {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private final JdbcClient jdbc;
+    private final OutboxWriter outbox;
+    private final TransactionOperations tx;
+
+    public StationOperationsSeeder(JdbcClient jdbc, OutboxWriter outbox,
+                                   TransactionOperations tx) {
         this.jdbc = jdbc;
+        this.outbox = outbox;
+        this.tx = tx;
     }
 
-    /** Applies the canonical dataset; safe to run any number of times. */
+    /** Applies the canonical dataset atomically; safe to run repeatedly. */
     public void seed() {
-        insertOrganization();
-        insertMembers();
-        insertStation(SeedDataset.STATION_A_REF, SeedDataset.STATION_A_PUBLIC_REF,
-                SeedDataset.STATION_A_NAME, SeedDataset.STATION_A_ADDRESS,
-                SeedDataset.STATION_A_CITY, SeedDataset.STATION_A_POSTAL,
-                SeedDataset.STATION_A_LAT, SeedDataset.STATION_A_LON);
-        insertStation(SeedDataset.STATION_B_REF, SeedDataset.STATION_B_PUBLIC_REF,
-                SeedDataset.STATION_B_NAME, SeedDataset.STATION_B_ADDRESS,
-                SeedDataset.STATION_B_CITY, SeedDataset.STATION_B_POSTAL,
-                SeedDataset.STATION_B_LAT, SeedDataset.STATION_B_LON);
-        insertEvse(SeedDataset.EVSE_A1);
-        insertEvse(SeedDataset.EVSE_A2);
-        insertEvse(SeedDataset.EVSE_B1);
-        insertEvse(SeedDataset.EVSE_B2);
-        insertConnectors(SeedDataset.EVSE_A1);
-        insertConnectors(SeedDataset.EVSE_A2);
-        insertConnectors(SeedDataset.EVSE_B1);
-        insertConnectors(SeedDataset.EVSE_B2);
-        insertOpeningHours(SeedDataset.STATION_A_REF);
-        insertOpeningHours(SeedDataset.STATION_B_REF);
-        insertTariff();
-        insertPolicy();
-        insertSimulatorAssignment(SeedDataset.SIM_A1);
-        insertSimulatorAssignment(SeedDataset.SIM_A2);
-        insertSimulatorAssignment(SeedDataset.SIM_B1);
-        insertSimulatorAssignment(SeedDataset.SIM_B2);
+        tx.executeWithoutResult(status -> {
+            insertOrganization();
+            insertMembers();
+            insertStation(SeedDataset.STATION_A_REF, SeedDataset.STATION_A_PUBLIC_REF,
+                    SeedDataset.STATION_A_NAME, SeedDataset.STATION_A_ADDRESS,
+                    SeedDataset.STATION_A_CITY, SeedDataset.STATION_A_POSTAL,
+                    SeedDataset.STATION_A_LAT, SeedDataset.STATION_A_LON);
+            insertStation(SeedDataset.STATION_B_REF, SeedDataset.STATION_B_PUBLIC_REF,
+                    SeedDataset.STATION_B_NAME, SeedDataset.STATION_B_ADDRESS,
+                    SeedDataset.STATION_B_CITY, SeedDataset.STATION_B_POSTAL,
+                    SeedDataset.STATION_B_LAT, SeedDataset.STATION_B_LON);
+            insertEvse(SeedDataset.EVSE_A1);
+            insertEvse(SeedDataset.EVSE_A2);
+            insertEvse(SeedDataset.EVSE_B1);
+            insertEvse(SeedDataset.EVSE_B2);
+            insertConnectors(SeedDataset.EVSE_A1);
+            insertConnectors(SeedDataset.EVSE_A2);
+            insertConnectors(SeedDataset.EVSE_B1);
+            insertConnectors(SeedDataset.EVSE_B2);
+            insertOpeningHours(SeedDataset.STATION_A_REF);
+            insertOpeningHours(SeedDataset.STATION_B_REF);
+            insertTariff();
+            insertPolicy();
+            insertSimulatorAssignment(SeedDataset.SIM_A1);
+            insertSimulatorAssignment(SeedDataset.SIM_A2);
+            insertSimulatorAssignment(SeedDataset.SIM_B1);
+            insertSimulatorAssignment(SeedDataset.SIM_B2);
+            emitStationPublished(SeedDataset.STATION_A_REF,
+                    SeedDataset.STATION_A_PUBLIC_REF, SeedDataset.STATION_A_NAME,
+                    SeedDataset.STATION_A_ADDRESS, SeedDataset.STATION_A_CITY,
+                    SeedDataset.STATION_A_POSTAL, SeedDataset.STATION_A_LAT,
+                    SeedDataset.STATION_A_LON,
+                    UUID.fromString("00000000-0000-0000-0000-000000000301"));
+            emitStationPublished(SeedDataset.STATION_B_REF,
+                    SeedDataset.STATION_B_PUBLIC_REF, SeedDataset.STATION_B_NAME,
+                    SeedDataset.STATION_B_ADDRESS, SeedDataset.STATION_B_CITY,
+                    SeedDataset.STATION_B_POSTAL, SeedDataset.STATION_B_LAT,
+                    SeedDataset.STATION_B_LON,
+                    UUID.fromString("00000000-0000-0000-0000-000000000302"));
+        });
+    }
+
+    /** CloudEvents 1.0 envelope carrying the station reference payload. */
+    private void emitStationPublished(UUID stationRef, String publicRef, String name,
+                                      String address, String city, String postal,
+                                      String lat, String lon, UUID messageId) {
+        ObjectNode data = MAPPER.createObjectNode();
+        data.put("stationRef", stationRef.toString());
+        data.put("publicRef", publicRef);
+        data.put("displayName", name);
+        data.put("addressLine", address);
+        data.put("city", city);
+        data.put("postalCode", postal);
+        data.put("countryCode", "GR");
+        data.put("latitude", new java.math.BigDecimal(lat));
+        data.put("longitude", new java.math.BigDecimal(lon));
+
+        ObjectNode envelope = MAPPER.createObjectNode();
+        envelope.put("specversion", "1.0");
+        envelope.put("type", STATION_PUBLISHED_TYPE);
+        envelope.put("source", STATION_PUBLISHED_SOURCE);
+        envelope.put("id", messageId.toString());
+        envelope.put("time", Instant.now().toString());
+        envelope.put("datacontenttype", "application/json");
+        envelope.put("subject", "station/" + publicRef);
+        envelope.set("data", data);
+
+        outbox.append(messageId, "EVENT", STATION_PUBLISHED_TYPE, "Station",
+                stationRef, 0, messageId, null, "BUSINESS",
+                (JsonNode) envelope, Instant.now());
     }
 
     private void insertOrganization() {
