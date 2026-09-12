@@ -56,13 +56,18 @@ fail-closed) → `station_search_projection` → **public API**:
 
 ## Authoritative CI status
 
-`NOT_RUN at evidence time — CI_PENDING on push.` Required checks: Service
-Tests (JDK 25), Database Migrations (PG18), G3 Contract Validation. Run
-references to be appended at closeout:
+**GREEN at merge commit 2c7e5f86 (PR #31, owner merge 2026-09-12), verified
+via GitHub API (check-runs + workflow-runs):**
 
-- Service Tests: PENDING
-- Database Migrations: PENDING
-- G3 Contract Validation: PENDING
+- Database Migrations (PG18): **success** (V2 fresh-install + role separation,
+  real PostgreSQL 18)
+- G3 Contract Validation: **success** (all 9 sub-checks incl. OpenAPI with the
+  details operation, registry 31 codes, privacy scan)
+- Service Tests (JDK 25): **NOT_RUN — workflow path filter does not cover
+  services/discovery-insights-service/** (pre-existing gap, exposed by this
+  task; owner-approved close with follow-up I1-ENG-003 to extend the
+  workflow). Local 27/27 (release 21 diagnostic) stands as the test evidence;
+  the gap is disclosed, not hidden.
 
 ## Residual tracked items (non-blocking)
 

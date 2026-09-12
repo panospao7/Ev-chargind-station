@@ -137,7 +137,7 @@ traceability:
     epic: "EP-DIS-01"
     securityRule: "Public-safe fields, location consent"
     dbTables: []
-    status: "PLANNED"
+    status: "IMPLEMENTED"
 
   - requirementId: FR-DIS-02
     description: >
@@ -156,7 +156,7 @@ traceability:
     dbTables:
       - station_search_projection
       - projection_checkpoint
-    status: "PLANNED"
+    status: "IMPLEMENTED"
 
   # ──────────────────────────────────────────────────────────────────────────
   # Availability (REQ-001 §4.3)
