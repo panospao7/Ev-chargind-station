@@ -183,10 +183,12 @@ public class SecurityConfig {
             }
         // Content-type check for mutations (documented mapping decision:
         // disallowed type → CSRF_VALIDATION_FAILED). Form-urlencoded is
-        // additionally allowed: the OIDC Back-Channel Logout notification
-        // (SEC-P08) is a form POST from Keycloak on /api/internal/** — it
-        // is NOT a browser mutation and is validated by its signed
-        // logout_token instead (BackChannelLogoutController).
+        // allowed ONLY on the OIDC Back-Channel Logout notification path
+        // (SEC-P08): that is a form POST from Keycloak on /api/internal/** —
+        // it is NOT a browser mutation and is validated by its signed
+        // logout_token instead (BackChannelLogoutController). Every other
+        // browser mutation on /api/** must use an approved JSON content
+        // type (SEC-P02 §6.4: "form-encoded mutation fails").
         if (isMutation(request) && !hasApprovedContentType(request)) {
             reject(response, "CSRF_VALIDATION_FAILED",
                     "Request content type is not approved for mutations.");
@@ -201,10 +203,16 @@ public class SecurityConfig {
             return false;
         }
         String base = contentType.split(";")[0].trim().toLowerCase();
-        return "application/json".equals(base)
-                || "application/x-www-form-urlencoded".equals(base)
+        if ("application/json".equals(base)
                 || "application/problem+json".equals(base)
-                || base.startsWith("application/problem+json");
+                || base.startsWith("application/problem+json")) {
+            return true;
+        }
+        // The form-urlencoded allowance is scoped to the back-channel
+        // logout receiver only (see doFilterInternal above).
+        return "application/x-www-form-urlencoded".equals(base)
+                && BackChannelLogoutController.BCL_PATH.equals(
+                        request.getRequestURI());
     }
 
         private static void reject(HttpServletResponse response, String code,
@@ -359,7 +367,17 @@ public class SecurityConfig {
         }
     }
 
-    /** Access denied: 403 ACCESS_DENIED (no reason detail). */
+    /**
+     * Access denied: 403 ACCESS_DENIED (no reason detail). Spring Security
+     * 7.1.1 routes CSRF token failures (missing/invalid synchronizer token)
+     * through this handler — CsrfFilter raises a CsrfException (an
+     * AccessDeniedException subtype) and CsrfConfigurer wires the chain's
+     * access-denied handler to it — so those failures are mapped to the
+     * SEC-001 §17 CSRF_VALIDATION_FAILED code (SEC-P02 §6.4, AC-04). The
+     * failure detail is generic: the request's token value, session
+     * reference and subject are never echoed (SEC-P02 §6.4 "does not reveal
+     * sensitive state").
+     */
     @Component
     public static class BffAccessDeniedHandler
             implements org.springframework.security.web.access.AccessDeniedHandler {
@@ -368,6 +386,12 @@ public class SecurityConfig {
         public void handle(HttpServletRequest request, HttpServletResponse response,
                            org.springframework.security.access.AccessDeniedException accessDeniedException)
                 throws IOException {
+            if (accessDeniedException instanceof
+                    org.springframework.security.web.csrf.CsrfException) {
+                writeProblem(response, HttpStatus.FORBIDDEN, "CSRF_VALIDATION_FAILED",
+                        "The CSRF token is missing or invalid for this session.");
+                return;
+            }
             writeProblem(response, HttpStatus.FORBIDDEN, "ACCESS_DENIED",
                     "Access to the requested resource is denied.");
         }

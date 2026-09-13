@@ -193,13 +193,16 @@ class JdbcSessionStoreTests {
         assertTrue(newRow.isPresent(), "the new row must exist after rotation");
         assertEquals(BffSession.RevocationState.ACTIVE, newRow.get().revocationState(),
                 "the new reference must be ACTIVE after rotation");
-        // identity and token material carry over; activity windows reset
+        // identity and token material carry over; activity windows reset.
+        // The session-bound CSRF synchronizer token does NOT carry over
+        // (SEC-P02 §6.1: the token rotates with the session), so the new
+        // row starts with an empty metadata document.
         assertEquals("subject-rot", newRow.get().keycloakSubject());
         assertEquals("sid-rot", newRow.get().keycloakSid());
         assertArrayEquals(original.encryptedTokenMaterial(),
                 newRow.get().encryptedTokenMaterial());
-        assertEquals(readJson(original.securityEventMetadata()),
-                readJson(newRow.get().securityEventMetadata()));
+        assertEquals(readJson("{}"), readJson(newRow.get().securityEventMetadata()),
+                "rotation must reset security_event_metadata (stale CSRF token must not survive)");
         assertEquals(T0, newRow.get().lastActivityAt());
         assertEquals(T0.plus(Duration.ofMinutes(30)), newRow.get().idleExpiresAt());
         assertEquals(T0.plus(Duration.ofHours(8)), newRow.get().absoluteExpiresAt());

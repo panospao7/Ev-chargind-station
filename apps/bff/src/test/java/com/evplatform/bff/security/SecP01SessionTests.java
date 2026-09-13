@@ -459,7 +459,7 @@ class SecP01SessionTests {
                         .cookie(sessionCookie(ref))
                         .header("X-CSRF-TOKEN", csrfToken)
                         .header("Origin", "http://127.0.0.1:4200")
-                        .contentType(MediaType.APPLICATION_FORM_URLENCODED))
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
 
         // item 7: the same cookie no longer authenticates.

@@ -171,7 +171,11 @@ public class JdbcSessionStore {
      * Atomic rotation (SEC-P01 §5.1 step 10: session ID rotates after
      * authentication): the old reference is marked REVOKED and the new row
      * inserted in ONE transaction, so an observer can never see both
-     * references ACTIVE.
+     * references ACTIVE. The new row starts with an EMPTY
+     * {@code security_event_metadata}: the session-bound CSRF synchronizer
+     * token (SEC-P02 §6.1) must NOT carry over — a stale token from the
+     * pre-rotation session must fail after rotation ("token rotates after
+     * login and session rotation").
      */
     @Transactional
     public void rotateRef(String oldRef, String newRef, Instant now) {
@@ -199,7 +203,7 @@ public class JdbcSessionStore {
                        encrypted_token_material, token_encryption_key_id, acr,
                        authn_time, ?, ?,
                        ?, ?, 'ACTIVE',
-                       security_event_metadata
+                       '{}'::jsonb
                 FROM bff_session.bff_session
                 WHERE session_ref = ?
                 """)
