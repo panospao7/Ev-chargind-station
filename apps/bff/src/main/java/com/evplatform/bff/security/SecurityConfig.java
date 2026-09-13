@@ -62,8 +62,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @EnableWebSecurity
 public class SecurityConfig {
 
-    /** Problem type URI base (RFC 9457 {@code type} member). */
-    static final String PROBLEM_BASE = "https://evplatform.example/problems/";
+    /**
+     * Problem type URI base (RFC 9457 {@code type} member). Aligned with the
+     * established platform convention used by PublicProxyController and the
+     * Discovery public API ({@code api.evplatform.example}); a phase-2
+     * deviation emitted the bare {@code evplatform.example} host.
+     */
+    static final String PROBLEM_BASE = "https://api.evplatform.example/problems/";
 
     /** Request attribute set by the OriginFilter when the origin is bad. */
     static final String ORIGIN_REJECTED_ATTR =

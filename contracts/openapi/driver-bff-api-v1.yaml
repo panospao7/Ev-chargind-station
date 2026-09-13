@@ -7,6 +7,119 @@ servers:
   - url: https://api.example.com
     description: Production server
 paths:
+  /api/v1/session:
+    get:
+      operationId: getSession
+      summary: Get current session state
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Current session state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionState'
+              example:
+                authenticated: true
+                acr: "loa2"
+                authenticationTime: "2026-09-14T08:30:00Z"
+                idleExpiresAt: "2026-09-14T09:00:00Z"
+                absoluteExpiresAt: "2026-09-14T20:30:00Z"
+        '401':
+          description: >
+            No valid session (AUTHENTICATION_REQUIRED) or the session has
+            expired or been revoked (SESSION_EXPIRED).
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+              examples:
+                authenticationRequired:
+                  summary: AUTHENTICATION_REQUIRED
+                  value:
+                    type: "https://api.evplatform.example/problems/authentication_required"
+                    title: "AUTHENTICATION_REQUIRED"
+                    status: 401
+                    detail: "A valid authenticated session is required to access this resource."
+                sessionExpired:
+                  summary: SESSION_EXPIRED
+                  value:
+                    type: "https://api.evplatform.example/problems/session_expired"
+                    title: "SESSION_EXPIRED"
+                    status: 401
+                    detail: "The session has expired or was revoked. Sign in again."
+  /api/v1/session/csrf:
+    get:
+      operationId: getSessionCsrf
+      summary: Get the session-bound CSRF token
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Session-bound CSRF token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionCsrfToken'
+              example:
+                token: "b6f3e2c4-9d1a-4a5e-8f3c-2b7d6a1e5f90"
+                headerName: "X-CSRF-TOKEN"
+        '401':
+          description: >
+            No valid session (AUTHENTICATION_REQUIRED) or the session has
+            expired or been revoked (SESSION_EXPIRED).
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+  /api/v1/session/logout:
+    post:
+      operationId: logout
+      summary: Log out of the current BFF session
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: X-CSRF-TOKEN
+          in: header
+          required: true
+          description: Session-bound CSRF token obtained from GET /api/v1/session/csrf
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Session revoked and session cookie cleared
+        '401':
+          description: >
+            No valid session (AUTHENTICATION_REQUIRED) or the session has
+            expired or been revoked (SESSION_EXPIRED).
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+        '403':
+          description: >
+            CSRF validation failed (CSRF_VALIDATION_FAILED) or the request
+            origin is not allowed (ORIGIN_NOT_ALLOWED).
+          content:
+            application/json:
+              schema:
+                $ref: ../schemas/common/problem-details.json
+              examples:
+                csrfValidationFailed:
+                  summary: CSRF_VALIDATION_FAILED
+                  value:
+                    type: "https://api.evplatform.example/problems/csrf_validation_failed"
+                    title: "CSRF_VALIDATION_FAILED"
+                    status: 403
+                    detail: "The request failed CSRF validation."
+                originNotAllowed:
+                  summary: ORIGIN_NOT_ALLOWED
+                  value:
+                    type: "https://api.evplatform.example/problems/origin_not_allowed"
+                    title: "ORIGIN_NOT_ALLOWED"
+                    status: 403
+                    detail: "The request origin is not allowed."
   /api/v1/stations/{stationRef}:
     get:
       operationId: getStation
@@ -109,7 +222,7 @@ components:
     sessionCookie:
       type: apiKey
       in: cookie
-      name: session
+      name: __Host-evsession
   schemas:
     Station:
       type: object
@@ -166,5 +279,41 @@ components:
         - sessionRef
         - bookingRef
         - status
+    SessionState:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        acr:
+          type: string
+          nullable: true
+          description: >
+            Authentication Context Class Reference from the IdP
+            authentication; null when unavailable.
+        authenticationTime:
+          type: string
+          format: date-time
+          nullable: true
+        idleExpiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        absoluteExpiresAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - authenticated
+    SessionCsrfToken:
+      type: object
+      properties:
+        token:
+          type: string
+        headerName:
+          type: string
+          description: Header that carries the token on mutations (X-CSRF-TOKEN)
+      required:
+        - token
+        - headerName
 security:
   - sessionCookie: []
