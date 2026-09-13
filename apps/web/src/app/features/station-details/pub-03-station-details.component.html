@@ -1,0 +1,70 @@
+@switch (status()) {
+  @case ('loading') {
+    <app-skeleton-list />
+  }
+  @case ('not-found') {
+    <section role="status" class="not-found">
+      <h1>{{ 'details_not_found' | translate }}</h1>
+      <a
+        [routerLink]="['/', localeService.current(), 'stations']"
+        queryParamsHandling="preserve"
+        >{{ 'back_to_search' | translate }}</a
+      >
+    </section>
+  }
+  @case ('error') {
+    <app-error-panel (retry)="load()" />
+  }
+  @case ('loaded') {
+    @if (station(); as s) {
+      <article class="details">
+        <h1>{{ s.name }}</h1>
+        <p>{{ s.address }}</p>
+        <p class="muted">
+          {{ s.city }} {{ s.postalCode }}, {{ s.countryCode }}
+        </p>
+        <p class="muted">{{ s.latitude.toFixed(5) }}, {{ s.longitude.toFixed(5) }}</p>
+
+        <h2>{{ 'details_evses' | translate }}</h2>
+        <p>
+          <span class="muted">{{ 'details_total_evses' | translate }}:</span>
+          {{ s.totalEvses }}
+        </p>
+        <ul class="card-list">
+          @for (evse of s.evses; track evse.uid) {
+            <li class="card">
+              <h3>{{ evse.uid }}</h3>
+              <ul>
+                @for (connector of evse.connectors; track connector.type) {
+                  <li>
+                    {{ connector.type }} ·
+                    <span class="muted">{{ 'connector_power_kw' | translate }}</span>
+                    {{ connectorKw(connector.maxPowerW) }} kW
+                  </li>
+                }
+              </ul>
+            </li>
+          }
+        </ul>
+
+        @if (s.tariff; as tariff) {
+          <h2>{{ 'details_tariff' | translate }}</h2>
+          <ul class="card-list">
+            @for (component of tariff.components; track component.kind) {
+              <li class="card">
+                {{ kindLabel(component.kind) }}:
+                {{ formatAmount(component.amountMinor, tariff.currency) }}
+                <span class="muted">/ {{ component.unit }}</span>
+              </li>
+            }
+          </ul>
+        }
+
+        <p class="freshness">
+          <span class="muted">{{ 'details_freshness' | translate }}:</span>
+          {{ freshness() }}
+        </p>
+      </article>
+    }
+  }
+}

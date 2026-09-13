@@ -1,0 +1,27 @@
+<header class="shell-header">
+  <a class="skip-link" href="#main">{{ 'skip_to_content' | translate }}</a>
+  <nav class="shell-nav" aria-label="{{ 'nav_find_charging' | translate }}">
+    <a
+      class="brand"
+      [routerLink]="['/', localeService.current()]"
+      queryParamsHandling="preserve"
+    >
+      {{ 'app_name' | translate }}
+    </a>
+    <div class="locale-switch" role="group" aria-label="{{ 'nav_language' | translate }}">
+      @for (l of localeService.locales(); track l) {
+        <a
+          class="locale-link"
+          [class.locale-link--active]="l === localeService.current()"
+          [attr.aria-current]="l === localeService.current() ? 'true' : null"
+          [routerLink]="localeLink(l)"
+          queryParamsHandling="preserve"
+          >{{ l === 'el' ? 'EL' : 'EN' }}</a
+        >
+      }
+    </div>
+  </nav>
+</header>
+<main id="main" class="shell-main" tabindex="-1">
+  <router-outlet />
+</main>

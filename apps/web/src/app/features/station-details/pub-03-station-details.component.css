@@ -1,0 +1,13 @@
+.details {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.not-found {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.freshness {
+  margin-top: var(--space-4);
+}
