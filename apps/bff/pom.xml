@@ -43,6 +43,14 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
+    <!-- I1-IAM-001 phase 2: Boot 4.1's starter-web no longer transitively
+         provides jackson-databind; the session stack serializes OAuth token
+         material to JSON explicitly (SessionLifecycleService). Version is
+         managed by the Boot BOM. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
     <!-- Approved BFF stack (ADR set §7 / ARC-009): Gateway Server Web MVC +
          Spring Security OAuth2 Client. Introduced by I1-IAM-001. -->
     <dependency>
