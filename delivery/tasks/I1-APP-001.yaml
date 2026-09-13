@@ -339,6 +339,10 @@ assumptions:
 openQuestions: []
 
 recordedDecisions:
+  - "Owner approved axe-core (dev scope) for AC-06 automated accessibility checks (interactive session, 2026-09-13)."
+  - "Geo model reconciliation (planner decision, disclosed): URL keeps the ARC-023 s9.2 bounds contract (west/south/east/north); the adapter maps bounds to the API center+radius model (circle covers the rectangle; slight over-fetch disclosed). If Discovery later gains a bounds API, only the adapter mapping changes."
+  - "i18n: signal-based typed dictionaries (runtime locale switch preserving route+query) rather than build-time $localize; el/en key-parity test proves completeness."
+  - "BFF proxy implemented as plain WebMvc routes (the BFF skeleton javadoc reserves Gateway+Security for the identity task); two allowlisted read routes, correlation header, header hygiene, verbatim Problem Details passthrough."
   - "Owner approved maplibre-gl (ARC-023-approved renderer) behind the
     replaceable tile adapter (2026-09-13)."
   - "Owner approved the BFF public proxy (ARC-FE-10 honored uniformly;
