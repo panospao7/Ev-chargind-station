@@ -1,0 +1,330 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-ENG-004"
+  title: "Frontend CI — apps/** workflow (web vitest+build, BFF tests), dependency-audit gate, and maplibre-gl critical-vulnerability upgrade"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-01"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L2"
+  owner: "Delivery Engineering and Project Owner"
+  createdAt: "2026-09-13"
+  baselineCommit: null
+
+objective: >
+  Close the last CI coverage gap disclosed at I1-APP-001 closeout: no
+  workflow covers apps/**, so web and BFF changes ship on local evidence
+  only. Add a frontend-tests GitHub Actions workflow that (1) runs the web
+  unit suite (CI=true npx ng test, vitest/jsdom, Node 24) and the web
+  production build (bundle budgets enforced), (2) runs the BFF Maven test
+  suite on JDK 25, and (3) runs a production-dependency audit gate
+  (npm audit --omit=dev, fail on high/critical). The audit gate currently
+  fails: apps/web depends on maplibre-gl 5.24.0 with CRITICAL
+  GHSA-jrc7-96c5-q579 (XSS sanitizer bypass in DOM.sanitize(), CWE-79,
+  CVSS 10.0, affects <=6.4.0, fixed in 6.4.1). Upgrade maplibre-gl to
+  ^6.9.0 (latest stable; 6.x reached GA 2026-07-22, superseding ADR-016's
+  5.24.x pin which existed because v6 was pre-release at approval time),
+  so the new gate lands green in the same change and every future UI
+  change is machine-verified.
+
+nonGoals:
+  - "Full EPIC-02 pipeline: CodeQL, SBOM, container scanning, image
+    signing/provenance, GHCR publication, promotion mechanism."
+  - "Root ci/required aggregation job (EPIC-02)."
+  - "Lint/format stage for apps/web (no eslint/prettier config exists yet;
+    introducing linters is separate scope)."
+  - "ADR-016 document text update (docs/** prohibited here) — recorded as a
+    follow-up backlog item."
+  - "API-client generation (POC-02 / EPIC-06 scope)."
+  - "Playwright/E2E harness and visual-contrast automation (UI-foundation
+    follow-up)."
+  - "Dev-dependency audit enforcement (gate scope is production deps via
+    --omit=dev; dev-only advisories are tracked, not gated, this slice)."
+  - "Any BFF or web product-code change beyond the maplibre adapter
+    compatibility surface."
+
+useCases:
+  - "Enabling infrastructure for all frontend tasks; no direct use-case
+    behavior."
+
+authority:
+  governance:
+    - path: "docs/08_delivery_and_ai_agents/01_cicd_repository_organization_v1.0.md"
+      section: "Stage 5 - Frontend (npm ci, Angular compile, unit/component tests, bundle-budget checks); Stage 7 - Security (dependency review/vulnerability scan); 10.2 CI security rules"
+    - path: "docs/08_delivery_and_ai_agents/04_local_engineering_foundation_v1.0.md"
+      section: "10.1 required pull-request stages (5 frontend compilation/tests, 10 secret and dependency scanning); 10.3 local/CI parity"
+  requirements: []
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/08_technology_selection_adr_set_v1.0.md"
+      section: "ADR-016 Mapping (MapLibre GL JS 5.24.x pin; v6 deferral rationale now obsolete — supersession approved via this packet's planning PR)"
+    - path: "docs/05_architecture/17_w1_frontend_ux_implementation_contract_v1.0.md"
+      section: "frontend verification expectations (unit/component tests, accessibility checks)"
+  contracts: []
+
+invariants:
+  - "CI gates cannot be weakened to obtain green runs (AGENTS.md §11)."
+  - "Every behavior change requires appropriate tests (AGENTS.md §10)."
+  - "Workflow permissions default to none; jobs grant only required
+    permissions; external Actions pinned to full commit SHAs (CI/CD doc
+    10.2)."
+
+ownership:
+  owningService: "delivery infrastructure (GitHub Actions workflow) + apps/web dependency manifest"
+  dataOwner: "n/a"
+  supportingServices:
+    - "apps/web (dependency upgrade subject; adapter compatibility)"
+    - "apps/bff (CI coverage subject only — no code changes)"
+  prohibitedOwners: []
+
+affectedArtifacts:
+  services:
+    - "apps/web (maplibre-gl 5.24.0 -> ^6.9.0; possible minimal adapter
+      compatibility adjustments)"
+    - "apps/bff (none — CI coverage only)"
+  modules:
+    - ".github/workflows/frontend-tests.yml (new)"
+    - "apps/web/package.json + package-lock.json (maplibre-gl bump)"
+    - "apps/web/src/app/features/discovery/map/maplibre.adapter.ts (only if
+      v6 requires surface adjustments)"
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations: []
+  commands: []
+  events: []
+  schemas: []
+  registries: []
+  screens: []
+  infrastructure:
+    - "New GitHub Actions workflow (contents: read only; pinned Actions;
+      no secrets; no runner changes; existing workflows untouched)"
+
+dependencies:
+  tasks:
+    - "I1-APP-001 (VERIFIED — the task that disclosed the gap and produced
+      the apps/web suite this workflow will run)"
+  contracts: []
+  infrastructure:
+    - "GitHub Actions runners (JDK 25 temurin, Node 24 per .nvmrc)"
+  humanDecisions:
+    - "Owner approval via planning-PR merge (L2: new CI workflow +
+      dependency upgrade superseding the ADR-016 5.24.x pin)."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - ".github/workflows/frontend-tests.yml"
+    - "apps/web/package.json"
+    - "apps/web/package-lock.json"
+    - "apps/web/src/app/features/discovery/map/maplibre.adapter.ts"
+    - "delivery/handoffs/I1-ENG-004/**"
+    - "delivery/evidence/I1-ENG-004/**"
+    - "delivery/deviations/I1-ENG-004/**"
+
+  prohibitedFiles:
+    - "contracts/**"
+    - "docs/**"
+    - "services/**"
+    - "simulator/**"
+    - "infra/**"
+    - "scripts/**"
+    - "libraries/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "apps/bff/**"
+    - "apps/web/src/** (except the single adapter file listed in allowedFiles)"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+    - ".github/workflows/service-tests.yml"
+    - ".github/workflows/db-migrations.yml"
+    - ".github/workflows/g3-contract-validation.yml"
+
+  maximumExpectedDiff: >
+    Bounded: one new workflow (~80 lines, read-only permissions, pinned
+    SHAs), a maplibre-gl version bump in package.json + regenerated
+    package-lock.json, and at most small compatibility adjustments in the
+    single maplibre adapter file. No product logic changes, no contract
+    changes, no new dependencies beyond the maplibre-gl upgrade itself.
+
+  generatedFilesPolicy: >
+    package-lock.json is regenerated by npm install (lockfile-backed,
+    reproducible); the workflow is hand-edited.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      A new frontend-tests workflow triggers on changes to apps/web/** and
+      apps/bff/** and executes the web unit suite green
+      (CI=true npx ng test, Node 24 from .nvmrc, npm ci from
+      apps/web/package-lock.json) on this PR.
+    authorityReferences:
+      - "CI/CD doc Stage 5; local/CI parity (foundation doc 10.3)"
+    evidenceRequired:
+      - "workflow run reference (green web job) on this PR"
+    testTypes: ["ci"]
+
+  - id: "AC-02"
+    statement: >
+      The same workflow executes the web production build green
+      (npx ng build) with the configured bundle budgets enforced
+      (initial 500kB warning / 1MB error; anyComponentStyle 4kB/8kB).
+    authorityReferences:
+      - "CI/CD doc Stage 5 (bundle-budget checks)"
+    evidenceRequired:
+      - "workflow run reference (green build step)"
+    testTypes: ["ci"]
+
+  - id: "AC-03"
+    statement: >
+      The same workflow executes the BFF Maven test suite green on JDK 25
+      (./mvnw -pl apps/bff -am test) with no BFF source changes.
+    authorityReferences:
+      - "Foundation doc 10.1 stage 4 (Java compilation and tests)"
+    evidenceRequired:
+      - "workflow run reference (green bff job)"
+    testTypes: ["ci"]
+
+  - id: "AC-04"
+    statement: >
+      A production-dependency audit gate runs in the same workflow
+      (npm audit --omit=dev --audit-level=high in apps/web) and is green
+      after the maplibre-gl upgrade. The pre-upgrade finding (CRITICAL
+      GHSA-jrc7-96c5-q579 on maplibre-gl 5.24.0, CVSS 10.0) is recorded in
+      the evidence file with the audit output summary.
+    authorityReferences:
+      - "CI/CD doc Stage 7 (dependency vulnerability scan); AGENTS.md §11"
+    evidenceRequired:
+      - "workflow run reference (green audit step) + pre-upgrade finding
+        record in the evidence file"
+    testTypes: ["ci", "security"]
+
+  - id: "AC-05"
+    statement: >
+      maplibre-gl is upgraded to ^6.9.0 in apps/web (owner-approved
+      supersession of the ADR-016 5.24.x pin, whose v6-pre-release
+      rationale is obsolete); the web suite (44/44) and production build
+      remain green locally, and the map adapter requires at most minimal
+      adjustments within its allowed file. Any adapter API change is
+      documented in the evidence file.
+    authorityReferences:
+      - "ADR-016 (superseded pin); ARC-016 §8 (dependency change requires
+        human confirmation — granted via planning-PR merge)"
+    evidenceRequired:
+      - "local suite + build output; lockfile diff; adapter diff (or
+        no-change note)"
+    testTypes: ["unit", "build"]
+
+  - id: "AC-06"
+    statement: >
+      No existing workflow, workflow permission, secret, or runner surface
+      is changed; the new workflow grants contents: read only, pins all
+      external Actions to full commit SHAs (reusing the SHAs already
+      pinned in this repository's workflows), and configures no secrets.
+    authorityReferences:
+      - "CI/CD doc 10.2 CI security rules; ARC-016 §8"
+    evidenceRequired:
+      - "diff review in the evidence file"
+    testTypes: ["review", "security"]
+
+tests:
+  focusedCommands:
+    - "Push-Location apps/web; $env:CI='true'; npx ng test; Pop-Location"
+    - "Push-Location apps/web; npx ng build; Pop-Location"
+    - "Push-Location apps/web; npm audit --omit=dev --audit-level=high; Pop-Location"
+    - ".\\mvnw.cmd -pl apps/bff -am test \"-Dmaven.compiler.release=21\""
+  requiredSuites:
+    - "CI: frontend-tests workflow green on this PR (web + bff jobs, audit step)"
+  positiveCases:
+    - "Web unit suite green in CI on Node 24 (44/44 baseline)."
+    - "BFF suite green in CI on JDK 25 (9/9 baseline)."
+    - "Audit gate green after maplibre-gl ^6.9.0 upgrade."
+  negativeCases:
+    - "Audit gate demonstrably fails on the pre-upgrade lockfile
+      (recorded evidence of the critical finding blocking the gate)."
+  boundaryCases: []
+  concurrencyCases: []
+  securityCases:
+    - "GHSA-jrc7-96c5-q579 remediation verified: lockfile resolves
+      maplibre-gl >= 6.4.1; no sanitizer/popup APIs introduced."
+    - "No workflow permission/secret changes; secret scan green."
+  contractCases: []
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "Remediates a CRITICAL known XSS advisory (GHSA-jrc7-96c5-q579,
+      CVSS 10.0) in a production browser dependency. Our code does not use
+      the vulnerable DOM.sanitize() path (grep: no popup/setHTML/innerHTML/
+      DomSanitizer usage in apps/web/src/app), but the dependency upgrade
+      eliminates the exposure class. Adds a CI gate preventing
+      high/critical production-dependency advisories from merging."
+  dataClassifications: []
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData: []
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: false
+  dataReviewer: false
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L2 — CI workflow + dependency upgrade / ADR-016 supersession)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-ENG-004/frontend-ci.md"
+  requiredCiChecks:
+    - "frontend-tests workflow green on the PR (web job, bff job, audit step)"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "ng test under @angular/build:unit-test uses vitest+jsdom and requires
+    no browser in CI (proven locally; axe color-contrast already disabled
+    for jsdom)."
+  - "The maplibre adapter's dynamic import + structural typing insulates
+    compile-time compatibility; v6 API surface used (Map, Marker,
+    fitBounds, jumpTo, getBounds, on, raster style, attributionControl) is
+    expected stable across the major bump — verified by suite+build."
+  - "If a CI-only BFF failure appears that requires a BFF source change,
+    the task enters FIX_REQUIRED with a scope amendment rather than
+    expanding allowedFiles silently."
+  - "Dev-only dependency advisories are recorded if present but do not
+    block the gate this slice (non-goal)."
+
+openQuestions: []
+
+recordedDecisions:
+  - "Dependency audit during ENG-004 planning (2026-09-13) found CRITICAL
+    GHSA-jrc7-96c5-q579 in maplibre-gl 5.24.0 (CVSS 10.0, XSS sanitizer
+    bypass, affects <=6.4.0). Owner chose option (a): fold the upgrade to
+    ^6.9.0 into I1-ENG-004 so the new audit gate lands green in the same
+    change (interactive session, 2026-09-13)."
+  - "Owner approval of the maplibre-gl 6.x upgrade supersedes the ADR-016
+    5.24.x pin (its rationale — v6 pre-release status — is obsolete; v6 GA
+    2026-07-22, fix release 6.4.1 2026-08-18). ADR-016 text update is a
+    follow-up backlog item (docs/** prohibited in this task)."

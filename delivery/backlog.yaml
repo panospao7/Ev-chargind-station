@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-13T01:30:00Z"
+updatedAt: "2026-09-13T17:00:00Z"
 
 authority:
   taskDefinition: "delivery/tasks/<TASK-ID>.yaml"
@@ -254,4 +254,21 @@ items:
       - w1-s1
       - l2
 
-nextRecommendedTask: "I1-APP-001"
+  - id: "I1-ENG-004"
+    order: 43
+    priority: "P0"
+    iteration: "I1"
+    epic: "EPIC-01"
+    title: "Frontend CI — apps/** workflow (web vitest+build, BFF tests), dependency-audit gate, and maplibre-gl critical-vulnerability upgrade"
+    packet: "delivery/tasks/I1-ENG-004.yaml"
+    dependsOn:
+      - "I1-APP-001"
+    tags:
+      - foundation
+      - ci
+      - frontend
+      - security
+      - w1-s1
+      - l2
+
+nextRecommendedTask: "I1-ENG-004"
