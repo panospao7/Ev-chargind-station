@@ -14,7 +14,7 @@
           class="locale-link"
           [class.locale-link--active]="l === localeService.current()"
           [attr.aria-current]="l === localeService.current() ? 'true' : null"
-          [routerLink]="['/', l]"
+          [routerLink]="localeLink(l)"
           queryParamsHandling="preserve"
           >{{ l === 'el' ? 'EL' : 'EN' }}</a
         >

@@ -22,6 +22,16 @@ public class DiscoveryDownstreamClient {
 
     private final RestClient restClient;
 
+    /**
+     * Outbound request-header observer for tests (package-private). When
+     * set, every downstream request's headers are handed to this consumer
+     * before execution — the honest seam that lets PublicProxyControllerTests
+     * assert header hygiene (no Cookie/Authorization) at the actual HTTP
+     * boundary instead of asserting on unrelated structures.
+     */
+    volatile java.util.function.Consumer<org.springframework.http.HttpHeaders>
+            outboundHeaderObserver;
+
     public DiscoveryDownstreamClient(
             @Value("${discovery.base-url}") String discoveryBaseUrl) {
         this.restClient = RestClient.builder().baseUrl(discoveryBaseUrl).build();
@@ -43,13 +53,26 @@ public class DiscoveryDownstreamClient {
      * GET /api/v1/stations/{stationRef} (404 included — passthrough).
      */
     public ResponseEntity<String> details(String stationRef) {
-        return request("/api/v1/stations/" + stationRef);
+        // Security review F-S1: encode the segment (defense in depth —
+        // the controller already validates the charset).
+        String uri = UriComponentsBuilder.fromPath("/api/v1/stations")
+                .pathSegment(stationRef)
+                .encode()
+                .build()
+                .toUriString();
+        return request(uri);
     }
 
     private ResponseEntity<String> request(String uri) {
         return restClient.get()
                 .uri(uri)
-                .exchange((request, response) -> toResponse(response));
+                .exchange((request, response) -> {
+                    var observer = outboundHeaderObserver;
+                    if (observer != null) {
+                        observer.accept(request.getHeaders());
+                    }
+                    return toResponse(response);
+                });
     }
 
     private static ResponseEntity<String> toResponse(ClientHttpResponse response)

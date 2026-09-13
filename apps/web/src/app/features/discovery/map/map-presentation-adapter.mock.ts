@@ -14,7 +14,6 @@ export class MapPresentationAdapterMock implements MapPresentationAdapter {
   /** Result-array references passed to setResults, in order. */
   setResultRefs: StationSummary[][] = [];
   fitBoundsCalls: Bounds[] = [];
-  selectCalls: (string | null)[] = [];
   destroyed = false;
 
   private boundsHandler: ((bounds: Bounds) => void) | null = null;
@@ -63,10 +62,6 @@ export class MapPresentationAdapterMock implements MapPresentationAdapter {
 
   setResults(stations: StationSummary[]): void {
     this.setResultRefs.push(stations);
-  }
-
-  selectStation(ref: string | null): void {
-    this.selectCalls.push(ref);
   }
 
   fitBounds(bounds: Bounds): void {

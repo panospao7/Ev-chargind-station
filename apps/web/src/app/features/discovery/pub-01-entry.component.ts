@@ -2,9 +2,9 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TranslatePipe } from '../../core/localization/translate.pipe';
 import { DiscoveryStore } from './discovery.store';
 import { ResultsListComponent } from './results-list.component';
-import { SkeletonListComponent } from './shared/ui/skeleton-list.component';
-import { EmptyStateComponent } from './shared/ui/empty-state.component';
-import { ErrorPanelComponent } from './shared/ui/error-panel.component';
+import { SkeletonListComponent } from '../../shared/ui/skeleton-list.component';
+import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
+import { ErrorPanelComponent } from '../../shared/ui/error-panel.component';
 
 /**
  * PUB-01 — /{locale} discovery entry (ARC-023 §6.2): localized hero plus

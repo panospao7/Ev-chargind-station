@@ -21,8 +21,6 @@ interface MapLike {
   fitBounds(bounds: number[][], options?: object): void;
   jumpTo(options: object): void;
   getBounds(): { getWest(): number; getSouth(): number; getEast(): number; getNorth(): number };
-  isStyleLoaded(): boolean;
-  once(event: string, handler: () => void): void;
 }
 
 interface MarkerLike {
@@ -62,6 +60,8 @@ export class MaplibreAdapter implements MapPresentationAdapter {
   }
 
   onStationClick(handler: (ref: string) => void): void {
+    // Reserved: marker activation has no consumer this slice; the
+    // handler is kept so the port contract stays stable.
     this.stationClickHandler = handler;
   }
 
@@ -120,17 +120,6 @@ export class MaplibreAdapter implements MapPresentationAdapter {
         element.addEventListener('click', () => this.stationClickHandler?.(station.ref));
       }
       this.markers.push(marker);
-    }
-  }
-
-  selectStation(ref: string | null): void {
-    for (const marker of this.markers) {
-      const element = marker.getElement();
-      if (!element) {
-        continue;
-      }
-      const isTarget = ref !== null && element.getAttribute('data-station-ref') === ref;
-      element.classList.toggle('map-marker--selected', isTarget);
     }
   }
 

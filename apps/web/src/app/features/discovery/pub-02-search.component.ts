@@ -13,9 +13,9 @@ import { LocaleService } from '../../core/localization/locale.service';
 import { StationSearchQuery } from '../../api/adapters/discovery.types';
 import { DiscoveryStore } from './discovery.store';
 import { ResultsListComponent } from './results-list.component';
-import { SkeletonListComponent } from './shared/ui/skeleton-list.component';
-import { EmptyStateComponent } from './shared/ui/empty-state.component';
-import { ErrorPanelComponent } from './shared/ui/error-panel.component';
+import { SkeletonListComponent } from '../../shared/ui/skeleton-list.component';
+import { EmptyStateComponent } from '../../shared/ui/empty-state.component';
+import { ErrorPanelComponent } from '../../shared/ui/error-panel.component';
 import { MapComponent } from './map/map.component';
 import {
   Bounds,
@@ -27,9 +27,15 @@ import {
   TILE_PROVIDER_CONFIG,
 } from './map/tile-provider.config';
 
-/** Connector filter options (CCS/TYPE2 per the seed data vocabulary). */
-type ConnectorFilter = '' | 'CCS' | 'TYPE2';
-type PowerFilter = '' | 22 | 50 | 100;
+/**
+ * Filter vocabulary bounds from the public-discovery-api-v1 contract:
+ * connectorType is any string (UI suggestions: CCS/TYPE2); minPowerW is
+ * an integer ≥ 1 → minimumPowerKw is an integer ≥ 1 (UI suggestions:
+ * 22/50/100). Anything else is an invalid parameter (stripped+announced).
+ */
+const CONNECTOR_MAX_LENGTH = 24;
+const MINIMUM_POWER_KW_MAX = 1000;
+
 type ViewMode = 'list' | 'map';
 
 const BOUND_KEYS = ['west', 'south', 'east', 'north'] as const;
@@ -40,6 +46,10 @@ const BOUND_KEYS = ['west', 'south', 'east', 'north'] as const;
  * the map bounds west/south/east/north. Invalid values are stripped and
  * announced via aria-live. The map and the list derive from the same
  * store results.
+ *
+ * Map movement (ARC-023 §26/§16.4) never triggers a search: pan/zoom
+ * only records the viewport internally; the explicit "Search this area"
+ * button adopts the recorded bounds (URL write + one search).
  */
 @Component({
   selector: 'app-pub02-search',
@@ -79,14 +89,15 @@ export class Pub02SearchComponent {
   });
 
   // Parsed, validated filter state derived from the URL.
-  protected readonly connector = signal<ConnectorFilter>('');
-  protected readonly minimumPowerKw = signal<PowerFilter>('');
+  protected readonly connector = signal<string>('');
+  protected readonly minimumPowerKw = signal<number | ''>('');
   protected readonly view = signal<ViewMode>('list');
   protected readonly bounds = signal<Bounds | null>(null);
   protected readonly invalidNotice = signal(false);
 
-  protected readonly connectorOptions: ConnectorFilter[] = ['', 'CCS', 'TYPE2'];
-  protected readonly powerOptions: PowerFilter[] = ['', 22, 50, 100];
+  /** UI suggestions (the contract allows any valid connector/power value). */
+  protected readonly connectorOptions: string[] = ['', 'CCS', 'TYPE2'];
+  protected readonly powerOptions: (number | '')[] = ['', 22, 50, 100];
 
   /** The URL-derived query for the store (geo via bounds mapping). */
   private readonly currentQuery = computed<StationSearchQuery>(() => {
@@ -119,18 +130,28 @@ export class Pub02SearchComponent {
   private parseParams(params: { get(name: string): string | null }): void {
     let invalid = false;
 
+    // Contract: connectorType is any non-empty string (≤ 24 chars here).
     const connectorRaw = params.get('connector');
-    const connector = connectorRaw === 'CCS' || connectorRaw === 'TYPE2' ? connectorRaw : '';
-    if (connectorRaw !== null && connectorRaw !== '' && !connector) {
-      invalid = true;
+    let connector = '';
+    if (connectorRaw !== null && connectorRaw !== '') {
+      if (connectorRaw.length <= CONNECTOR_MAX_LENGTH) {
+        connector = connectorRaw;
+      } else {
+        invalid = true;
+      }
     }
 
+    // Contract: minPowerW ≥ 1 (integer) → minimumPowerKw integer ≥ 1.
     const powerRaw = params.get('minimumPowerKw');
-    let power: PowerFilter = '';
+    let power: number | '' = '';
     if (powerRaw !== null && powerRaw !== '') {
       const parsed = Number(powerRaw);
-      if (Number.isInteger(parsed) && (parsed === 22 || parsed === 50 || parsed === 100)) {
-        power = parsed as PowerFilter;
+      if (
+        Number.isInteger(parsed) &&
+        parsed >= 1 &&
+        parsed <= MINIMUM_POWER_KW_MAX
+      ) {
+        power = parsed;
       } else {
         invalid = true;
       }
@@ -158,15 +179,21 @@ export class Pub02SearchComponent {
     }
     const allBoundsPresent = BOUND_KEYS.every((key) => key in boundsParsed);
     const anyBoundsPresent = BOUND_KEYS.some((key) => key in boundsParsed);
-    const bounds =
-      allBoundsPresent && !boundsInvalid
-        ? ({
-            west: boundsParsed['west'],
-            south: boundsParsed['south'],
-            east: boundsParsed['east'],
-            north: boundsParsed['north'],
-          } as Bounds)
-        : null;
+    let bounds: Bounds | null = null;
+    if (allBoundsPresent && !boundsInvalid) {
+      const candidate: Bounds = {
+        west: boundsParsed['west'],
+        south: boundsParsed['south'],
+        east: boundsParsed['east'],
+        north: boundsParsed['north'],
+      };
+      // Ordering: west<east and south<north; inverted boxes are invalid.
+      if (candidate.west < candidate.east && candidate.south < candidate.north) {
+        bounds = candidate;
+      } else {
+        invalid = true;
+      }
+    }
     if (boundsInvalid || (anyBoundsPresent && !allBoundsPresent)) {
       invalid = true;
     }
@@ -222,14 +249,14 @@ export class Pub02SearchComponent {
   }
 
   protected onConnectorChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value as ConnectorFilter;
+    const value = (event.target as HTMLSelectElement).value;
     this.connector.set(value);
     void this.writeUrl();
   }
 
   protected onPowerChange(event: Event): void {
     const raw = (event.target as HTMLSelectElement).value;
-    const value = (raw === '' ? '' : Number(raw)) as PowerFilter;
+    const value = raw === '' ? '' : Number(raw);
     this.minimumPowerKw.set(value);
     void this.writeUrl();
   }
@@ -239,19 +266,21 @@ export class Pub02SearchComponent {
     void this.writeUrl();
   }
 
-  /** "Search this area": adopt the map's current viewport as bounds. */
+  /**
+   * "Search this area": adopt the map's recorded viewport as the bounds
+   * filter (URL write + exactly one search). Map movement alone never
+   * reaches here (ARC-023 §26/§16.4 no automatic search while panning).
+   */
   protected searchThisArea(): void {
     this.bounds.set(this.lastMapBounds);
     void this.writeUrl();
   }
 
   protected onMapBoundsChange(bounds: Bounds): void {
+    // Map movement only records the viewport internally: no URL write and
+    // no search while panning/zooming (ARC-023 §26/§16.4). The recorded
+    // bounds are adopted explicitly via "Search this area".
     this.lastMapBounds = bounds;
-    // When the map view is active, keep the URL in sync with the viewport.
-    if (this.view() === 'map') {
-      this.bounds.set(bounds);
-      void this.writeUrl();
-    }
   }
 
   protected retrySearch(): void {

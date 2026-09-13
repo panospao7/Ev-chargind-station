@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { TranslatePipe } from '../../../../core/localization/translate.pipe';
+import { TranslatePipe } from '../../core/localization/translate.pipe';
 
 /**
  * Loading skeleton list (ARC-023 §9.5 initial loading state). Announced as

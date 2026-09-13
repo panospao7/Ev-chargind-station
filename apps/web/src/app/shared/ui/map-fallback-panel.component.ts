@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { TranslatePipe } from '../../../../core/localization/translate.pipe';
+import { TranslatePipe } from '../../core/localization/translate.pipe';
 
 /**
  * Map fallback panel (ARC-023 §9.5: map initialization failed / tile

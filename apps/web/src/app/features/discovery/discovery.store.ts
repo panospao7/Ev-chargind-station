@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Subscription, tap, timer } from 'rxjs';
+import { Subscription } from 'rxjs';
 
 import { DiscoveryApiAdapter } from '../../api/adapters/discovery-api.adapter';
 import {
@@ -15,7 +15,8 @@ export type DiscoveryStatus = 'idle' | 'loading' | 'ready' | 'empty' | 'error';
  * serialized with a monotonic sequence counter: only the most recently
  * issued search may commit results, so rapid filter changes cannot let a
  * stale response overwrite newer state (switchMap-style cancellation
- * without operator complexity).
+ * without operator complexity). The adapter is invoked synchronously —
+ * no timer(0) deferral; the sequence guard alone prevents stale commits.
  */
 @Injectable({ providedIn: 'root' })
 export class DiscoveryStore {
@@ -42,28 +43,24 @@ export class DiscoveryStore {
     this.status.set('loading');
     this.error.set(null);
 
-    const subscription = timer(0)
-      .pipe(tap(() => undefined))
-      .subscribe(() => {
-        this.adapter.listStations(query).subscribe({
-          next: (stations) => {
-            if (seq !== this.requestSeq) {
-              return; // stale response — ignore
-            }
-            this.inFlight.delete(seq);
-            this.results.set(stations);
-            this.status.set(stations.length === 0 ? 'empty' : 'ready');
-          },
-          error: (apiError: ApiError) => {
-            if (seq !== this.requestSeq) {
-              return; // stale error — ignore
-            }
-            this.inFlight.delete(seq);
-            this.error.set(apiError);
-            this.status.set('error');
-          },
-        });
-      });
+    const subscription = this.adapter.listStations(query).subscribe({
+      next: (stations) => {
+        if (seq !== this.requestSeq) {
+          return; // stale response — ignore
+        }
+        this.inFlight.delete(seq);
+        this.results.set(stations);
+        this.status.set(stations.length === 0 ? 'empty' : 'ready');
+      },
+      error: (apiError: ApiError) => {
+        if (seq !== this.requestSeq) {
+          return; // stale error — ignore
+        }
+        this.inFlight.delete(seq);
+        this.error.set(apiError);
+        this.status.set('error');
+      },
+    });
 
     this.inFlight.set(seq, subscription);
   }

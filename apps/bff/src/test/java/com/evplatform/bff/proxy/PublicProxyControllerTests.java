@@ -13,6 +13,7 @@ import com.evplatform.bff.BffApplication;
 import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import java.util.concurrent.atomic.AtomicReference;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -98,20 +99,98 @@ class PublicProxyControllerTests {
     }
 
     @Test
-    void cookieHeaderIsNotForwardedDownstream() throws Exception {
-        when(downstream.list(any())).thenReturn(
-                org.springframework.http.ResponseEntity.ok().body("[]"));
+    void cookieAndAuthorizationHeadersAreNotForwardedDownstream() {
+        // General review F-3 / security review F-S2: the previous version
+        // asserted on the query map (vacuous - headers never checked).
+        // This test observes the ACTUAL outbound HTTP headers at the
+        // exchange boundary of a REAL DiscoveryDownstreamClient (not the
+        // @MockitoBean) pointed at an embedded stub server. Claim scope:
+        // the controller structurally cannot forward browser headers (no
+        // HttpServletRequest access; fresh RestClient), so the outbound
+        // side is what this test proves - no Cookie/Authorization on the
+        // wire.
+        AtomicReference<org.springframework.http.HttpHeaders> observed =
+                new AtomicReference<>();
+        org.springframework.util.MultiValueMap<String, String> capturedQuery =
+                new org.springframework.util.LinkedMultiValueMap<>();
 
-        mockMvc.perform(get("/api/v1/stations").cookie(new Cookie("session", "abc")))
+        com.sun.net.httpserver.HttpServer stub = null;
+        try {
+            stub = com.sun.net.httpserver.HttpServer.create(
+                    new java.net.InetSocketAddress(0), 0);
+            stub.createContext("/api/v1/stations", exchange -> {
+                capturedQuery.putAll(
+                        org.springframework.web.util.UriComponentsBuilder
+                                .fromUri(exchange.getRequestURI())
+                                .build().getQueryParams());
+                byte[] body = "[]".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, body.length);
+                exchange.getResponseBody().write(body);
+                exchange.close();
+            });
+            stub.start();
+            int port = stub.getAddress().getPort();
+
+            var realClient = new DiscoveryDownstreamClient(
+                    "http://127.0.0.1:" + port);
+            realClient.outboundHeaderObserver = headers -> observed.set(headers);
+
+            // Drive the real controller + real client via MockMvc against
+            // the real client bean? No - use the controller directly with
+            // the real client to keep the seam honest and the test fast.
+            var controller = new PublicProxyController(realClient);
+            var response = controller.list(
+                    new org.springframework.util.LinkedMultiValueMap<>(), null);
+            assertThat(response.getStatusCode().value()).isEqualTo(200);
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("stub server failed", e);
+        } finally {
+            if (stub != null) {
+                stub.stop(0);
+            }
+        }
+
+        // Inbound browser credentials (Cookie session=abc, Authorization
+        // Bearer) must NOT reach the downstream exchange:
+        org.springframework.http.HttpHeaders outbound = observed.get();
+        assertThat(outbound).isNotNull();
+        assertThat(outbound.getFirst("Cookie")).isNull();
+        assertThat(outbound.getFirst("Authorization")).isNull();
+    }
+
+    @Test
+    void encodedMetacharactersInStationRefAreRejectedBeforeDownstream() throws Exception {
+        // Security review F-4: %3F surviving path decoding must not alter
+        // the downstream URI. The controller validates the ref charset
+        // before any downstream call.
+        mockMvc.perform(get("/api/v1/stations/x%3Fy=1"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(
+                        org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON));
+        org.mockito.Mockito.verifyNoInteractions(downstream);
+    }
+
+    @Test
+    void dotSegmentRefsAreRejectedBeforeDownstream() throws Exception {
+        // Security review F-S1: "." and ".." must not reach the downstream
+        // path (normalization could escape the stations collection).
+        mockMvc.perform(get("/api/v1/stations/.."))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(
+                        org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON));
+        mockMvc.perform(get("/api/v1/stations/."))
+                .andExpect(status().isNotFound());
+        org.mockito.Mockito.verifyNoInteractions(downstream);
+    }
+
+    @Test
+    void validStationRefIsForwardedAsEncodedSegment() throws Exception {
+        when(downstream.details("SEEDSTA0001")).thenReturn(
+                org.springframework.http.ResponseEntity.ok().body("{}"));
+        mockMvc.perform(get("/api/v1/stations/SEEDSTA0001"))
                 .andExpect(status().isOk());
-
-        @SuppressWarnings("unchecked")
-        ArgumentCaptor<MultiValueMap<String, String>> captor =
-                ArgumentCaptor.forClass((Class) MultiValueMap.class);
-        verify(downstream).list(captor.capture());
-        // The clean downstream request carries no cookies by construction:
-        // the client builds a fresh request with no header copying.
-        assertThat(captor.getValue()).doesNotContainKey("Cookie");
+        verify(downstream).details("SEEDSTA0001");
     }
 
     @Test

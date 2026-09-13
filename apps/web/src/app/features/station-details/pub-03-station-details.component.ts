@@ -13,8 +13,8 @@ import { StationDetails } from '../../api/adapters/discovery.types';
 import { ApiError } from '../../core/http/api-error';
 import { LocaleService } from '../../core/localization/locale.service';
 import { TranslatePipe } from '../../core/localization/translate.pipe';
-import { ErrorPanelComponent } from '../discovery/shared/ui/error-panel.component';
-import { SkeletonListComponent } from '../discovery/shared/ui/skeleton-list.component';
+import { ErrorPanelComponent } from '../../shared/ui/error-panel.component';
+import { SkeletonListComponent } from '../../shared/ui/skeleton-list.component';
 
 type DetailsStatus = 'loading' | 'loaded' | 'not-found' | 'error';
 

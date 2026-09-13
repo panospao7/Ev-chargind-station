@@ -1,6 +1,14 @@
-import { effect, inject, Injectable, signal } from '@angular/core';
+import {
+  DestroyRef,
+  effect,
+  inject,
+  Injectable,
+  signal,
+} from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
 import {
   DEFAULT_LOCALE,
   isLocale,
@@ -15,14 +23,18 @@ import { EL } from './i18n/el';
  * i18n with runtime locale switch preserving route + query).
  *
  * The active locale is derived from the URL's locale prefix segment
- * (/el default, /en) so a deep link or hard reload to /en/... renders in
- * English without relying on component wiring; the effect keeps
- * `<html lang>` in sync for accessibility (ARC-008 §12).
+ * (/el default, /en): once on construction (deep link / hard reload,
+ * AC-04) and again on every NavigationEnd, so in-app navigation between
+ * locale roots keeps the signal, `<html lang>` and Intl formatting in
+ * sync (ARC-008 §12). The NavigationEnd subscription is the single
+ * navigation-time writer — `setLocale` remains for tests and programmatic
+ * use and is never wired to UI controls.
  */
 @Injectable({ providedIn: 'root' })
 export class LocaleService {
   private readonly document = inject(DOCUMENT);
   private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
 
   private readonly localeSignal = signal<Locale>(DEFAULT_LOCALE);
 
@@ -31,15 +43,21 @@ export class LocaleService {
       this.document.documentElement.lang = this.localeSignal();
     });
 
-    // Derive the initial locale from the current URL prefix. A hard reload
-    // of /en/... must render English (AC-04); there is no locale change
-    // signal on pure navigation between sibling locale roots, so reading
-    // the URL once per service construction is sufficient for the public
-    // full-page-load flows this SPA serves.
-    const firstSegment = this.router.url.split(/[?#]/)[0].split('/')[1];
-    if (isLocale(firstSegment)) {
-      this.localeSignal.set(firstSegment);
-    }
+    // Initial load: derive the locale from the current URL prefix. A hard
+    // reload of /en/... must render English (AC-04).
+    this.localeSignal.set(this.localeFromUrl());
+
+    // In-app navigation: re-derive on every NavigationEnd so the signal
+    // always mirrors the URL (fixes stale-locale desync after locale
+    // switches or cross-locale navigation).
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        this.localeSignal.set(this.localeFromUrl());
+      });
   }
 
   /** Narrow read-only view for template binding. */
@@ -59,5 +77,11 @@ export class LocaleService {
   text(key: string): string {
     const dictionary = this.localeSignal() === 'en' ? EN : EL;
     return dictionary[key] ?? key;
+  }
+
+  /** Locale from the URL's first path segment (fallback: default). */
+  private localeFromUrl(): Locale {
+    const firstSegment = this.router.url.split(/[?#]/)[0].split('/')[1];
+    return isLocale(firstSegment) ? firstSegment : DEFAULT_LOCALE;
   }
 }

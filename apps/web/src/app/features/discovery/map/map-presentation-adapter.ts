@@ -1,3 +1,4 @@
+import { InjectionToken } from '@angular/core';
 import { StationSummary } from '../../../api/adapters/discovery.types';
 import { Locale } from '../../../core/localization/locale';
 
@@ -23,19 +24,16 @@ export interface MapPresentationAdapter {
   /** Replace the rendered markers with the given stations. */
   setResults(stations: StationSummary[]): void;
 
-  /** Highlight (or clear) the selected station by public ref. */
-  selectStation(ref: string | null): void;
-
   /** Fit the viewport to the given bounds. */
   fitBounds(bounds: Bounds): void;
 
   /** React to locale changes (labels/attribution handling). */
   setLocale(locale: Locale): void;
 
-  /** Register the viewport-change callback (moveend → URL bounds). */
+  /** Register the viewport-change callback (moveend → recorded bounds). */
   onBoundsChange(handler: (bounds: Bounds) => void): void;
 
-  /** Register the marker-activation callback (click → selection). */
+  /** Register the marker-activation callback (reserved; no consumer yet). */
   onStationClick(handler: (ref: string) => void): void;
 
   /** Release all map resources (idempotent). */
@@ -45,5 +43,3 @@ export interface MapPresentationAdapter {
 export const MAP_PRESENTATION_ADAPTER = new InjectionToken<MapPresentationAdapter>(
   'MAP_PRESENTATION_ADAPTER',
 );
-
-import { InjectionToken } from '@angular/core';

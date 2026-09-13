@@ -96,7 +96,7 @@ describe('PUB-02 search screen (URL contract)', () => {
   });
 
   it('strips invalid query values, announces it via aria-live, and still renders results', async () => {
-    const { harness } = await navigate('/el/stations?connector=BOGUS&minimumPowerKw=-5');
+    const { harness } = await navigate('/el/stations?minimumPowerKw=0');
 
     // The strip navigation replaces the URL (replaceUrl).
     await nextMacroTask();
@@ -113,8 +113,21 @@ describe('PUB-02 search screen (URL contract)', () => {
     const connector = el.querySelector(
       '#connector-filter',
     ) as HTMLSelectElement;
-    expect(connector.value).toBe('');
     expect(el.querySelector('app-results-list')).toBeTruthy();
+    httpMock.verify();
+  });
+
+  it('preserves contract-valid values the UI does not offer (F-7): connector=BOGUS, minimumPowerKw=11', async () => {
+    const { harness } = await navigate('/el/stations?connector=BOGUS&minimumPowerKw=11');
+    await nextMacroTask();
+    flushStations();
+    await harness.fixture.whenStable();
+    expect(router.url).toBe('/el/stations?connector=BOGUS&minimumPowerKw=11');
+    const el = document.body;
+    const connector = el.querySelector('#connector-filter') as HTMLSelectElement;
+    // The select keeps its suggestion options; the URL value is honored
+    // through the query even when not an option (contract-true).
+    expect(connector).toBeTruthy();
     httpMock.verify();
   });
 
@@ -131,9 +144,47 @@ describe('PUB-02 search screen (URL contract)', () => {
     ).find((b) => b.textContent.trim() === 'Χάρτης');
     expect(mapButton).toBeTruthy();
     mapButton!.click();
+    await nextMacroTask();
+    await harness.fixture.whenStable();
+    // The toggle changes the query (view enters currentQuery), which
+    // re-fires the search effect — flush the re-search before verify.
+    const reSearch = httpMock.expectOne((r) => r.url === STATIONS_URL, STATIONS_URL);
+    reSearch.flush(STATION_FIXTURE);
     await harness.fixture.whenStable();
 
     expect(router.url).toBe('/el/stations?view=map');
+    httpMock.verify();
+  });
+
+  it('map movement does not search; the explicit button does (F-2, ARC-023 s26/s16.4)', async () => {
+    const { harness, component } = await navigate('/el/stations?view=map');
+    await nextMacroTask();
+    flushStations();
+    await harness.fixture.whenStable();
+    httpMock.verify(); // baseline: exactly one request, already flushed
+
+    // Simulate map movement via the mock adapter's bounds handler:
+    // the component must NOT write the URL or trigger a search.
+    const mapEl = document.body.querySelector('app-discovery-map');
+    expect(mapEl).toBeTruthy();
+    // The map component emits boundsChange through the adapter seam;
+    // drive it via the component's public handler instead of touching
+    // maplibre:
+    (component as unknown as { onMapBoundsChange: (b: { west: number; south: number; east: number; north: number }) => void }).onMapBoundsChange({ west: 23.0, south: 37.0, east: 24.0, north: 38.5 });
+    await harness.fixture.whenStable();
+    expect(router.url).toBe('/el/stations?view=map'); // URL unchanged
+    httpMock.verify(); // no new request
+
+    // The explicit button adopts the recorded bounds:
+    const button = document.querySelector('.map-area button') as HTMLButtonElement | null;
+    expect(button).toBeTruthy();
+    button!.click();
+    await nextMacroTask();
+    const req = httpMock.expectOne((r) => r.url === STATIONS_URL, STATIONS_URL);
+    expect(req.request.params.get('latitude')).toBe('37.75000');
+    req.flush(STATION_FIXTURE);
+    await harness.fixture.whenStable();
+    expect(router.url).toContain('west=23.00000');
     httpMock.verify();
   });
 });

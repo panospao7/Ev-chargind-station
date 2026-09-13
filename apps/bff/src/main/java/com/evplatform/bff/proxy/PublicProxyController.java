@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
  * Public same-origin proxy for the two Discovery read operations
  * (ARC-FE-10 honored uniformly: the browser never calls Discovery
  * directly). Route allowlist: only GET /api/v1/stations and
- * GET /api/v1/stations/{stationRef} exist — any other /api/** path 404s
+ * GET /api/v1/stations/{stationRef} exist ΓÇö any other /api/** path 404s
  * by Spring MVC routing itself (asserted in tests).
  *
  * <p>Header hygiene: no Cookie/Authorization forwarding (a clean request
@@ -30,6 +30,17 @@ public class PublicProxyController {
 
     private static final Pattern UUID_PATTERN = Pattern.compile(
             "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+
+    /**
+     * Public station refs are constrained to the safe charset the seed and
+     * the API contract use (alphanumerics, dot, underscore, hyphen; 1-64
+     * chars). Anything else - including URL-encoded metacharacters such as
+     * %3F/%23/%2F that survive servlet path decoding - is rejected with 404
+     * BEFORE any downstream call (security review F-4: prevents query/
+     * fragment/path injection into the proxied URI).
+     */
+    private static final Pattern STATION_REF_PATTERN = Pattern.compile(
+            "^(?!\\.+$)[A-Za-z0-9._-]{1,64}$");
 
     private final DiscoveryDownstreamClient downstream;
 
@@ -52,6 +63,14 @@ public class PublicProxyController {
     public ResponseEntity<String> details(
             @PathVariable String stationRef,
             @RequestHeader(value = "X-Correlation-Id", required = false) String correlationId) {
+        if (!STATION_REF_PATTERN.matcher(stationRef).matches()) {
+            // Reject before any downstream call; 404 (resource-not-found
+            // semantics) rather than 400 keeps the public surface honest.
+            String problem = "{\"type\":\"https://api.evplatform.example/problems/resource-not-found\",\"title\":\"Resource not found\",\"status\":404,\"detail\":\"The requested station does not exist.\"}";
+            return ResponseEntity.status(404)
+                    .contentType(org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON)
+                    .body(problem);
+        }
         ResponseEntity<String> response = downstream.details(stationRef);
         return withCorrelationId(response, correlationId);
     }

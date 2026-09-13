@@ -1,7 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+} from '@angular/core';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { LocaleService } from '../../core/localization/locale.service';
 import { TranslatePipe } from '../../core/localization/translate.pipe';
+import type { Locale } from '../../core/localization/locale';
 
 /**
  * Public shell (ARC-023 §4.1): localized header with the app name, an
@@ -17,5 +22,27 @@ import { TranslatePipe } from '../../core/localization/translate.pipe';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PublicShellComponent {
+  private readonly router = inject(Router);
   protected readonly localeService = inject(LocaleService);
+
+  /**
+   * Locale-switch link segments for the *current* URL with the locale
+   * segment swapped (ARC-FE-15: the switch preserves the route and the
+   * query). The first path segment is the locale prefix; everything
+   * after it is kept verbatim.
+   */
+  protected localeLink(locale: Locale): string[] {
+    const path = this.router.url.split(/[?#]/)[0];
+    const segments = path.split('/').filter((segment) => segment.length > 0);
+    if (segments.length > 0 && this.isLocaleSegment(segments[0])) {
+      segments[0] = locale;
+    } else {
+      segments.unshift(locale);
+    }
+    return ['/', ...segments];
+  }
+
+  private isLocaleSegment(value: string): boolean {
+    return value === 'el' || value === 'en';
+  }
 }

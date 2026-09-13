@@ -15,7 +15,7 @@ import {
 import { StationSummary } from '../../../api/adapters/discovery.types';
 import { LocaleService } from '../../../core/localization/locale.service';
 import { TranslatePipe } from '../../../core/localization/translate.pipe';
-import { MapFallbackPanelComponent } from '../shared/ui/map-fallback-panel.component';
+import { MapFallbackPanelComponent } from '../../../shared/ui/map-fallback-panel.component';
 import {
   Bounds,
   MAP_PRESENTATION_ADAPTER,
@@ -57,7 +57,6 @@ export class MapComponent implements AfterViewInit, OnChanges {
   readonly bounds = input<Bounds | null>(null);
 
   readonly boundsChange = output<Bounds>();
-  readonly stationSelect = output<string>();
 
   protected readonly mapDegraded = signal(false);
 
@@ -68,7 +67,6 @@ export class MapComponent implements AfterViewInit, OnChanges {
 
   constructor() {
     this.adapter.onBoundsChange((bounds) => this.boundsChange.emit(bounds));
-    this.adapter.onStationClick((ref) => this.stationSelect.emit(ref));
     this.adapter.setLocale(this.localeService.current());
   }
 
