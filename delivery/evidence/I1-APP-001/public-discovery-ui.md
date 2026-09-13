@@ -79,3 +79,11 @@ read routes, correlation ids, header hygiene, Problem Details passthrough).
     (pairs with I1-ENG-004).
 
 No secrets or personal data in this evidence.
+## Post-merge live validation
+
+The full stack was brought up and the chain verified end-to-end after the
+merge (browser -> UI 4200 -> BFF 8081 -> Discovery 8090 -> projections):
+seed 15 facts all PUBLISHED, both stations served with EVSEs/connectors/
+tariff/freshness, Greek rendering byte-verified in the served HTML and the
+owner-captured DOM snapshots. Bring-up automation captured in
+`scripts/dev/run-platform.ps1` (uncommitted at evidence time).
