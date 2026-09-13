@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-13T17:00:00Z"
+updatedAt: "2026-09-13T18:00:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -738,25 +738,24 @@ tasks:
       status: "NOT_STARTED"
       paths: []
   I1-ENG-004:
-    state: "READY"
-    assignedAgent: null
-    claimedAt: null
+    state: "CLAIMED"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-13T18:00:00Z"
 
-    baselineCommit: null
-    branch: null
+    baselineCommit: "23a15fe9d0e57b6d9966de6a17ab1a2b9e2a6872"
+    branch: "task/i1-eng-004-ci"
     candidateCommit: null
     pullRequest: null
 
-    blockers:
-      - "Owner packet approval pending (L2; planning-PR merge = approval precedent)"
+    blockers: []
 
     deviations: []
     unresolvedFindings: []
 
-    handoffSequence: 0
-    latestHandoff: null
+    handoffSequence: 1
+    latestHandoff: "delivery/handoffs/I1-ENG-004/01-claim.md"
     reviews:
-      planner: "NOT_STARTED"
+      planner: "IN_PROGRESS"
       tester: "NOT_STARTED"
       generalReviewer: "NOT_STARTED"
       contractReviewer: "NOT_REQUIRED"
@@ -784,8 +783,8 @@ summary:
 
 counts:
     BACKLOG: 0
-    READY: 1
-    CLAIMED: 0
+    READY: 0
+    CLAIMED: 1
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
