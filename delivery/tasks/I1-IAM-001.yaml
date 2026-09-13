@@ -1,0 +1,491 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-IAM-001"
+  title: "S1-04 slice 1 — Keycloak realm/client bootstrap, BFF opaque session (login/logout), CSRF, and session contract operations (SEC-P01/SEC-P02)"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-04"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L3"
+  owner: "Identity/BFF Engineering, Security Review, Project Owner"
+  createdAt: "2026-09-13"
+  baselineCommit: null
+
+objective: >
+  Deliver the first slice of S1-04 driver authentication (GOV-007 §3):
+  (1) deterministic Keycloak `ev-local` realm/client bootstrap as a
+  version-controlled realm import consumed by the existing compose
+  `--import-realm` wiring (SEC-IMP-01: ev-bff confidential client with
+  Authorization Code + PKCE and private_key_jwt client authentication;
+  svc-* service clients declared; test users per SEC-001 §3; no shared
+  secrets in source); (2) BFF login/logout with opaque `__Host-evsession`
+  cookie, server-side session store in bff_session_db (encrypted OAuth
+  token material, session rotation, idle/absolute expiry, back-channel
+  logout handling) per SEC-P01; (3) server-side synchronizer CSRF
+  protection per SEC-P02 (GET /api/v1/session/csrf, X-CSRF-TOKEN on
+  mutations, Origin validation); (4) driver-bff contract extension for
+  session operations (GET /api/v1/session, GET /api/v1/session/csrf,
+  POST /api/v1/session/logout) with the SEC-001 §17 security problem
+  codes; (5) executable proof evidence for SEC-P01 and SEC-P02 required
+  tests. Token exchange (SEC-P03), service identity (SEC-P04) and the
+  Account Service profile/registration APIs are explicitly out of scope
+  (follow-up tasks I1-IAM-002/I1-IAM-003).
+
+nonGoals:
+  - "SEC-P03 target-audience token exchange and SEC-P04 service
+    private_key_jwt identity proofs (I1-IAM-002)."
+  - "Account Service registration, verification, recovery, profile/vehicle
+    APIs and account_db migrations (I1-IAM-003); the session store's
+    account binding this slice is the Keycloak subject only."
+  - "Angular login screen implementation (follow-up; this slice proves the
+    BFF endpoints with integration tests and a minimal browser-level test
+    client; web app changes limited to what SEC-P01 browser-storage tests
+    require)."
+  - "MFA/step-up proof (SEC-P07) and membership revocation (SEC-P06) —
+    privileged test users are created per SEC-001 §3 but MFA policy
+    enforcement is a later proof."
+  - "Rate limiting (SEC-P10), audit sealing (SEC-P11), secret rotation
+    proof (SEC-P09 beyond key-ring versioning design)."
+  - "GOV-001 register patches (DEC-SEC-26..33) and SEC-001 §20 document
+    updates — docs/** is prohibited here; recorded as a required owner
+    decision (see humanDecisions)."
+  - "keycloak_db wiring for Keycloak's own storage (compose comment defers
+    production-like KC_DB; dev-file H2 remains the local profile)."
+  - "Operator BFF / platform BFF session flows (driver BFF only)."
+  - "Production deployment, TLS termination, real email."
+
+useCases:
+  - "DR-07 (sign-in/sign-out/recovery — login/logout and session parts)"
+  - "DR-10 (session management — server-side session store and revocation
+    foundations)"
+
+authority:
+  governance:
+    - path: "docs/06_security_and_privacy/03_security_implementation_proof_plan_v1.0.md"
+      section: "§3 proof environment; §4 realm/client topology; §5 SEC-P01 (flow, cookie contract, session persistence, required tests); §6 SEC-P02 (CSRF model, mutation validation, OpenAPI changes, required tests); §17 security problem codes; §19 SEC-IMP-01..03"
+    - path: "docs/06_security_and_privacy/02_security_architecture_threat_model_v1.0.md"
+      section: "§6.1 confidential BFF profile; §6.2 authentication flow; §6.3 session cookie; §6.4 server-side session; §6.5 CSRF; §6.6 CORS"
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§3 S1-04 driver authentication"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "FR-IAM-01 (authentication/session portions delivered by this slice; registration/verification in I1-IAM-003), FR-IAM-03 (session-level authorization foundations)"
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/08_technology_selection_adr_set_v1.0.md"
+      section: "ADR-009 Identity Provider (Keycloak 26.6.x, capabilities, no extensions, pinned image+digest); §3 stack rows (Spring Cloud Gateway Server Web MVC 5.0.x, Spring Security OAuth2 Client)"
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "§4 bff_session_db; Driver BFF API required W1-S1 operations (GET /api/v1/session, POST /api/v1/session/logout) and response rules (opaque cookie, CSRF)"
+    - path: "docs/05_architecture/03_rest_api_contract_catalogue_v1.0.md"
+      section: "§10 authentication and actor context; §21 edge operations pattern; registration/verification remain IdP endpoints (line ~649)"
+    - path: "docs/02_use_cases/driver/03_dr_06_10_account_auth_vehicle_profile_v1.0.md"
+      section: "DR-07 sign-in/sign-out; DR-10 session management; security and acceptance rules (anti-enumeration, rate limits noted for later tasks)"
+  contracts:
+    - path: "contracts/openapi/driver-bff-api-v1.yaml"
+      section: "sessionCookie security scheme (components.securitySchemes); paths to be extended with session operations"
+    - path: "contracts/registries/problem-codes-v1.yaml"
+      section: "problem-code registry — add/normalize SEC-001 §17 codes (AUTHENTICATION_REQUIRED, SESSION_EXPIRED, CSRF_VALIDATION_FAILED, ORIGIN_NOT_ALLOWED, TOKEN_INVALID, ACCESS_DENIED, ACCOUNT_SUSPENDED)"
+
+invariants:
+  - "Browser JavaScript never receives OAuth tokens (AGENTS.md §4; ARC-007 §6.1)."
+  - "Current membership and resource ownership are not inferred solely from
+    token claims (session store binds Keycloak subject; eligibility
+    enforcement arrives with I1-IAM-003)."
+  - "Implicit flow and ROPC are prohibited (SEC-001 §5.1)."
+  - "No shared client secrets; private_key_jwt for the BFF client (SEC-001
+    §4.2); no secret material committed."
+  - "Arbitrary Java serialization of sessions is prohibited (SEC-001 §5.3)."
+  - "Every behavior change requires appropriate tests (AGENTS.md §10)."
+  - "Errors use approved Problem Details and the problem-code registry
+    (AGENTS.md §10)."
+
+ownership:
+  owningService: "BFF (apps/bff) + local identity infrastructure (infra/local/keycloak)"
+  dataOwner: "BFF session store (bff_session_db) — opaque sessions and encrypted OAuth material"
+  supportingServices:
+    - "Keycloak (identity provider, local compose service)"
+    - "apps/web (minimal: only what browser-storage proof tests require)"
+  prohibitedOwners:
+    - "Discovery/Station Operations/Booking databases and code (untouched)"
+
+affectedArtifacts:
+  services:
+    - "apps/bff (Spring Security OAuth2 Client + session store + CSRF +
+      session endpoints)"
+    - "apps/web (minimal login-flow wiring only if SEC-P01 browser tests
+      require; otherwise untouched)"
+  modules:
+    - "infra/local/keycloak/realms/ev-local-realm.json (new, version-controlled)"
+    - "apps/bff/pom.xml (add spring-boot-starter-oauth2-client,
+      spring-cloud-gateway-server-webmvc or spring-security deps as needed,
+      session-store persistence deps)"
+    - "apps/bff/src/main/resources/application.yml (OIDC client config)"
+    - "apps/bff/src/main/resources/db/migration/** (bff_session_db V1
+      migrations)"
+    - "apps/bff session/security Java packages (new)"
+  tables:
+    - "bff_session_db: bff_session (opaque reference, keycloak subject,
+      keycloak sid, encrypted token material, acr, authn time, creation,
+      last activity, idle expiry, absolute expiry, revocation state, key
+      ring id) + schema_version (Flyway)"
+  projections: []
+  migrations:
+    - "bff_session_db V1 (new, service-owned; L3 human approval required)"
+  apiOperations:
+    - "GET /api/v1/session (driver-bff contract + BFF implementation)"
+    - "GET /api/v1/session/csrf (contract + implementation)"
+    - "POST /api/v1/session/logout (contract + implementation)"
+    - "BFF login redirect + callback endpoints (BFF-owned, OIDC standard)"
+    - "Keycloak back-channel logout endpoint (BFF-owned)"
+  commands: []
+  events: []
+  schemas: []
+  registries:
+    - "contracts/registries/problem-codes-v1.yaml (add security codes)"
+    - "contracts/registries/traceability-v1.yaml (FR-IAM-01 row status only
+      if this slice completes it — likely remains PLANNED until
+      I1-IAM-003)"
+  screens: []
+  infrastructure:
+    - "infra/local/compose.yaml keycloak service: realm import volume
+      already wired; no compose changes expected (KC_DB dev-file retained)"
+
+dependencies:
+  tasks:
+    - "I1-ENG-001 (VERIFIED — compose core profile incl. Keycloak 26.6
+      pinned, bff_session_db provisioned)"
+    - "I1-ENG-004 (VERIFIED — frontend CI covers apps/bff and apps/web)"
+    - "I1-APP-001 (VERIFIED — BFF skeleton and web app exist)"
+  contracts:
+    - "contracts/openapi/driver-bff-api-v1.yaml (extension in scope)"
+    - "contracts/registries/problem-codes-v1.yaml (addition in scope)"
+  infrastructure:
+    - "Docker Compose core profile (Keycloak 8180, Mailpit, PostgreSQL)"
+    - "GitHub Actions Frontend Tests workflow (JDK 25, Node 24)"
+  humanDecisions:
+    - "Owner approval via planning-PR merge (L3: authentication/session
+      security, new migration, contract change)."
+    - "Owner decision recorded: SEC-001 §20 requires GOV-001 register
+      patches (DEC-SEC-26..33) and ARC-007/ARC-009 wording updates —
+      a separate owner-approved documentation task must follow this slice;
+      this task does not edit docs/**."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "infra/local/keycloak/realms/ev-local-realm.json"
+    - "infra/local/keycloak/realms/README.md"
+    - "apps/bff/pom.xml"
+    - "apps/bff/src/main/resources/application.yml"
+    - "apps/bff/src/main/resources/db/migration/**"
+    - "apps/bff/src/main/java/com/evplatform/bff/session/**"
+    - "apps/bff/src/main/java/com/evplatform/bff/security/**"
+    - "apps/bff/src/main/java/com/evplatform/bff/BffApplication.java"
+    - "apps/bff/src/test/java/**"
+    - "apps/web/src/** (ONLY if SEC-P01 browser-storage proof tests require
+      minimal wiring; any broader UI work is prohibited)"
+    - "contracts/openapi/driver-bff-api-v1.yaml"
+    - "contracts/openapi/examples/** (session operation examples)"
+    - "contracts/registries/problem-codes-v1.yaml"
+    - "contracts/registries/traceability-v1.yaml"
+    - "delivery/handoffs/I1-IAM-001/**"
+    - "delivery/evidence/I1-IAM-001/**"
+    - "delivery/deviations/I1-IAM-001/**"
+
+  prohibitedFiles:
+    - "docs/**"
+    - "services/**"
+    - "simulator/**"
+    - "libraries/** (use existing kernel libraries only; new kernel code is
+      a separate decision)"
+    - "infra/local/compose.yaml (realm volume already wired; changes need a
+      deviation record)"
+    - "infra/local/postgres/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "contracts/asyncapi/**"
+    - "contracts/schemas/**"
+    - "contracts/openapi/account-internal-api-v1.yaml"
+    - "contracts/openapi/booking-session-internal-api-v1.yaml"
+    - "contracts/openapi/discovery-insights-internal-api-v1.yaml"
+    - "contracts/openapi/public-discovery-api-v1.yaml"
+    - "contracts/openapi/operator-bff-api-v1.yaml"
+    - "contracts/openapi/platform-bff-api-v1.yaml"
+    - "apps/web/** (beyond the explicitly bounded browser-proof exception
+      in allowedFiles)"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+    - ".github/workflows/**"
+
+  maximumExpectedDiff: >
+    Large but bounded: one realm JSON (~200-400 lines), BFF pom + config +
+    one new migration + session/security packages (~800-1500 lines Java
+    incl. tests), contract extension (~100 lines), problem-code registry
+    additions (~30 lines), evidence files. No service code, no discovery
+    changes, no compose changes.
+
+  generatedFilesPolicy: >
+    Hand-authored realm JSON (version-controlled, no private keys — realm
+    import format holds client public keys/config only); BFF code
+    hand-written; contract hand-edited per ARC-013 API-first; generated
+    client output is not part of this slice.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      A version-controlled `ev-local` realm import exists under
+      infra/local/keycloak/realms/ and a fresh `docker compose up` (core
+      profile) imports it deterministically: realm ev-local; ev-bff client
+      (Authorization Code + PKCE S256, private_key_jwt client auth,
+      exact redirect URIs for the local BFF callback, implicit/ROPC
+      disabled); svc-* clients declared per SEC-001 §4.2; test users per
+      SEC-001 §3 (driver verified-active; suspended account; privileged
+      user marked MFA-capable); no secret material in the file.
+    authorityReferences:
+      - "SEC-001 §3, §4.1, §4.2; foundation doc §6.5; ADR-009"
+    evidenceRequired:
+      - "realm import file + fresh-bootstrap demonstration output"
+    testTypes: ["integration", "configuration"]
+
+  - id: "AC-02"
+    statement: >
+      BFF login works end-to-end locally: browser redirect to Keycloak
+      (Code + PKCE S256, state+nonce), callback validation, private_key_jwt
+      code exchange, tokens encrypted in the server-side session store
+      (bff_session_db), browser receives ONLY the __Host-evsession opaque
+      cookie (Secure, HttpOnly, Path=/, no Domain, SameSite=Lax), session
+      ID rotates after authentication.
+    authorityReferences:
+      - "SEC-001 §5.1 flow steps 1-7; §5.2 cookie contract; §5.3 persistence"
+    evidenceRequired:
+      - "integration test evidence + cookie attribute assertions"
+    testTypes: ["integration", "security"]
+
+  - id: "AC-03"
+    statement: >
+      SEC-P01 §5.4 required tests pass to the extent reachable without a
+      real browser harness: browser storage contains no OAuth token;
+      session ID changes after login; idle expiry works; absolute expiry
+      works; logout invalidates the BFF session; refresh after logout
+      fails; stolen old session ID fails after rotation; malformed
+      back-channel logout token is rejected; authenticated responses use
+      Cache-Control: no-store. Back-channel logout (valid token)
+      invalidates the mapped local session.
+    authorityReferences:
+      - "SEC-001 §5.4 required tests"
+    evidenceRequired:
+      - "test suite output mapping each required test to a result"
+    testTypes: ["integration", "security"]
+
+  - id: "AC-04"
+    statement: >
+      SEC-P02 CSRF protection: GET /api/v1/session/csrf issues a
+      session-bound synchronizer token; browser mutations without
+      X-CSRF-TOKEN fail 403 CSRF_VALIDATION_FAILED; token from another
+      session fails; stale token after rotation fails; hostile Origin
+      fails 403 ORIGIN_NOT_ALLOWED; safe methods exempt; login callback
+      relies on state/nonce/PKCE not CSRF.
+    authorityReferences:
+      - "SEC-001 §6.1-§6.4"
+    evidenceRequired:
+      - "test suite output mapping each §6.4 required test to a result"
+    testTypes: ["integration", "security"]
+
+  - id: "AC-05"
+    statement: >
+      driver-bff contract extended with GET /api/v1/session,
+      GET /api/v1/session/csrf, POST /api/v1/session/logout (session-cookie
+      security, x-release-wave W1, x-slice-applicability W1-S1, unique
+      operationIds), problem-code registry updated with the SEC-001 §17
+      codes this slice emits (AUTHENTICATION_REQUIRED, SESSION_EXPIRED,
+      CSRF_VALIDATION_FAILED, ORIGIN_NOT_ALLOWED, TOKEN_INVALID,
+      ACCESS_DENIED, ACCOUNT_SUSPENDED), examples validate, G3 contract
+      validation passes, compatibility checks pass.
+    authorityReferences:
+      - "SEC-001 §6.3; ARC-022 Driver BFF API; ARC-013 API-first; AGENTS.md
+        §10 contract synchronization rules"
+    evidenceRequired:
+      - "contract diff + G3 green + registry check output"
+    testTypes: ["contract"]
+
+  - id: "AC-06"
+    statement: >
+      bff_session_db V1 Flyway migration creates the session store per
+      SEC-001 §5.3 fields (no arbitrary Java serialization; encrypted
+      token material via authenticated encryption with a versioned key
+      ring; key material supplied via environment placeholder, never
+      committed); migration tested against real PostgreSQL via
+      Testcontainers; runtime role cannot DDL.
+    authorityReferences:
+      - "SEC-001 §5.3; ARC-022 §4; AGENTS.md §10 migration rules"
+    evidenceRequired:
+      - "migration file + Testcontainers test output"
+    testTypes: ["migration", "integration"]
+
+  - id: "AC-07"
+    statement: >
+      All new/changed BFF code passes the Frontend Tests CI workflow
+      (bff job) green on the PR; the web job remains green; secret scans
+      pass; no browser-storage OAuth token in any test fixture.
+    authorityReferences:
+      - "I1-ENG-004 workflow; AGENTS.md §11"
+    evidenceRequired:
+      - "workflow run reference (green) on the PR"
+    testTypes: ["ci"]
+
+tests:
+  focusedCommands:
+    - ".\\mvnw.cmd -pl apps/bff -am test \"-Dmaven.compiler.release=21\""
+    - "docker compose up keycloak (fresh volume) + realm import verification"
+    - "Push-Location apps/web; $env:CI='true'; npx ng test; Pop-Location (if web touched)"
+  requiredSuites:
+    - "BFF integration suite: SEC-P01 §5.4 + SEC-P02 §6.4 test mappings"
+    - "CI: Frontend Tests workflow green on the PR (web + bff jobs)"
+    - "G3 contract validation green"
+  positiveCases:
+    - "Full local login flow yields opaque cookie + server-side encrypted
+      session + rotated session ID."
+    - "CSRF-protected mutation with valid token succeeds."
+    - "Back-channel logout with valid token invalidates the local session."
+  negativeCases:
+    - "Mutation without/with-stale/with-foreign CSRF token fails 403."
+    - "Hostile Origin fails 403 ORIGIN_NOT_ALLOWED."
+    - "Malformed back-channel logout token rejected."
+    - "Refresh after logout fails; stolen pre-rotation session ID fails."
+    - "Implicit/ROPC grants disabled at the realm (negative client config)."
+  boundaryCases:
+    - "Idle expiry boundary (30 min) and absolute expiry boundary (8 h)
+      via clock control in tests."
+  concurrencyCases: []
+  securityCases:
+    - "All SEC-P01 §5.4 and SEC-P02 §6.4 test items executed and mapped."
+    - "Secret scan: no client secrets, private keys, or token material in
+      source, config, fixtures, logs, or evidence."
+  contractCases:
+    - "G3 validates the extended driver-bff contract + examples + registries."
+  migrationCases:
+    - "bff_session_db V1 on real PostgreSQL (Testcontainers), fresh +
+      repeatable; role separation preserved."
+  accessibilityCases: []
+
+persistence:
+  affected: true
+  classification: "NEW_SERVICE_OWNED_STORE"
+  notes: >
+    bff_session_db V1 only. No cross-service foreign keys. Encrypted OAuth
+    material at rest. L3 human approval required before editing.
+
+contracts:
+  affected: true
+  compatibilityClassification: "ADDITIVE"
+  requiredUpdates:
+    - "contracts/openapi/driver-bff-api-v1.yaml (session operations)"
+    - "contracts/registries/problem-codes-v1.yaml (security codes)"
+    - "contracts/openapi/examples/** (session examples)"
+    - "contracts/registries/traceability-v1.yaml (only if FR-IAM-01 row
+      status changes; expected to remain PLANNED)"
+  requiredExamples:
+    - "GET /api/v1/session 200 example; 401 AUTHENTICATION_REQUIRED example;
+      403 CSRF_VALIDATION_FAILED example; 403 ORIGIN_NOT_ALLOWED example"
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "Introduces the browser identity trust boundary (TB-02/TB-03):
+      mitigated by the confidential BFF profile, opaque cookie, PKCE,
+      private_key_jwt, encrypted server-side token storage, rotation,
+      CSRF, Origin allowlist, no browser tokens."
+    - "New personal-ish data in bff_session_db: keycloak subject + session
+      metadata (no profile data); encrypted token material; retention
+      follows session expiry — no unbounded retention."
+    - "Anti-enumeration rules apply to login error responses (generic
+      errors)."
+  dataClassifications:
+    - "Session reference (opaque); Keycloak subject; encrypted IdP tokens;
+      authentication context (acr, timestamps, revocation state)"
+  authorizationPolicies:
+    - "Session-scoped authentication only this slice; role/ownership
+      enforcement arrives with later slices; gateway-independent denial is
+      NOT claimed by this task"
+  rateLimitPolicies: []
+  auditRequirements:
+    - "Security-event metadata fields in the session store (login, logout,
+      rotation events) per SEC-001 §5.3; full audit trail is SEC-P11
+      scope"
+  prohibitedData:
+    - "No OAuth token material in browser storage, logs, or evidence"
+    - "No production credentials or real user data anywhere"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: true
+  dataReviewer: true
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L3 — authentication/session security, migration, contract change)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-IAM-001/realm-bootstrap.md"
+    - "delivery/evidence/I1-IAM-001/sec-p01-session.md"
+    - "delivery/evidence/I1-IAM-001/sec-p02-csrf.md"
+  requiredCiChecks:
+    - "Frontend Tests workflow green on the PR (web + bff jobs)"
+    - "G3 contract validation green on the PR"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "Spring Boot 4.1.1 + Spring Security 7 OAuth2 Client supports the
+    SEC-P01 flow (private_key_jwt client auth, PKCE, back-channel logout);
+    Spring Cloud Gateway Server Web MVC 5.0.x is the approved BFF stack —
+    if a Boot 4.1.1 compatibility gap is found, stop and report instead of
+    substituting frameworks."
+  - "Keycloak 26.6 realm import supports private_key_jwt client config and
+    the required test users without custom providers (ADR-009 no-extension
+    rule)."
+  - "Local HTTP development: SEC-001 §5.2 permits an explicitly labelled
+    local convenience cookie profile; the __Host- contract is proven with
+    TLS-terminated local HTTPS (Caddy or equivalent may be introduced ONLY
+    if compose changes are approved via deviation; otherwise tests assert
+    attributes on the emitted cookie with a secure-flag-compatible test
+    setup)."
+  - "Back-channel logout route is BFF-owned and registered in the realm
+    client config."
+  - "Session lifetimes use the SEC-001 §5.2 W1 provisional values."
+
+openQuestions:
+  - id: OQ-IAM-1
+    question: >
+      Does the owner want local HTTPS termination added to the compose
+      core profile in this slice (required for the literal __Host- cookie
+      contract in a browser) or shall the cookie-contract proof use
+      test-emitted attribute assertions with local HTTPS deferred to the
+      UI slice?
+    state: "OPEN — owner decision requested in the planning PR"
+
+recordedDecisions:
+  - "S1-04 is split into I1-IAM-001 (this task: realm bootstrap + BFF
+    session + CSRF + contract session ops), I1-IAM-002 (SEC-P03 token
+    exchange + SEC-P04 service identity), I1-IAM-003 (Account Service
+    registration/profile/vehicles + UI screens). Split proposed by the
+    orchestrator per the SEC-001 §19 work-package dependency chain;
+    owner approval of this planning PR records the split."
+  - "Keycloak compose service already exists pinned to 26.6 by digest with
+    --import-realm wired to infra/local/keycloak/realms/ (I1-ENG-001);
+    this task populates the realm import (the directory README explicitly
+    reserves this for the identity task)."
+  - "SEC-001 §20 documentation patches (DEC-SEC-26..33 register entries,
+    ARC-007/ARC-009 wording) are deferred to an owner-approved docs task
+    after this slice lands."
