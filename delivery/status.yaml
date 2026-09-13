@@ -697,17 +697,16 @@ tasks:
       status: "NOT_STARTED"
       paths: []
   I1-APP-001:
-    state: "READY"
-    assignedAgent: null
-    claimedAt: null
+    state: "CLAIMED"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-13T02:00:00Z"
 
-    baselineCommit: null
-    branch: null
+    baselineCommit: "7389191d2799454b4ecebd56ded87bb07ae5e520"
+    branch: "task/i1-app-001-ui"
     candidateCommit: null
     pullRequest: null
 
-    blockers:
-      - "Owner packet approval pending (L2; planning-PR merge = approval precedent)"
+    blockers: []
 
     deviations: []
     unresolvedFindings: []
@@ -740,8 +739,8 @@ tasks:
 summary:
   counts:
     BACKLOG: 0
-    READY: 1
-    CLAIMED: 0
+    READY: 0
+    CLAIMED: 1
     BLOCKED: 0
     IMPLEMENTING: 0
     SELF_VERIFIED: 0
