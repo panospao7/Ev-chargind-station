@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-13T19:30:00Z"
+updatedAt: "2026-09-13T20:10:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -517,8 +517,8 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "PENDING_PR_RUN"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
@@ -559,8 +559,8 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "PENDING_PR_RUN"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
@@ -601,8 +601,8 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "PENDING_PR_RUN"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
@@ -642,8 +642,8 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "PENDING_PR_RUN"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
@@ -683,8 +683,8 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "PENDING_PR_RUN"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
@@ -724,8 +724,8 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "PENDING_PR_RUN"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
@@ -745,7 +745,7 @@ tasks:
     baselineCommit: "23a15fe9d0e57b6d9966de6a17ab1a2b9e2a6872"
     branch: "task/i1-eng-004-ci"
     candidateCommit: "ae72acce0e8e35545898daae3f05b2bc96bd9085"
-    pullRequest: null
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/42"
 
     blockers: []
 
@@ -764,8 +764,8 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "PENDING_PR_RUN"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 

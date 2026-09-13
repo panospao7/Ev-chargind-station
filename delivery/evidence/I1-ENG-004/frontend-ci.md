@@ -114,3 +114,19 @@ Suggested commit message: `I1-ENG-004: frontend CI workflow (web vitest+build+au
 - maplibre-gl 5→6 is a major upgrade. The adapter's used surface was verified API-by-API against the v6.9.0 typings and the full vitest suite plus production build pass, but browser-runtime behavior (WebGL rendering) is not exercised by unit tests; first real map interaction in a staging environment remains a normal follow-up check.
 - The CI workflow itself has not executed yet (requires push; orchestrator-owned). Post-push, the orchestrator should record the first green `Frontend Tests` run reference in this directory.
 - Untracked stray files (`scripts/dev/run-platform.ps1`, `Φόρτιση*.html`, `Φόρτιση*_files/`) exist in the worktree; they are NOT part of this task and were never staged.
+## 9. CI run reference (post-PR-open, closes MINOR-2)
+
+- PR: #42 (task/i1-eng-004-ci -> main), head dc212d3f
+- Run: Frontend Tests, event pull_request, conclusion SUCCESS
+  https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598
+- Web job (vitest + prod build + dependency audit): SUCCESS — steps
+  Checkout, Setup Node, Install dependencies (npm ci), Unit tests
+  (CI=true npx ng test), Production build (budgets), Dependency audit gate
+  all success.
+- BFF job (Maven tests, JDK 25): SUCCESS — Set up JDK 25, Run BFF suite
+  success.
+- This is the workflow's first execution (AC-01..04 run reference).
+- Section 7 correction (reviewer NOTE-2): the coder's changes were staged
+  and committed by the orchestrator as ae72acce after the pre-commit gate;
+  the "left unstaged" state was only the interim state at evidence-writing
+  time.
