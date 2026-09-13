@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-13T20:10:00Z"
+updatedAt: "2026-09-13T20:40:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -519,7 +519,7 @@ tasks:
     ci:
       status: "GREEN_ON_PR"
       candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
-      mergeRunReference: null
+      mergeRunReference: "candidate run; no separate merge-run workflow covers delivery-only closeout commits"
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
@@ -561,7 +561,7 @@ tasks:
     ci:
       status: "GREEN_ON_PR"
       candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
-      mergeRunReference: null
+      mergeRunReference: "candidate run; no separate merge-run workflow covers delivery-only closeout commits"
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
@@ -603,7 +603,7 @@ tasks:
     ci:
       status: "GREEN_ON_PR"
       candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
-      mergeRunReference: null
+      mergeRunReference: "candidate run; no separate merge-run workflow covers delivery-only closeout commits"
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
@@ -644,7 +644,7 @@ tasks:
     ci:
       status: "GREEN_ON_PR"
       candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
-      mergeRunReference: null
+      mergeRunReference: "candidate run; no separate merge-run workflow covers delivery-only closeout commits"
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
@@ -685,7 +685,7 @@ tasks:
     ci:
       status: "GREEN_ON_PR"
       candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
-      mergeRunReference: null
+      mergeRunReference: "candidate run; no separate merge-run workflow covers delivery-only closeout commits"
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
@@ -726,7 +726,7 @@ tasks:
     ci:
       status: "GREEN_ON_PR"
       candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
-      mergeRunReference: null
+      mergeRunReference: "candidate run; no separate merge-run workflow covers delivery-only closeout commits"
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
@@ -738,13 +738,14 @@ tasks:
       status: "NOT_STARTED"
       paths: []
   I1-ENG-004:
-    state: "SELF_VERIFIED"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-13T18:00:00Z"
 
     baselineCommit: "23a15fe9d0e57b6d9966de6a17ab1a2b9e2a6872"
     branch: "task/i1-eng-004-ci"
     candidateCommit: "ae72acce0e8e35545898daae3f05b2bc96bd9085"
+    mergeCommit: "8d9c2f0b55e5a28d437cc7c82d363c2129edc1ea"
     pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/42"
 
     blockers: []
@@ -752,8 +753,8 @@ tasks:
     deviations: []
     unresolvedFindings: []
 
-    handoffSequence: 2
-    latestHandoff: "delivery/handoffs/I1-ENG-004/02-orchestrator.md"
+    handoffSequence: 3
+    latestHandoff: "delivery/handoffs/I1-ENG-004/03-closeout.md"
     reviews:
       planner: "COMPLETED"
       tester: "NOT_STARTED"
@@ -761,12 +762,12 @@ tasks:
       contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_REQUIRED"
       securityReviewer: "PASS_WITH_FINDINGS"
-      humanReview: "NOT_STARTED"
+      humanReview: "APPROVED (owner merge of PR #42, merge commit 8d9c2f0b)"
 
     ci:
       status: "GREEN_ON_PR"
       candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
-      mergeRunReference: null
+      mergeRunReference: "candidate run; no separate merge-run workflow covers delivery-only closeout commits"
       requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
@@ -778,7 +779,7 @@ tasks:
       status: "NOT_STARTED"
       paths: []
 summary:
-  activeTask: "I1-ENG-004"
+  activeTask: null
   nextRecommendedTask: "I1-ENG-004"
 
 counts:
@@ -787,13 +788,13 @@ counts:
     CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
-    SELF_VERIFIED: 1
+    SELF_VERIFIED: 0
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
     HUMAN_REVIEW: 0
     MERGED: 0
-    VERIFIED: 16
+    VERIFIED: 17
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
