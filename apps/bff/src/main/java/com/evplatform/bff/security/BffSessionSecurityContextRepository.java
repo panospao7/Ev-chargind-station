@@ -136,7 +136,8 @@ public class BffSessionSecurityContextRepository implements SecurityContextRepos
             super(AuthorityUtils.createAuthorityList("ROLE_AUTHENTICATED"));
             this.principal = new BffSessionPrincipal(
                     session.keycloakSubject(), session.keycloakSid(),
-                    session.acr(), session.authnTime(), session.sessionRef());
+                    session.acr(), session.authnTime(), session.sessionRef(),
+                    session.idleExpiresAt(), session.absoluteExpiresAt());
             setAuthenticated(true);
         }
 
@@ -155,10 +156,12 @@ public class BffSessionSecurityContextRepository implements SecurityContextRepos
         }
     }
 
-    /** Session principal: identity + assurance context, no token material. */
+    /** Session principal: identity + assurance + lifetime context, no token material. */
     public record BffSessionPrincipal(String subject, String sid, String acr,
                                       Instant authenticationTime,
-                                      String sessionRef)
+                                      String sessionRef,
+                                      Instant idleExpiresAt,
+                                      Instant absoluteExpiresAt)
             implements java.security.Principal, java.io.Serializable {
 
         @Override

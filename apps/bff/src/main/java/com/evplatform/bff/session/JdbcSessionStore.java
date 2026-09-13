@@ -195,7 +195,7 @@ public class JdbcSessionStore {
                      authn_time, created_at, last_activity_at,
                      idle_expires_at, absolute_expires_at, revocation_state,
                      security_event_metadata)
-                SELECT session_ref, keycloak_subject, keycloak_sid,
+                SELECT ?, keycloak_subject, keycloak_sid,
                        encrypted_token_material, token_encryption_key_id, acr,
                        authn_time, ?, ?,
                        ?, ?, 'ACTIVE',
@@ -203,6 +203,7 @@ public class JdbcSessionStore {
                 FROM bff_session.bff_session
                 WHERE session_ref = ?
                 """)
+                .param(newRef)
                 .param(Timestamp.from(now))
                 .param(Timestamp.from(now))
                 .param(Timestamp.from(idleExpiresAt))

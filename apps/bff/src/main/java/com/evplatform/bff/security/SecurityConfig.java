@@ -3,6 +3,7 @@ package com.evplatform.bff.security;
 import com.evplatform.bff.session.BffSession;
 import com.evplatform.bff.session.BffSessionProperties;
 import com.evplatform.bff.session.SessionLifecycleService;
+import com.nimbusds.jose.jwk.RSAKey;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +14,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -49,6 +51,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *       CSRF_VALIDATION_FAILED, ORIGIN_NOT_ALLOWED, ACCESS_DENIED).</li>
  * </ul>
  */
+/**
+ * {@code @Configuration} is declared explicitly: in Spring Security 7.1.1
+ * {@code @EnableWebSecurity} is no longer meta-annotated with
+ * {@code @Configuration}, so without it the {@code idpJwkSource}
+ * {@code JWKSource<SecurityContext>} bean is not registered and context
+ * load fails (I1-IAM-001 phase-2 blocker).
+ */
+@Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
@@ -171,26 +181,31 @@ public class SecurityConfig {
                     return;
                 }
             }
-            // Content-type check for mutations (documented mapping decision:
-            // disallowed type → CSRF_VALIDATION_FAILED).
-            if (isMutation(request) && !hasApprovedContentType(request)) {
-                reject(response, "CSRF_VALIDATION_FAILED",
-                        "Request content type is not approved for mutations.");
-                return;
-            }
-            chain.doFilter(request, response);
+        // Content-type check for mutations (documented mapping decision:
+        // disallowed type → CSRF_VALIDATION_FAILED). Form-urlencoded is
+        // additionally allowed: the OIDC Back-Channel Logout notification
+        // (SEC-P08) is a form POST from Keycloak on /api/internal/** — it
+        // is NOT a browser mutation and is validated by its signed
+        // logout_token instead (BackChannelLogoutController).
+        if (isMutation(request) && !hasApprovedContentType(request)) {
+            reject(response, "CSRF_VALIDATION_FAILED",
+                    "Request content type is not approved for mutations.");
+            return;
         }
+        chain.doFilter(request, response);
+    }
 
-        private static boolean hasApprovedContentType(HttpServletRequest request) {
-            String contentType = request.getContentType();
-            if (contentType == null) {
-                return false;
-            }
-            String base = contentType.split(";")[0].trim().toLowerCase();
-            return "application/json".equals(base)
-                    || "application/problem+json".equals(base)
-                    || base.startsWith("application/problem+json");
+    private static boolean hasApprovedContentType(HttpServletRequest request) {
+        String contentType = request.getContentType();
+        if (contentType == null) {
+            return false;
         }
+        String base = contentType.split(";")[0].trim().toLowerCase();
+        return "application/json".equals(base)
+                || "application/x-www-form-urlencoded".equals(base)
+                || "application/problem+json".equals(base)
+                || base.startsWith("application/problem+json");
+    }
 
         private static void reject(HttpServletResponse response, String code,
                                    String detail) throws IOException {
@@ -359,6 +374,63 @@ public class SecurityConfig {
     }
 
     // ------------------------------------------------------------------
+    // IdP JWKS source (back-channel logout token verification, SEC-P08)
+    // ------------------------------------------------------------------
+
+    /**
+     * Remote JWKS for the Keycloak realm, cached 300s with a 60s refresh
+     * window (task decision). Used by {@link BackChannelLogoutController}
+     * to verify RS256 logout-token signatures. The issuer URL comes from
+     * the configured provider property, matching the OIDC discovery value
+     * resolved by the OAuth2 client auto-configuration.
+     */
+    @org.springframework.context.annotation.Bean
+    public com.nimbusds.jose.jwk.source.JWKSource<com.nimbusds.jose.proc.SecurityContext>
+    idpJwkSource(
+            @org.springframework.beans.factory.annotation.Value(
+                    "${spring.security.oauth2.client.provider.keycloak.issuer-uri}")
+            String issuer) throws java.net.MalformedURLException {
+        var jwkSetUrl = new java.net.URL(
+                issuer + "/protocol/openid-connect/certs");
+        var cache = new com.nimbusds.jose.jwk.source.DefaultJWKSetCache(
+                300, 60, java.util.concurrent.TimeUnit.SECONDS);
+        return new com.nimbusds.jose.jwk.source.RemoteJWKSet<>(
+                jwkSetUrl,
+                new com.nimbusds.jose.util.DefaultResourceRetriever(2000, 2000),
+                cache);
+    }
+
+    // ------------------------------------------------------------------
+    // Token endpoint clients: private_key_jwt client authentication
+    // ------------------------------------------------------------------
+
+    /**
+     * Authorization-code token request client with private_key_jwt client
+     * authentication (SEC-001 §4.2/§5.1): the client assertion is signed
+     * with the ev-bff RSA key ({@link ClientKeyConfig#BFF_CLIENT_JWK_BEAN}).
+     * {@code setParametersConverter} composes with (does not replace) the
+     * default grant-parameter converter — verified in
+     * {@code AbstractRestClientOAuth2AccessTokenResponseClient} bytecode —
+     * so grant_type/code/redirect_uri are preserved alongside
+     * client_assertion. The converter itself returns {@code null} for
+     * non-jwt registrations (verified bytecode), which the parent treats as
+     * "no extra parameters".
+     */
+    @org.springframework.context.annotation.Bean
+    public org.springframework.security.oauth2.client.endpoint
+            .RestClientAuthorizationCodeTokenResponseClient
+    authorizationCodeTokenResponseClient(RSAKey bffClientJwk) {
+        var client = new org.springframework.security.oauth2.client.endpoint
+                .RestClientAuthorizationCodeTokenResponseClient();
+        client.setParametersConverter(
+                new org.springframework.security.oauth2.client.endpoint
+                        .NimbusJwtClientAuthenticationParametersConverter<>(
+                        registration -> "ev-bff".equals(registration.getClientId())
+                                ? bffClientJwk : null));
+        return client;
+    }
+
+    // ------------------------------------------------------------------
     // Filter chain
     // ------------------------------------------------------------------
 
@@ -372,7 +444,10 @@ public class SecurityConfig {
             BffLoginFailureHandler failureHandler,
             BffAuthenticationEntryPoint entryPoint,
             BffAccessDeniedHandler accessDeniedHandler,
-            ClientRegistrationRepository clientRegistrationRepository) throws Exception {
+            ClientRegistrationRepository clientRegistrationRepository,
+            org.springframework.security.oauth2.client.endpoint
+                    .RestClientAuthorizationCodeTokenResponseClient
+                    authorizationCodeTokenResponseClient) throws Exception {
 
         // PKCE S256 on the authorization-code request (SEC-P01 §5.1 step 2).
         // Spring Security 7 auto-enables PKCE for confidential clients when
@@ -402,10 +477,21 @@ public class SecurityConfig {
                                         .CsrfTokenRequestAttributeHandler())
                         .ignoringRequestMatchers(
                                 PathPatternRequestMatcher.withDefaults()
-                                        .matcher("/login/oauth2/code/*")))
-                .addFilterBefore(originFilter, CsrfFilter.class)                .oauth2Login(oauth2 -> oauth2
+                                        .matcher("/login/oauth2/code/*"),
+                                // OIDC Back-Channel Logout (SEC-P08): the
+                                // notification is authenticated by its signed
+                                // logout_token (RS256 against the IdP JWKS),
+                                // not by the browser CSRF synchronizer.
+                                PathPatternRequestMatcher.withDefaults()
+                                        .matcher(BackChannelLogoutController.BCL_PATH)))
+                .addFilterBefore(originFilter, CsrfFilter.class)
+                .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(ae -> ae
                                 .authorizationRequestResolver(pkceResolver))
+                        // private_key_jwt client authentication on the token
+                        // endpoint (SEC-001 §4.2/§5.1).
+                        .tokenEndpoint(te -> te.accessTokenResponseClient(
+                                authorizationCodeTokenResponseClient))
                         .successHandler(successHandler)
                         .failureHandler(failureHandler))
                 .exceptionHandling(ex -> ex
