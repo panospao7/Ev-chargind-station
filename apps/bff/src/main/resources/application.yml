@@ -2,6 +2,39 @@ spring:
   application:
     name: bff
 
+  # ---------------------------------------------------------------------------
+  # OIDC login (I1-IAM-001 / SEC-P01). Confidential BFF client: Authorization
+  # Code + PKCE S256 with private_key_jwt client authentication (SEC-001 §4.2,
+  # §5.1). The client signing key is supplied via environment
+  # (BFF_OAUTH_CLIENT_PRIVATE_KEY_PATH) — key material is NEVER committed.
+  # ---------------------------------------------------------------------------
+  security:
+    oauth2:
+      client:
+        registration:
+          ev-bff:
+            provider: keycloak
+            client-id: ev-bff
+            client-authentication-method: private_key_jwt
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/ev-bff"
+            scope: openid,profile
+        provider:
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER:http://127.0.0.1:8180/realms/ev-local}
+
+  # ---------------------------------------------------------------------------
+  # BFF session store (SEC-001 §5.3 / SEC-P01). bff_session_db is BFF-owned;
+  # the runtime role cannot DDL (migrations run via Flyway under the migrator
+  # role in deployment; local default is the documented dev-only password).
+  # ---------------------------------------------------------------------------
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:5432/bff_session_db
+    username: bff_session_runtime
+    # Env-supplied in real deployments; dev-only fallback mirrors
+    # infra/local/.env.example (PLATFORM_ROLE_PASSWORD).
+    password: ${BFF_RUNTIME_PASSWORD:evplatform_dev_only}
+
 server:
   port: ${SERVER_PORT:8081}
 
@@ -13,3 +46,34 @@ management:
     web:
       exposure:
         include: health,info
+
+# -----------------------------------------------------------------------------
+# BFF session + OAuth custom properties (I1-IAM-001).
+#
+# Values marked "env-supplied" MUST come from the developer/deployment
+# environment and are never committed: BFF_SESSION_KEY_V1 (token-encryption
+# key, versioned key ring v1) and BFF_OAUTH_CLIENT_PRIVATE_KEY_PATH (PEM path
+# for the ev-bff private_key_jwt signing key). Defaults here are EMPTY on
+# purpose: startup with missing key configuration must fail explicitly in
+# phase 2, not silently run without encryption.
+# -----------------------------------------------------------------------------
+bff:
+  session:
+    # SEC-001 §5.2 W1 provisional lifetimes.
+    idle-timeout: 30m
+    absolute-timeout: 8h
+    # Opaque session cookie (SEC-001 §5.2). __Host- prefix requires Secure +
+    # Path=/ + no Domain; local HTTP convenience profile is explicitly
+    # labelled (OQ-IAM-1: local HTTPS deferred to the UI slice).
+    cookie-name: __Host-evsession
+    allowed-origins:
+      - http://127.0.0.1:4200
+      - http://127.0.0.1:8081
+    encryption:
+      keys:
+        # Env-supplied (BFF_SESSION_KEY_V1); empty default, never committed.
+        v1: ${BFF_SESSION_KEY_V1:}
+  oauth:
+    # Env-supplied path to the ev-bff client signing key (PEM); empty default,
+    # never committed.
+    client-private-key-path: ${BFF_OAUTH_CLIENT_PRIVATE_KEY_PATH:}

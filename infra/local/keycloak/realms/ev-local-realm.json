@@ -1,0 +1,284 @@
+{
+  "realm": "ev-local",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "verifyEmail": true,
+  "clients": [
+    {
+      "id": "ev-bff",
+      "clientId": "ev-bff",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "clientAuthenticatorType": "client-jwt",
+      "redirectUris": [
+        "http://127.0.0.1:8081/login/oauth2/code/ev-bff"
+      ],
+      "webOrigins": [
+        "http://127.0.0.1:8081"
+      ],
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "roles"
+      ],
+      "attributes": {
+        "use.jwks.string": "true",
+        "jwks.string": "<PLACEHOLDER_JWKS_EV_BFF>",
+        "pkce.code.challenge.method": "S256",
+        "token.endpoint.auth.signing.alg": "RS256",
+        "backchannel.logout.url": "http://127.0.0.1:8081/api/internal/back-channel-logout",
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.revoke.offline.tokens": "false"
+      }
+    },
+    {
+      "id": "svc-account",
+      "clientId": "svc-account",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-jwt",
+      "attributes": {
+        "use.jwks.string": "true",
+        "jwks.string": "<PLACEHOLDER_JWKS_SVC_ACCOUNT>",
+        "token.endpoint.auth.signing.alg": "RS256"
+      }
+    },
+    {
+      "id": "svc-station-operations",
+      "clientId": "svc-station-operations",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-jwt",
+      "attributes": {
+        "use.jwks.string": "true",
+        "jwks.string": "<PLACEHOLDER_JWKS_SVC_STATION_OPERATIONS>",
+        "token.endpoint.auth.signing.alg": "RS256"
+      }
+    },
+    {
+      "id": "svc-booking-session",
+      "clientId": "svc-booking-session",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-jwt",
+      "attributes": {
+        "use.jwks.string": "true",
+        "jwks.string": "<PLACEHOLDER_JWKS_SVC_BOOKING_SESSION>",
+        "token.endpoint.auth.signing.alg": "RS256"
+      }
+    },
+    {
+      "id": "svc-device-integration",
+      "clientId": "svc-device-integration",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-jwt",
+      "attributes": {
+        "use.jwks.string": "true",
+        "jwks.string": "<PLACEHOLDER_JWKS_SVC_DEVICE_INTEGRATION>",
+        "token.endpoint.auth.signing.alg": "RS256"
+      }
+    },
+    {
+      "id": "svc-discovery-insights",
+      "clientId": "svc-discovery-insights",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-jwt",
+      "attributes": {
+        "use.jwks.string": "true",
+        "jwks.string": "<PLACEHOLDER_JWKS_SVC_DISCOVERY_INSIGHTS>",
+        "token.endpoint.auth.signing.alg": "RS256"
+      }
+    },
+    {
+      "id": "svc-notification",
+      "clientId": "svc-notification",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-jwt",
+      "attributes": {
+        "use.jwks.string": "true",
+        "jwks.string": "<PLACEHOLDER_JWKS_SVC_NOTIFICATION>",
+        "token.endpoint.auth.signing.alg": "RS256"
+      }
+    },
+    {
+      "id": "svc-governance-support",
+      "clientId": "svc-governance-support",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-jwt",
+      "attributes": {
+        "use.jwks.string": "true",
+        "jwks.string": "<PLACEHOLDER_JWKS_SVC_GOVERNANCE_SUPPORT>",
+        "token.endpoint.auth.signing.alg": "RS256"
+      }
+    },
+    {
+      "id": "security-test-client",
+      "clientId": "security-test-client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "evplatform_dev_only",
+      "attributes": {
+        "client_credentials.use_refresh_token": "false"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "driver-local",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "driver-local@evplatform.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "evplatform_dev_only",
+          "temporary": false
+        }
+      ],
+      "requiredActions": []
+    },
+    {
+      "username": "operator-owner-local",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "operator-owner-local@evplatform.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "evplatform_dev_only",
+          "temporary": false
+        }
+      ],
+      "requiredActions": [
+        "CONFIGURE_TOTP"
+      ]
+    },
+    {
+      "username": "operator-tech-local",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "operator-tech-local@evplatform.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "evplatform_dev_only",
+          "temporary": false
+        }
+      ],
+      "requiredActions": [
+        "CONFIGURE_TOTP"
+      ]
+    },
+    {
+      "username": "removed-operator-local",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "removed-operator-local@evplatform.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "evplatform_dev_only",
+          "temporary": false
+        }
+      ],
+      "requiredActions": []
+    },
+    {
+      "username": "platform-admin-local",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "platform-admin-local@evplatform.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "evplatform_dev_only",
+          "temporary": false
+        }
+      ],
+      "requiredActions": [
+        "CONFIGURE_TOTP"
+      ]
+    },
+    {
+      "username": "suspended-account-local",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "suspended-account-local@evplatform.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "evplatform_dev_only",
+          "temporary": false
+        }
+      ],
+      "requiredActions": []
+    },
+    {
+      "username": "security-reviewer-local",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "security-reviewer-local@evplatform.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "evplatform_dev_only",
+          "temporary": false
+        }
+      ],
+      "requiredActions": []
+    }
+  ]
+}

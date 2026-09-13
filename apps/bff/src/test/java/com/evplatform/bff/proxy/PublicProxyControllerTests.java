@@ -34,7 +34,15 @@ import org.springframework.web.context.WebApplicationContext;
  * 404 Problem Details passthrough, route allowlist, and header hygiene
  * (no Cookie/Authorization downstream).
  */
-@SpringBootTest(classes = BffApplication.class)
+@SpringBootTest(classes = BffApplication.class, properties = {
+        // I1-IAM-001: module now carries the JDBC/PostgreSQL session store
+        // and the OAuth2 client configuration; proxy tests are DB-free and
+        // IdP-free (OAuth2Client auto-configuration would eagerly resolve
+        // the Keycloak issuer at startup), the store is covered by dedicated
+        // Testcontainers integration tests and the login flow by dedicated
+        // session integration tests with a stubbed IdP.
+        "spring.autoconfigure.exclude=org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration,org.springframework.boot.security.oauth2.client.autoconfigure.OAuth2ClientAutoConfiguration"
+})
 class PublicProxyControllerTests {
 
     @Autowired
