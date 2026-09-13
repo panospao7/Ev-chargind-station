@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-13T18:00:00Z"
+updatedAt: "2026-09-13T19:30:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -517,10 +517,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
+      status: "PENDING_PR_RUN"
       candidateRunReference: null
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -559,10 +559,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
+      status: "PENDING_PR_RUN"
       candidateRunReference: null
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -601,10 +601,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
+      status: "PENDING_PR_RUN"
       candidateRunReference: null
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -642,10 +642,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
+      status: "PENDING_PR_RUN"
       candidateRunReference: null
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -683,10 +683,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
+      status: "PENDING_PR_RUN"
       candidateRunReference: null
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -724,10 +724,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
+      status: "PENDING_PR_RUN"
       candidateRunReference: null
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -738,13 +738,13 @@ tasks:
       status: "NOT_STARTED"
       paths: []
   I1-ENG-004:
-    state: "CLAIMED"
+    state: "SELF_VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-13T18:00:00Z"
 
     baselineCommit: "23a15fe9d0e57b6d9966de6a17ab1a2b9e2a6872"
     branch: "task/i1-eng-004-ci"
-    candidateCommit: null
+    candidateCommit: "ae72acce0e8e35545898daae3f05b2bc96bd9085"
     pullRequest: null
 
     blockers: []
@@ -752,22 +752,22 @@ tasks:
     deviations: []
     unresolvedFindings: []
 
-    handoffSequence: 1
-    latestHandoff: "delivery/handoffs/I1-ENG-004/01-claim.md"
+    handoffSequence: 2
+    latestHandoff: "delivery/handoffs/I1-ENG-004/02-orchestrator.md"
     reviews:
-      planner: "IN_PROGRESS"
+      planner: "COMPLETED"
       tester: "NOT_STARTED"
-      generalReviewer: "NOT_STARTED"
+      generalReviewer: "PASS_WITH_FINDINGS"
       contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_REQUIRED"
-      securityReviewer: "NOT_STARTED"
+      securityReviewer: "PASS_WITH_FINDINGS"
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
+      status: "PENDING_PR_RUN"
       candidateRunReference: null
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -784,10 +784,10 @@ summary:
 counts:
     BACKLOG: 0
     READY: 0
-    CLAIMED: 1
+    CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
-    SELF_VERIFIED: 0
+    SELF_VERIFIED: 1
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
