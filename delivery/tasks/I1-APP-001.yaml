@@ -1,0 +1,349 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-APP-001"
+  title: "Angular public discovery — PUB-01..03, locale routing, BFF public proxy, map/list with adapter (first UI slice)"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-19"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L2"
+  owner: "Frontend/UX Architect and Project Owner"
+  createdAt: "2026-09-13"
+  baselineCommit: null
+
+objective: >
+  Deliver the first user-visible UI: the public discovery screens of the
+  Angular SPA per ARC-023 (W1-S1 scope) — PUB-01 (/{locale} discovery entry),
+  PUB-02 (/{locale}/stations map/list search with URL-contract filters and
+  map/list mode), PUB-03 (/{locale}/stations/{stationRef} station details
+  with EVSEs/connectors/tariff/freshness) — against the live Discovery API
+  through the same-origin BFF public proxy (owner decision: ARC-FE-10
+  honored uniformly). Locale-prefixed routing /el (default) and /en with
+  Greek/English labels for all rendered strings. MapLibre GL JS rendering
+  behind the replaceable tile adapter (owner-approved dependency; provider
+  selection stays deferred per OQ-UI-03 — a free OSM tile source is
+  configured for local dev with attribution). Hand-written type-safe
+  adapters mirroring the public-discovery OpenAPI schemas (owner decision;
+  openapi-generator setup remains an EPIC-06 follow-up). Screen states per
+  ARC-023 §9.5 (loading skeletons, empty, map-failure fallback with list
+  retained, tile-provider unavailable panel, search unavailable + retry).
+  Accessibility baseline per ARC-023 §26/ARC-008: keyboard navigation,
+  focus order, axe checks on the three screens, list/map equivalence.
+
+origin: >
+  Owner decision 2026-09-13 (interactive session): Angular app selected as
+  the next slice after I1-DSC-002 (15 tasks verified); four implementation
+  decisions approved (maplibre-gl, BFF proxy, hand-written adapters,
+  PUB-01..03 scope).
+
+requirements:
+  - "FR-DIS-01 — public discovery browse/search through accessible map and
+    list views (this slice delivers the UI surface)."
+  - "FR-DIS-02 — station/EVSE/connector/tariff/freshness details display
+    (UI rendering of the I1-DSC-002 data)."
+
+useCases:
+  - "UC-DR-001 (browse/search stations) — the user-facing portion."
+
+authority:
+  governance:
+    - path: "docs/00_governance/07_w1_baseline_and_first_vertical_slice_v1.0.md"
+      section: "§3 S1-02 (map/list views, filters, details, freshness, GR/EN)"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "FR-DIS-01, FR-DIS-02"
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/07_frontend_ux_flow_specification_v1.0.md"
+      section: "§3 (SPA, standalone components, signals, strict TS), §4.1
+        (public shell), §5 (workspace structure), §6 (dependency rules),
+        §7 (BFF integration, relative paths, interceptors), §9 (locale
+        routing), §10 (prohibited browser storage)"
+    - path: "docs/05_architecture/17_w1_frontend_ux_implementation_contract_v1.0.md"
+      section: "§2 (approved W1 decisions: MapLibre, BFF-only, locales),
+        §6 (route/screen catalogue PUB-01..03), §9 (discovery screen
+        contract: search inputs, URL query contract, layouts, states),
+        §10 (station-detail contract), §26 (accessibility criteria),
+        §27 (work packages UX-005/006/007/011/012 portions)"
+    - path: "docs/05_architecture/08_technology_selection_adr_set_v1.0.md"
+      section: "§4 (Angular 21.2.x, Node 24, TS 5.9), §7 (BFF)"
+  contracts:
+    - path: "contracts/openapi/public-discovery-api-v1.yaml"
+      identifiers: ["listStations (connectorType, minPowerW, geo, limit),
+        getStationDetails"]
+
+invariants:
+  - "Browser authentication uses an opaque BFF session; browser JavaScript
+    receives no OAuth token (AGENTS.md §4) — public reads carry no session
+    requirement but must still go through the BFF origin (ARC-FE-10)."
+  - "Discovery projections contain no account/driver/vehicle identifiers —
+    the UI renders public fields only."
+  - "Components do not construct REST URLs manually (ARC-008 §6.8) — all
+    calls go through adapters using relative /api paths."
+  - "No OAuth tokens, session identifiers, or restricted data in browser
+    storage (ARC-008 §9 prohibited list)."
+  - "Search state lives in URL query parameters (ARC-FE-08)."
+  - "The map and list derive from the same result collection (ARC-023 §9.5)."
+  - "Map failure never blocks the list (ARC-023 §9.5)."
+
+ownership:
+  owningService: "apps/web (Angular SPA) + apps/bff (public proxy routes)"
+  dataOwner: "n/a (no new persistence)"
+  supportingServices:
+    - "discovery-insights-service (read-only consumer of its API)"
+  prohibitedOwners: []
+
+affectedArtifacts:
+  services:
+    - "apps/web (Angular: public shell, locale routing, discovery feature,
+      adapters, interceptors, localization)"
+    - "apps/bff (minimal same-origin proxy: /api/v1/stations/** → Discovery;
+      no auth, no session changes)"
+  modules:
+    - "apps/web/src/**"
+    - "apps/bff/src/**"
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations:
+    - "GET /api/v1/stations (via BFF proxy)"
+    - "GET /api/v1/stations/{stationRef} (via BFF proxy)"
+  commands: []
+  events: []
+  schemas: []
+  registries: []
+  screens:
+    - "PUB-01, PUB-02, PUB-03 (ARC-023 §6.2)"
+  infrastructure: []
+
+dependencies:
+  tasks:
+    - "I1-DSC-002 (VERIFIED — the API this UI consumes)"
+    - "I1-ENG-003 (VERIFIED — CI patterns; NOTE: service-tests.yml does NOT
+      cover apps/** — frontend CI is a follow-up, disclosed)"
+  contracts:
+    - "contracts/openapi/public-discovery-api-v1.yaml (adapter mirror source)"
+  infrastructure:
+    - "Node 24 (.nvmrc), npm; local dev proxy for BFF origin"
+  humanDecisions:
+    - "Owner approved maplibre-gl, BFF proxy, hand-written adapters,
+      PUB-01..03 scope (interactive session, 2026-09-13); L2 approval of
+      this packet via planning-PR merge."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "apps/web/**"
+    - "apps/bff/**"
+    - "delivery/handoffs/I1-APP-001/**"
+    - "delivery/evidence/I1-APP-001/**"
+    - "delivery/deviations/I1-APP-001/**"
+
+  prohibitedFiles:
+    - "contracts/**"
+    - "docs/**"
+    - "services/**"
+    - "simulator/**"
+    - "infra/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "package.json"
+    - "package-lock.json"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+    - ".github/workflows/**"
+
+  maximumExpectedDiff: >
+    Frontend feature slice: public shell + locale routing + 3 screens +
+    adapters + interceptors + i18n resources + map adapter + BFF proxy
+    routes + component tests. No backend service changes, no contract
+    changes, no registry changes.
+
+  generatedFilesPolicy: >
+    Hand-authored Angular sources; adapters hand-written to mirror the
+    OpenAPI schemas (typed, with a comment linking each interface to its
+    schema source).
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      PUB-01 and PUB-02 render the station list from listStations (via the
+      BFF proxy) with the ARC-023 §9.2 URL query contract (geo bounds,
+      connector, minimumPowerKw→minPowerW mapping, view=list|map) preserved
+      in the URL; filters restore on reload; invalid values are removed.
+    authorityReferences:
+      - "ARC-023 §6.2, §9.1, §9.2; ARC-FE-08"
+    evidenceRequired:
+      - "component tests; E2E-style navigation test"
+    testTypes: ["component", "integration"]
+
+  - id: "AC-02"
+    statement: >
+      PUB-02 provides explicit map/list mode; the map (MapLibre via the
+      adapter) and the list derive from the same result collection; map
+      initialization failure or tile-provider unavailability shows the
+      fallback panel while the list remains fully operational.
+    authorityReferences:
+      - "ARC-023 §9.3-9.5; ARC-FE-17"
+    evidenceRequired:
+      - "component tests incl. map-failure fallback"
+    testTypes: ["component", "negative"]
+
+  - id: "AC-03"
+    statement: >
+      PUB-03 renders station details from getStationDetails: name, address,
+      coordinates, EVSEs with connectors (type + power), tariff components
+      (display-ready from minor units), totalEvses, freshness timestamp;
+      unknown station → the not-found state (localized); loading skeleton;
+      error state with retry.
+    authorityReferences:
+      - "ARC-023 §6.2, §10; ARC-023 §9.5 states"
+    evidenceRequired:
+      - "component tests (loaded/empty/error paths)"
+    testTypes: ["component", "negative"]
+
+  - id: "AC-04"
+    statement: >
+      Locale routing: /el (default) and /en prefixes work; all rendered
+      strings are localized in Greek and English; page titles localized;
+      locale switch preserves the current route and query state.
+    authorityReferences:
+      - "ARC-008 §9; ARC-FE-15; ARC-023 §2"
+    evidenceRequired:
+      - "routing tests; i18n resource completeness check"
+    testTypes: ["component"]
+
+  - id: "AC-05"
+    statement: >
+      The BFF exposes same-origin public proxy routes for the two Discovery
+      operations (no auth required, no session changes, no token handling);
+      the browser never calls Discovery directly; the BFF adds correlation
+      headers and forwards Problem Details responses unchanged.
+    authorityReferences:
+      - "ARC-FE-10; ARC-008 §7; owner decision"
+    evidenceRequired:
+      - "BFF integration test (proxy + problem passthrough)"
+    testTypes: ["integration"]
+
+  - id: "AC-06"
+    statement: >
+      Accessibility baseline: the three screens pass automated axe checks
+      with zero critical violations; keyboard-only navigation reaches all
+      interactive elements in correct focus order; list/map equivalence
+      holds (every map result is reachable via the list).
+    authorityReferences:
+      - "ARC-023 §26; ARC-008 §12 (accessibility)"
+    evidenceRequired:
+      - "axe test output; keyboard test notes"
+    testTypes: ["accessibility", "component"]
+
+  - id: "AC-07"
+    statement: >
+      Browser storage invariants: no OAuth tokens, session identifiers, or
+      restricted data in any browser storage; search state only in the URL;
+      components never construct REST URLs manually (adapters only).
+    authorityReferences:
+      - "ARC-008 §9-10; ARC-FE-10/11"
+    evidenceRequired:
+      - "code review; grep evidence in the handoff"
+    testTypes: ["review"]
+
+tests:
+  focusedCommands:
+    - "npm test --prefix apps/web (vitest, headless)"
+    - "./mvnw -pl apps/bff -am test (or the repo's BFF test command)"
+  requiredSuites:
+    - "apps/web vitest suite green"
+    - "apps/bff tests green"
+    - "npm run contracts:verify (unchanged, sanity)"
+  positiveCases:
+    - "List renders fixture stations; details renders SEEDSTA0001 content; locale switch preserves state."
+  negativeCases:
+    - "Unknown station → localized not-found; API 500 → error state with retry; map failure → list retained."
+  boundaryCases:
+    - "Empty result set → empty state with widen-bounds suggestion."
+  concurrencyCases: []
+  securityCases:
+    - "No tokens/credentials in the app; BFF proxy adds no auth surface; secret scan green."
+  contractCases:
+    - "Adapter types mirror the OpenAPI schemas (comment-linked)."
+  migrationCases: []
+  accessibilityCases:
+    - "axe zero-critical on PUB-01/02/03; keyboard-only pass."
+
+persistence:
+  affected: false
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "New public proxy surface on the BFF (no auth, read-only, fixed route
+      allowlist; no token handling); browser app renders public data only."
+  dataClassifications:
+    - "Public station reference data only"
+  authorizationPolicies:
+    - "Public proxy routes require no authentication (by design, matching
+      the Discovery API's anonymous scheme)"
+  rateLimitPolicies:
+    - "Coarse rate limiting remains a deployment-stage BFF concern (noted)"
+  auditRequirements: []
+  prohibitedData:
+    - "OAuth tokens, session identifiers, account/driver/vehicle data in
+      browser storage or the UI"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: false
+  dataReviewer: false
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L2 — new public proxy surface)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-APP-001/public-discovery-ui.md"
+  requiredCiChecks:
+    - "NOTE: service-tests.yml does not cover apps/** — frontend CI is a
+      disclosed gap; local test evidence + review stand for this slice;
+      I1-ENG-004 (frontend CI workflow) is the follow-up"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "Tile source for local dev: free OSM raster tiles with attribution
+    (provider selection stays deferred per OQ-UI-03; the adapter interface
+    keeps it replaceable)."
+  - "The BFF proxy is minimal (two read routes + health); gateway/security
+    features arrive with EPIC-04 (S1-04 auth slice)."
+  - "E2E (Playwright) harness is NOT in this slice; component tests +
+    integration tests stand in (UX-012/E2E follow-up)."
+  - "MapLibre CSS/style loading follows the library's Angular integration
+    guidance; the map is a lazily-loaded feature to keep the initial bundle
+    lean."
+
+openQuestions: []
+
+recordedDecisions:
+  - "Owner approved maplibre-gl (ARC-023-approved renderer) behind the
+    replaceable tile adapter (2026-09-13)."
+  - "Owner approved the BFF public proxy (ARC-FE-10 honored uniformly;
+    public reads proxied same-origin) (2026-09-13)."
+  - "Owner approved hand-written type-safe adapters this slice;
+    openapi-generator setup remains an EPIC-06 follow-up (2026-09-13)."
+  - "Owner approved PUB-01..03 scope; PUB-04 (EVSE details) and PUB-05
+    (help) follow (2026-09-13)."
