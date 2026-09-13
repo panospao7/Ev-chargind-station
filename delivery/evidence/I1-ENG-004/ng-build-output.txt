@@ -1,0 +1,25 @@
+﻿[33mΓ¥»[39m Building...
+[32mΓ£ö[39m Building...
+[1mInitial chunk files[22m[2m | [22m[1mNames[22m                           [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-NYJUYEP6.js[39m  [2m | [22m[2m-[22m                               [2m | [22m[36m262.77 kB[39m[2m | [22m               [36m70.86 kB[39m
+[32mmain-MFFSOMFV.js[39m   [2m | [22m[2mmain[22m                            [2m | [22m  [36m5.19 kB[39m[2m | [22m                [36m1.88 kB[39m
+[32mstyles-UJW5KSIH.css[39m[2m | [22m[2mstyles[22m                          [2m | [22m  [36m1.83 kB[39m[2m | [22m              [36m631 bytes[39m
+[32mchunk-2NFLSA4Y.js[39m  [2m | [22m[2m-[22m                               [2m | [22m[36m449 bytes[39m[2m | [22m              [36m449 bytes[39m
+
+[1m [22m                  [2m | [22m[1mInitial total[22m                   [2m | [22m[1m270.25 kB[22m[2m | [22m               [1m73.81 kB[22m
+
+[1mLazy chunk files[22m   [2m | [22m[1mNames[22m                           [2m | [22m [1mRaw size[22m[2m | [22m[1mEstimated transfer size[22m
+[32mchunk-MLK7HNON.js[39m  [2m | [22m[2mmaplibre-gl[22m                     [2m | [22m  [36m1.06 MB[39m[2m | [22m              [36m234.42 kB[39m
+[32mmain-T7MXUYRD.css[39m  [2m | [22m[2m-[22m                               [2m | [22m [36m83.02 kB[39m[2m | [22m                [36m8.59 kB[39m
+[32mchunk-SCS66HXU.css[39m [2m | [22m[2m-[22m                               [2m | [22m [36m83.02 kB[39m[2m | [22m                [36m8.59 kB[39m
+[32mchunk-FX2CL2Q7.js[39m  [2m | [22m[2mpub-02-search-component[22m         [2m | [22m [36m11.61 kB[39m[2m | [22m                [36m3.76 kB[39m
+[32mchunk-XZCZDRDZ.js[39m  [2m | [22m[2mpub-03-station-details-component[22m[2m | [22m  [36m4.18 kB[39m[2m | [22m                [36m1.68 kB[39m
+[32mchunk-R5MZELS4.js[39m  [2m | [22m[2m-[22m                               [2m | [22m  [36m3.40 kB[39m[2m | [22m                [36m1.38 kB[39m
+[32mchunk-BVUSWJK4.js[39m  [2m | [22m[2m-[22m                               [2m | [22m  [36m2.98 kB[39m[2m | [22m                [36m1.19 kB[39m
+[32mchunk-DCLWLEPH.js[39m  [2m | [22m[2mpub-01-entry-component[22m          [2m | [22m  [36m1.61 kB[39m[2m | [22m              [36m749 bytes[39m
+
+Application bundle generation complete. [19.697 seconds] - 2026-09-13T14:23:03.410Z
+
+Output location: C:\Users\panos\Desktop\ev chargig app on steroids\apps\web\dist\web
+
+

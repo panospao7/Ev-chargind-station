@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-13T17:00:00Z"
+updatedAt: "2026-09-13T20:10:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -517,10 +517,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -559,10 +559,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -601,10 +601,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -642,10 +642,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -683,10 +683,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -724,10 +724,10 @@ tasks:
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -738,37 +738,36 @@ tasks:
       status: "NOT_STARTED"
       paths: []
   I1-ENG-004:
-    state: "READY"
-    assignedAgent: null
-    claimedAt: null
+    state: "SELF_VERIFIED"
+    assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
+    claimedAt: "2026-09-13T18:00:00Z"
 
-    baselineCommit: null
-    branch: null
-    candidateCommit: null
-    pullRequest: null
+    baselineCommit: "23a15fe9d0e57b6d9966de6a17ab1a2b9e2a6872"
+    branch: "task/i1-eng-004-ci"
+    candidateCommit: "ae72acce0e8e35545898daae3f05b2bc96bd9085"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/42"
 
-    blockers:
-      - "Owner packet approval pending (L2; planning-PR merge = approval precedent)"
+    blockers: []
 
     deviations: []
     unresolvedFindings: []
 
-    handoffSequence: 0
-    latestHandoff: null
+    handoffSequence: 2
+    latestHandoff: "delivery/handoffs/I1-ENG-004/02-orchestrator.md"
     reviews:
-      planner: "NOT_STARTED"
+      planner: "COMPLETED"
       tester: "NOT_STARTED"
-      generalReviewer: "NOT_STARTED"
+      generalReviewer: "PASS_WITH_FINDINGS"
       contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_REQUIRED"
-      securityReviewer: "NOT_STARTED"
+      securityReviewer: "PASS_WITH_FINDINGS"
       humanReview: "NOT_STARTED"
 
     ci:
-      status: "NOT_REQUIRED"
-      candidateRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "https://github.com/panospao7/Ev-chargind-station/actions/runs/34763965598"
       mergeRunReference: null
-      requiredChecks: []
+      requiredChecks: ["Frontend Tests workflow green on PR (web job incl. audit step, bff job)"]
 
     humanApproval:
       required: true
@@ -784,11 +783,11 @@ summary:
 
 counts:
     BACKLOG: 0
-    READY: 1
+    READY: 0
     CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
-    SELF_VERIFIED: 0
+    SELF_VERIFIED: 1
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0

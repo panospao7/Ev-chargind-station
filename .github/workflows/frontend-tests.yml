@@ -1,0 +1,82 @@
+name: Frontend Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "apps/bff/**"
+      - "libraries/**"
+      - "pom.xml"
+      - "mvnw"
+      - ".github/workflows/frontend-tests.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/web/**"
+      - "apps/bff/**"
+      - "libraries/**"
+      - "pom.xml"
+      - "mvnw"
+      - ".github/workflows/frontend-tests.yml"
+
+# Least privilege: the gate only reads the repository. It publishes no
+# check runs, releases, or packages.
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  web:
+    name: Web (vitest + prod build + dependency audit)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: apps/web
+
+      - name: Unit tests
+        run: CI=true npx ng test
+        working-directory: apps/web
+
+      - name: Production build
+        run: npx ng build
+        working-directory: apps/web
+
+      - name: Dependency audit gate
+        run: npm audit --omit=dev --audit-level=high
+        working-directory: apps/web
+
+  bff:
+    name: BFF (Maven tests, JDK 25)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Run BFF suite
+        run: ./mvnw -pl apps/bff -am test
