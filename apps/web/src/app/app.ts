@@ -1,12 +1,12 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+import { PublicShellComponent } from './layout/public-shell/public-shell.component';
 
+/**
+ * Application host — delegates to the public shell (header + outlet).
+ */
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.css',
+  imports: [PublicShellComponent],
+  template: `<app-public-shell />`,
 })
-export class App {
-  protected readonly title = signal('web');
-}
+export class App {}

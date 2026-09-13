@@ -1,0 +1,128 @@
+<section class="search-screen">
+  <h1>{{ 'stations_title' | translate }}</h1>
+  <p class="muted">{{ 'stations_subtitle' | translate }}</p>
+
+  <div
+    class="filters"
+    role="group"
+    aria-label="{{ 'stations_title' | translate }}"
+  >
+    <div>
+      <label class="field-label" for="connector-filter">{{
+        'filter_connector' | translate
+      }}</label>
+      <select
+        id="connector-filter"
+        [value]="connector()"
+        (change)="onConnectorChange($event)"
+      >
+        @for (option of connectorOptions; track option) {
+          <option [value]="option" [selected]="option === connector()">
+            @switch (option) {
+              @case ('') {
+                {{ 'connector_any' | translate }}
+              }
+              @case ('CCS') {
+                {{ 'connector_ccs' | translate }}
+              }
+              @case ('TYPE2') {
+                {{ 'connector_type2' | translate }}
+              }
+            }
+          </option>
+        }
+      </select>
+    </div>
+
+    <div>
+      <label class="field-label" for="power-filter">{{
+        'filter_min_power' | translate
+      }}</label>
+      <select
+        id="power-filter"
+        [value]="minimumPowerKw()"
+        (change)="onPowerChange($event)"
+      >
+        @for (option of powerOptions; track option) {
+          <option [value]="option" [selected]="option === minimumPowerKw()">
+            @switch (option) {
+              @case ('') {
+                {{ 'min_power_any' | translate }}
+              }
+              @case (22) {
+                {{ 'min_power_22' | translate }}
+              }
+              @case (50) {
+                {{ 'min_power_50' | translate }}
+              }
+              @case (100) {
+                {{ 'min_power_100' | translate }}
+              }
+            }
+          </option>
+        }
+      </select>
+    </div>
+
+    <div
+      class="view-toggle"
+      role="group"
+      [attr.aria-label]="'view_list' | translate"
+    >
+      <button
+        type="button"
+        [class.primary]="view() === 'list'"
+        [attr.aria-pressed]="view() === 'list'"
+        (click)="onViewChange('list')"
+      >
+        {{ 'view_list' | translate }}
+      </button>
+      <button
+        type="button"
+        [class.primary]="view() === 'map'"
+        [attr.aria-pressed]="view() === 'map'"
+        (click)="onViewChange('map')"
+      >
+        {{ 'view_map' | translate }}
+      </button>
+    </div>
+  </div>
+
+  <p aria-live="polite" class="invalid-notice">
+    @if (invalidNotice()) {
+      {{ 'invalid_params_notice' | translate }}
+    }
+  </p>
+
+  @if (view() === 'map') {
+    <div class="map-area">
+      <app-discovery-map
+        [stations]="store.results()"
+        [bounds]="bounds()"
+        (boundsChange)="onMapBoundsChange($event)"
+      />
+      <button type="button" class="primary" (click)="searchThisArea()">
+        {{ 'search_this_area' | translate }}
+      </button>
+    </div>
+  }
+
+  <h2>{{ 'results_title' | translate }}</h2>
+  @switch (store.status()) {
+    @case ('idle') {
+      <app-skeleton-list />
+    }
+    @case ('loading') {
+      <app-skeleton-list />
+    }
+    @case ('empty') {
+      <app-empty-state />
+    }
+    @case ('error') {
+      <app-error-panel (retry)="retrySearch()" />
+    }
+    @case ('ready') {
+      <app-results-list [stations]="store.results()" />
+    }
+  }
+</section>

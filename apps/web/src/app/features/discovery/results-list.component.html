@@ -1,0 +1,26 @@
+<ul class="card-list" aria-label="{{ 'results_title' | translate }}">
+  @for (station of stations(); track station.ref) {
+    <li>
+      <a
+        class="card card-link"
+        [routerLink]="['/', localeService.current(), 'stations', station.ref]"
+        queryParamsHandling="preserve"
+        [attr.aria-label]="station.name"
+      >
+        <h3>{{ station.name }}</h3>
+        @if (station.address) {
+          <p class="muted">{{ station.address }}</p>
+        }
+        <p class="muted">
+          {{ station.latitude.toFixed(5) }}, {{ station.longitude.toFixed(5) }}
+        </p>
+        @if (station.totalEvses !== undefined) {
+          <p>
+            <span class="muted">{{ 'details_total_evses' | translate }}:</span>
+            {{ station.totalEvses }}
+          </p>
+        }
+      </a>
+    </li>
+  }
+</ul>

@@ -1,0 +1,27 @@
+.search-screen {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: end;
+}
+
+.view-toggle {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.invalid-notice {
+  min-height: 1.5rem;
+  color: var(--danger);
+  margin: 0;
+}
+
+.map-area {
+  display: grid;
+  gap: var(--space-3);
+}
