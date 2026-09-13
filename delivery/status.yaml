@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-12T22:30:00Z"
+updatedAt: "2026-09-13T17:00:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -737,10 +737,54 @@ tasks:
     evidence:
       status: "NOT_STARTED"
       paths: []
+  I1-ENG-004:
+    state: "READY"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    candidateCommit: null
+    pullRequest: null
+
+    blockers:
+      - "Owner packet approval pending (L2; planning-PR merge = approval precedent)"
+
+    deviations: []
+    unresolvedFindings: []
+
+    handoffSequence: 0
+    latestHandoff: null
+    reviews:
+      planner: "NOT_STARTED"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_REQUIRED"
+      dataReviewer: "NOT_REQUIRED"
+      securityReviewer: "NOT_STARTED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "L2 CI workflow + dependency upgrade (maplibre-gl CRITICAL GHSA-jrc7-96c5-q579 fix, ADR-016 5.24.x pin superseded); owner approval via planning-PR merge"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
 summary:
-  counts:
+  activeTask: "I1-ENG-004"
+  nextRecommendedTask: "I1-ENG-004"
+
+counts:
     BACKLOG: 0
-    READY: 0
+    READY: 1
     CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
@@ -756,6 +800,3 @@ summary:
     SPEC_CONFLICT: 0
     SUPERSEDED: 0
     CANCELLED: 0
-
-  activeTask: "I1-CON-004"
-  nextRecommendedTask: "I1-DSC-002"
