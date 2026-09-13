@@ -1,0 +1,114 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------------< com.evplatform:bff >-------------------------
+[INFO] Building bff 0.1.0-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.5.0:resources (default-resources) @ bff ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.15.0:compile (default-compile) @ bff ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.5.0:testResources (default-testResources) @ bff ---
+[INFO] skip non existing resourceDirectory C:\Users\panos\Desktop\ev chargig app on steroids\apps\bff\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.15.0:testCompile (default-testCompile) @ bff ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- surefire:3.5.6:test (default-test) @ bff ---
+[INFO] Using auto detected provider org.apache.maven.surefire.junitplatform.JUnitPlatformProvider
+[INFO] 
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running com.evplatform.bff.BffApplicationTests
+17:23:41.076 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.evplatform.bff.BffApplicationTests]: BffApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+17:23:41.247 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.evplatform.bff.BffApplication for test class com.evplatform.bff.BffApplicationTests
+17:23:41.399 [main] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [com.evplatform.bff.BffApplicationTests]: BffApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+17:23:41.400 [main] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration com.evplatform.bff.BffApplication for test class com.evplatform.bff.BffApplicationTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-09-13T17:23:41.986+03:00  INFO 31852 --- [bff] [           main] com.evplatform.bff.BffApplicationTests   : Starting BffApplicationTests using Java 21.0.1 with PID 31852 (started by panos in C:\Users\panos\Desktop\ev chargig app on steroids\apps\bff)
+2026-09-13T17:23:41.988+03:00  INFO 31852 --- [bff] [           main] com.evplatform.bff.BffApplicationTests   : No active profile set, falling back to 1 default profile: "default"
+2026-09-13T17:23:45.560+03:00  INFO 31852 --- [bff] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-09-13T17:23:45.646+03:00  INFO 31852 --- [bff] [           main] com.evplatform.bff.BffApplicationTests   : Started BffApplicationTests in 4.15 seconds (process running for 6.06)
+mvnw.cmd : Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future 
+releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: 
+https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+At line:1 char:8
++ $out = & .\mvnw.cmd -pl apps/bff -am test "-Dmaven.compiler.release=2 ...
++        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Mockito is curr...ockito.html#0.3:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+WARNING: A Java agent has been loaded dynamically 
+(C:\Users\panos\.m2\repository\net\bytebuddy\byte-buddy-agent\1.18.11\byte-buddy-agent-1.18.11.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+Java HotSpot(TM) 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap 
+classpath has been appended
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 6.055 s -- in com.evplatform.bff.BffApplicationTests
+[INFO] Running com.evplatform.bff.proxy.PublicProxyControllerTests
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-09-13T17:23:46.820+03:00  INFO 31852 --- [bff] [           main] c.e.b.proxy.PublicProxyControllerTests   : Starting PublicProxyControllerTests using Java 21.0.1 with PID 31852 (started by panos in C:\Users\panos\Desktop\ev chargig app on steroids\apps\bff)
+2026-09-13T17:23:46.820+03:00  INFO 31852 --- [bff] [           main] c.e.b.proxy.PublicProxyControllerTests   : No active profile set, falling back to 1 default profile: "default"
+2026-09-13T17:23:48.017+03:00  INFO 31852 --- [bff] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 2 endpoints beneath base path '/actuator'
+2026-09-13T17:23:48.071+03:00  INFO 31852 --- [bff] [           main] c.e.b.proxy.PublicProxyControllerTests   : Started PublicProxyControllerTests in 1.292 seconds (process running for 8.486)
+2026-09-13T17:23:48.143+03:00  INFO 31852 --- [bff] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-09-13T17:23:48.144+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-09-13T17:23:48.146+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-09-13T17:23:48.747+03:00  INFO 31852 --- [bff] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-09-13T17:23:48.748+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-09-13T17:23:48.749+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+2026-09-13T17:23:49.021+03:00  INFO 31852 --- [bff] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-09-13T17:23:49.021+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-09-13T17:23:49.024+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 3 ms
+2026-09-13T17:23:49.068+03:00  INFO 31852 --- [bff] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-09-13T17:23:49.069+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-09-13T17:23:49.071+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 2 ms
+2026-09-13T17:23:49.089+03:00  INFO 31852 --- [bff] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-09-13T17:23:49.090+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-09-13T17:23:49.093+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 3 ms
+2026-09-13T17:23:49.120+03:00  INFO 31852 --- [bff] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-09-13T17:23:49.120+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-09-13T17:23:49.122+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 2 ms
+2026-09-13T17:23:49.154+03:00  INFO 31852 --- [bff] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-09-13T17:23:49.155+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-09-13T17:23:49.158+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 3 ms
+2026-09-13T17:23:49.176+03:00  INFO 31852 --- [bff] [           main] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-09-13T17:23:49.176+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-09-13T17:23:49.178+03:00  INFO 31852 --- [bff] [           main] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 1 ms
+[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 2.451 s -- in com.evplatform.bff.proxy.PublicProxyControllerTests
+[INFO] 
+[INFO] Results:
+[INFO] 
+[INFO] Tests run: 9, Failures: 0, Errors: 0, Skipped: 0
+[INFO] 
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  14.152 s
+[INFO] Finished at: 2026-09-13T17:23:49+03:00
+[INFO] ------------------------------------------------------------------------
+

@@ -1,0 +1,14 @@
+﻿# npm audit report
+
+maplibre-gl  <=6.4.0
+Severity: critical
+MapLibre GL JS: XSS Sanitizer Bypass in DOM.sanitize() via Live NamedNodeMap Removal Skip - https://github.com/advisories/GHSA-jrc7-96c5-q579
+fix available via `npm audit fix --force`
+Will install maplibre-gl@6.9.0, which is a breaking change
+node_modules/maplibre-gl
+
+1 critical severity vulnerability
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
