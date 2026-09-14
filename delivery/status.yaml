@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-14T14:00:00Z"
+updatedAt: "2026-09-14T15:00:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -825,7 +825,7 @@ tasks:
         - "delivery/evidence/I1-IAM-001/sec-p02-csrf.md"
         - "delivery/evidence/I1-IAM-001/tester-verification.md"
   I1-IAM-002:
-    state: "CLAIMED"
+    state: "IMPLEMENTING"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-14T14:00:00Z"
 
@@ -842,7 +842,7 @@ tasks:
     handoffSequence: 1
     latestHandoff: "delivery/handoffs/I1-IAM-002/01-claim.md"
     reviews:
-      planner: "IN_PROGRESS"
+      planner: "COMPLETED"
       tester: "NOT_STARTED"
       generalReviewer: "NOT_STARTED"
       contractReviewer: "NOT_STARTED"
@@ -871,9 +871,9 @@ summary:
 counts:
     BACKLOG: 0
     READY: 0
-    CLAIMED: 1
+    CLAIMED: 0
     BLOCKED: 0
-    IMPLEMENTING: 0
+    IMPLEMENTING: 1
     SELF_VERIFIED: 0
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
