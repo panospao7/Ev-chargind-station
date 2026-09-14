@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-14T13:00:00Z"
+updatedAt: "2026-09-14T13:30:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -824,13 +824,54 @@ tasks:
         - "delivery/evidence/I1-IAM-001/sec-p01-session.md"
         - "delivery/evidence/I1-IAM-001/sec-p02-csrf.md"
         - "delivery/evidence/I1-IAM-001/tester-verification.md"
+  I1-IAM-002:
+    state: "READY"
+    assignedAgent: null
+    claimedAt: null
+
+    baselineCommit: null
+    branch: null
+    candidateCommit: null
+    pullRequest: null
+
+    blockers:
+      - "Owner packet approval pending (L3; planning-PR merge = approval precedent)"
+
+    deviations: []
+    unresolvedFindings: []
+
+    handoffSequence: 0
+    latestHandoff: null
+    reviews:
+      planner: "NOT_STARTED"
+      tester: "NOT_STARTED"
+      generalReviewer: "NOT_STARTED"
+      contractReviewer: "NOT_STARTED"
+      dataReviewer: "NOT_REQUIRED"
+      securityReviewer: "NOT_STARTED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "NOT_REQUIRED"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "L3 authentication architecture (token exchange + service identity + resource-server validation); owner approval via planning-PR merge"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "NOT_STARTED"
+      paths: []
 summary:
   activeTask: null
-  nextRecommendedTask: "I1-IAM-001"
+  nextRecommendedTask: "I1-IAM-002"
 
 counts:
     BACKLOG: 0
-    READY: 0
+    READY: 1
     CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
