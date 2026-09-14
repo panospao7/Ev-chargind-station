@@ -423,16 +423,41 @@ problemCodes:
       - POST /api/v1/session/logout
     releaseWave: W1
 
-  # TOKEN_INVALID is registered for future downstream validation use
-  # (I1-IAM-002); NOT currently emitted by the BFF. It is an internal
-  # registry entry with no public operation, so applicableOperations is
-  # empty per registry convention (see
+  # TOKEN_INVALID is emitted by the Discovery/STA resource-server
+  # validation (I1-IAM-002) for signature/issuer/expiry/type failures.
+  # It is an internal registry entry with no public operation, so
+  # applicableOperations is empty per registry convention (see
   # PRECONDITION_REQUIRED / SESSION_STATE_CONFLICT).
   - code: TOKEN_INVALID
     httpStatus: 401
     retryable: false
     title: Token invalid
     detailTemplate: "The presented credential is invalid."
+    parameters: []
+    applicableOperations: []
+    releaseWave: W1
+
+  # TOKEN_AUDIENCE_INVALID / INSUFFICIENT_SCOPE are emitted by the
+  # Discovery/STA resource-server validation (I1-IAM-002): a structurally
+  # valid token minted for another audience is rejected (SEC-001 §8.3
+  # audience-limited edge tokens), and an authenticated token lacking the
+  # service-specific scope is rejected (SEC-001 §8.4 analog). Both are
+  # internal registry entries with no public operation, so
+  # applicableOperations is empty per registry convention.
+  - code: TOKEN_AUDIENCE_INVALID
+    httpStatus: 401
+    retryable: false
+    title: Token audience invalid
+    detailTemplate: "The token audience does not match this service."
+    parameters: []
+    applicableOperations: []
+    releaseWave: W1
+
+  - code: INSUFFICIENT_SCOPE
+    httpStatus: 403
+    retryable: false
+    title: Insufficient scope
+    detailTemplate: "The token lacks a required scope for this operation."
     parameters: []
     applicableOperations: []
     releaseWave: W1

@@ -36,6 +36,13 @@ spring:
     # Migrations run through the delivery pipeline (migrator role), not at
     # application boot (mirrors station-operations-service).
     enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Keycloak realm JWKS (I1-IAM-002). Env-supplied in real
+          # deployments; the default points at the local compose realm.
+          jwk-set-uri: ${KEYCLOAK_JWKS_URI:http://127.0.0.1:8180/realms/ev-local/protocol/openid-connect/certs}
 
 # Top level, NOT under spring: — @Value("${discovery.consumer.*}") binds
 # against top-level configuration properties only (MSG-002 m4 lesson).
@@ -43,6 +50,31 @@ discovery:
   consumer:
     queue-name: ${DISC_CONSUMER_QUEUE:discovery.sta.domain}
     dlq-suffix: .dlq
+
+# ---------------------------------------------------------------------------
+# Internal-API resource-server validation (I1-IAM-002, SEC-001 §8.3).
+# Top level (NOT under spring:) so @Value binding works like discovery.*.
+# issuer: the Keycloak realm issuer every presented JWT must carry.
+# audience: this service's client id — tokens minted for another audience
+#   are rejected (SEC-001 §8.2 "tokens issued for one audience are rejected
+#   by another").
+# allowed-clients: the azp values this service accepts (the BFF after token
+#   exchange, and this service's own client for direct client-credentials
+#   calls). SEC-001 §9.1: every service has a unique client identity.
+# required-scope: the scope the internal discovery API demands
+#   (SEC-001 §8.4 analog — audience-limited service tokens carry a
+#   service-specific scope; recorded I1-IAM-002 decision).
+# ---------------------------------------------------------------------------
+app:
+  security:
+    issuer: ${KEYCLOAK_ISSUER:http://127.0.0.1:8180/realms/ev-local}
+    audience: ${DISC_TOKEN_AUDIENCE:svc-discovery-insights}
+    # Comma-separated scalar (NOT a YAML list): @Value("${app.security.allowed-clients}")
+    # binds the placeholder as a single string and Spring converts it to a
+    # List via the comma-splitting conversion service — a YAML list would
+    # produce indexed keys the placeholder resolver cannot see.
+    allowed-clients: ev-bff,svc-discovery-insights
+    required-scope: ${DISC_REQUIRED_SCOPE:discovery:insights:read}
 
 management:
   endpoints:
