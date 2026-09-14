@@ -394,6 +394,95 @@ problemCodes:
       - GET /api/v1/stations/{stationRef}
     releaseWave: W1
 
+  # ──────────────────────────────────────────────────────────────────────────
+  # Security Errors (SEC-001 §17; SEC-P01 §5.4 / SEC-P02 §6.2–6.4)
+  # Emitted by the Driver BFF security layer (I1-IAM-001).
+  # ──────────────────────────────────────────────────────────────────────────
+
+  - code: AUTHENTICATION_REQUIRED
+    httpStatus: 401
+    retryable: false
+    title: Authentication required
+    detailTemplate: "A valid authenticated session is required to access this resource."
+    parameters: []
+    applicableOperations:
+      - GET /api/v1/session
+      - GET /api/v1/session/csrf
+      - POST /api/v1/session/logout
+    releaseWave: W1
+
+  - code: SESSION_EXPIRED
+    httpStatus: 401
+    retryable: false
+    title: Session expired
+    detailTemplate: "The session has expired or was revoked. Sign in again."
+    parameters: []
+    applicableOperations:
+      - GET /api/v1/session
+      - GET /api/v1/session/csrf
+      - POST /api/v1/session/logout
+    releaseWave: W1
+
+  # TOKEN_INVALID is emitted on the OIDC Back-Channel Logout notification
+  # path (SEC-P08) — an internal IdP→BFF endpoint with no public operation,
+  # so applicableOperations is empty per registry convention (see
+  # PRECONDITION_REQUIRED / SESSION_STATE_CONFLICT).
+  - code: TOKEN_INVALID
+    httpStatus: 401
+    retryable: false
+    title: Token invalid
+    detailTemplate: "The presented credential is invalid."
+    parameters: []
+    applicableOperations: []
+    releaseWave: W1
+
+  - code: CSRF_VALIDATION_FAILED
+    httpStatus: 403
+    retryable: false
+    title: CSRF validation failed
+    detailTemplate: "The request failed CSRF validation."
+    parameters: []
+    applicableOperations:
+      - POST /api/v1/session/logout
+    releaseWave: W1
+
+  - code: ORIGIN_NOT_ALLOWED
+    httpStatus: 403
+    retryable: false
+    title: Origin not allowed
+    detailTemplate: "The request origin is not allowed."
+    parameters: []
+    applicableOperations:
+      - POST /api/v1/session/logout
+    releaseWave: W1
+
+  - code: ACCESS_DENIED
+    httpStatus: 403
+    retryable: false
+    title: Access denied
+    detailTemplate: "The authenticated identity is not allowed to perform this operation."
+    parameters: []
+    applicableOperations:
+      - GET /api/v1/session
+      - GET /api/v1/session/csrf
+      - POST /api/v1/session/logout
+    releaseWave: W1
+
+  # ACCOUNT_SUSPENDED emission arrives with I1-IAM-003 (account-state
+  # enforcement); registered here now so the BFF contract slice and the
+  # registry stay synchronized (SEC-001 §17).
+  - code: ACCOUNT_SUSPENDED
+    httpStatus: 403
+    retryable: false
+    title: Account suspended
+    detailTemplate: "The account is suspended and cannot perform this operation."
+    parameters: []
+    applicableOperations:
+      - GET /api/v1/session
+      - GET /api/v1/session/csrf
+      - POST /api/v1/session/logout
+    releaseWave: W1
+
 # =============================================================================
 # End of Problem Codes Registry
 # =============================================================================
