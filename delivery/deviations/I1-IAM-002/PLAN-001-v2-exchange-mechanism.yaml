@@ -100,3 +100,74 @@ residualRisk: >
   Until DA-1/DA-2 are closed empirically, the realm import may silently
   ignore the attribute or policy blocks. The Testcontainers harness
   (phase 3) must verify both round-trips before evidence is accepted.
+addendum_1:
+  date: "2026-09-14"
+  raisedBy: "coder agent (phase 3, empirical: Keycloak 26.6.0 StandardTokenExchangeProvider + TokenManager source + official V2 test realm)"
+  finding: >
+    V2 exchange builds the exchanged token under the requester's (ev-bff)
+    client session; TokenManager.restrictRequestedAudience only filters
+    (retainAll) and checkRequestedAudiences fails with invalid_request
+    "Requested audience not available" unless the target audience is
+    resolvable in ev-bff's client session. The svc-* self-audience mappers
+    (mechanism item 3) fire only on tokens issued TO svc-* clients and do
+    not make the audience reachable for exchange.
+  decision: >
+    Add the seven svc-* oidc-audience-mapper entries to ev-bff (audience
+    reachability on the requester — Keycloak's own V2 canonical pattern).
+    Subject-token audience surface widens; mitigation: subject tokens never
+    leave the BFF (AGENTS.md §4 invariant), exchanged tokens are filtered
+    to exactly one audience by restrictRequestedAudience + the N7
+    single-audience assertion. Alternative (roles-based scope mapping)
+    rejected: changes role semantics.
+  decidedBy: "Orchestrator within packet authority (bounded config amendment
+    to the approved mechanism; SEC-001 §7.1 'token for itself' + §7.2
+    exchanged-token rules unaffected); recorded for owner review at the L3
+    gate"
+  status: "DECIDED (pending owner ratification at merge)"
+
+addendum_2:
+  date: "2026-09-14"
+  raisedBy: "coder agent (final completion round, empirical: Keycloak 26.6.4
+    container startup + ROPC + ClientPublicKeyLoader behavior in the
+    Testcontainers harness)"
+  findings:
+    - id: "A2-1"
+      item: "downscope-assertion-grant-enforcer executor REQUIRES a configuration node"
+      observed: >
+        Keycloak 26.6.4 refuses to start the realm import with an executor
+        entry that lacks a "configuration" member: startup fails with
+        "configNode must be not null". The official docs specify no
+        configuration for this executor; an empty configuration object {}
+        satisfies the loader.
+      resolution: >
+        The executor entry in clientProfiles carries "configuration": {}.
+        Realm file infra/local/keycloak/realms/ev-local-realm.json amended
+        (already applied in phase 1); DA-2 round-trip confirms the profile
+        and policy import and are asserted by da1_da2_adminRoundTrip.
+    - id: "A2-2"
+      item: "ROPC on imported users requires firstName/lastName"
+      observed: >
+        The ROPC (direct access grant) token request for an imported user
+        without firstName/lastName fails profile resolution with
+        "Account is not fully set up" (VERIFY_PROFILE resolution rejects
+        the incomplete profile), so no subject token can be obtained for
+        the exchange tests.
+      resolution: >
+        All seven imported users carry firstName and lastName in the realm
+        JSON. ROPC for driver-local then succeeds (HTTP 200, aud=ev-bff
+        via the aud-ev-bff mapper, acr=1).
+    - id: "A2-3"
+      item: "imported jwks.string keys MUST carry use:sig + alg:RS256"
+      observed: >
+        ClientPublicKeyLoader filters client JWKS keys through
+        JWKSUtils.getKeyWrappersForUse(SIG): a JWK without the "use" field
+        is silently dropped, so client_assertion verification fails with
+        invalid_client "Unable to load public key — Requested kid …
+        Available kids: '[]'" even though the kid matches the imported
+        JWKS.
+      resolution: >
+        The harness's generated JWKS keys (ev-bff key and shared svc key)
+        carry keyUse(SIGNATURE) + algorithm(RS256). After the fix the
+        client_assertion authenticates and all 12 exchange integration
+        tests pass against the real container.
+  status: "DECIDED (empirical deviations recorded for owner review at the L3 gate)"

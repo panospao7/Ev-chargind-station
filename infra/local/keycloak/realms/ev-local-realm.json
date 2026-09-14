@@ -11,7 +11,8 @@
         "name": "ev-token-exchange-downscope",
         "executors": [
           {
-            "executor": "downscope-assertion-grant-enforcer"
+            "executor": "downscope-assertion-grant-enforcer",
+            "configuration": {}
           }
         ]
       }
@@ -57,6 +58,8 @@
         "http://127.0.0.1:8081"
       ],
       "defaultClientScopes": [
+        "basic",
+        "acr",
         "profile",
         "email",
         "roles"
@@ -70,7 +73,93 @@
         "backchannel.logout.session.required": "true",
         "backchannel.logout.revoke.offline.tokens": "false",
         "standard.token.exchange.enabled": "true"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-svc-account",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-account",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "aud-svc-station-operations",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-station-operations",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "aud-svc-booking-session",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-booking-session",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "aud-svc-device-integration",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-device-integration",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "aud-svc-discovery-insights",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-discovery-insights",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "aud-svc-notification",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-notification",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        },
+        {
+          "name": "aud-svc-governance-support",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-governance-support",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "id": "svc-account",
@@ -303,7 +392,21 @@
       "secret": "evplatform_dev_only",
       "attributes": {
         "client_credentials.use_refresh_token": "false"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-ev-bff",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "ev-bff",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "id": "rogue-exchange-client",
@@ -327,6 +430,8 @@
       "username": "driver-local",
       "enabled": true,
       "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "Driver",
       "email": "driver-local@evplatform.local",
       "credentials": [
         {
@@ -341,6 +446,8 @@
       "username": "operator-owner-local",
       "enabled": true,
       "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "OperatorOwner",
       "email": "operator-owner-local@evplatform.local",
       "credentials": [
         {
@@ -357,6 +464,8 @@
       "username": "operator-tech-local",
       "enabled": true,
       "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "OperatorTech",
       "email": "operator-tech-local@evplatform.local",
       "credentials": [
         {
@@ -373,6 +482,8 @@
       "username": "removed-operator-local",
       "enabled": true,
       "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "OperatorRemoved",
       "email": "removed-operator-local@evplatform.local",
       "credentials": [
         {
@@ -387,6 +498,8 @@
       "username": "platform-admin-local",
       "enabled": true,
       "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "PlatformAdmin",
       "email": "platform-admin-local@evplatform.local",
       "credentials": [
         {
@@ -403,6 +516,8 @@
       "username": "suspended-account-local",
       "enabled": true,
       "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "Suspended",
       "email": "suspended-account-local@evplatform.local",
       "credentials": [
         {
@@ -417,6 +532,8 @@
       "username": "security-reviewer-local",
       "enabled": true,
       "emailVerified": true,
+      "firstName": "Local",
+      "lastName": "SecurityReviewer",
       "email": "security-reviewer-local@evplatform.local",
       "credentials": [
         {
