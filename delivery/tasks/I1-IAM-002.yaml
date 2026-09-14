@@ -1,0 +1,411 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-IAM-002"
+  title: "S1-04 slice 2 — Standard Token Exchange (SEC-P03) and service private_key_jwt identity with resource-server validation (SEC-P04)"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-04"
+  releaseWave: "W1"
+  sliceApplicability: "W1-S1"
+  impactLevel: "L3"
+  owner: "Identity/BFF Engineering, Service Owners, Security Review, Project Owner"
+  createdAt: "2026-09-14"
+  baselineCommit: null
+
+objective: >
+  Deliver the second slice of S1-04: the BFF-to-service and
+  service-to-service identity layer. (1) SEC-P03 (SEC-IMP-04): the BFF
+  exchanges a user session token for an audience-limited downstream token
+  via Keycloak Standard Token Exchange V2 — one exchange per target
+  service, exchanged tokens cached only within the originating BFF session
+  until shortly before expiry, subject/acr/auth-time preserved, no
+  multi-audience or over-scoped tokens; all §7.3 negative proofs executed
+  (cross-service rejection, unsupported audience, scope escalation,
+  unauthorized client, expired subject token, revoked-session exchange
+  failure, no broad tokens, ID-token-as-API-token rejection). (2) SEC-P04
+  (SEC-IMP-05): each service gets a unique private_key_jwt client-credentials
+  identity (unique key pair, ≤60s assertion, unique jti, 5-minute access
+  tokens) and implements resource-server validation per §8.3 (signature,
+  algorithm allowlist, issuer, audience, expiry, nbf, token type, calling
+  client, required scope) in the two existing services' internal APIs
+  (Discovery & Insights internal API, Station Operations internal API).
+  Realm config for svc-* clients is finalized (real JWKS, service-account
+  roles/scopes, audience mappers, exchange permissions). This closes the
+  identity prerequisites for the S2 booking spine.
+
+nonGoals:
+  - "Delegated Action JWS profile (SEC-IMP-06) and authorization registry
+    (SEC-IMP-07) — later slices."
+  - "Account Service implementation (does not exist yet; its resource-server
+    validation lands with I1-IAM-003/S2 account work)."
+  - "Membership-revocation proof (SEC-IMP-08) and MFA/step-up (SEC-IMP-09)."
+  - "Key rotation proof (SEC-IMP-10) beyond the versioned key-ring design
+    already in place."
+  - "Rate limiting (SEC-IMP-11), audit sealing (SEC-IMP-12), security CI
+    gates (SEC-IMP-13) — separate work packages."
+  - "mTLS between services (transport layer is deployment-stage; message-
+    level bearer validation is in scope per the internal contracts)."
+  - "Frontend UI changes (no login screen yet — I1-IAM-003)."
+  - "GOV-001 register patches (DEC-SEC-26..33) — the owner-approved docs
+    task remains separate."
+  - "Booking/Session service (does not exist yet)."
+
+useCases:
+  - "Enabling infrastructure for S1-04/S2 authorization; no direct
+    use-case behavior."
+
+authority:
+  governance:
+    - path: "docs/06_security_and_privacy/03_security_implementation_proof_plan_v1.0.md"
+      section: "§7 SEC-P03 (Standard Token Exchange V2 flow, target-token rules, negative proofs); §8 SEC-P04 (service identity profile, assertion validation, resource-server validation); §19 SEC-IMP-04/05"
+    - path: "docs/06_security_and_privacy/02_security_architecture_threat_model_v1.0.md"
+      section: "§6.7-§6.9 (S2S identity, audience restriction, delegated actor context as applicable)"
+  requirements:
+    - path: "docs/01_scope_and_requirements/04_functional_requirements_and_traceability_v1.1.md"
+      section: "FR-IAM-03 (service-level authorization foundations)"
+  domain: []
+  architecture:
+    - path: "docs/05_architecture/03_rest_api_contract_catalogue_v1.0.md"
+      section: "§10 (authentication and actor context; BFF→service audience bearer tokens; internal APIs reject tokens lacking service audience); §21 edge-operations pattern"
+    - path: "docs/05_architecture/08_technology_selection_adr_set_v1.0.md"
+      section: "ADR-009 (Keycloak capabilities incl. Standard Token Exchange V2, no extensions); §3 stack rows (Spring Security OAuth2 Resource Server)"
+    - path: "docs/05_architecture/16_w1_persistence_and_contract_finalization_v1.0.md"
+      section: "internal API bearer-token security schemes (serviceToken) in discovery-insights-internal and account-internal contracts"
+  contracts:
+    - path: "contracts/openapi/discovery-insights-internal-api-v1.yaml"
+      section: "serviceToken bearer scheme (validation target)"
+    - path: "contracts/openapi/station-operations-internal-api-v1.yaml"
+      section: "serviceToken bearer scheme (validation target; verify current scheme declaration)"
+
+invariants:
+  - "Internal APIs reject public/user tokens lacking the service audience
+    (ARC-003)."
+  - "No shared service credentials; unique asymmetric key pair per service
+    (SEC-001 §8.1)."
+  - "Exchanged tokens are audience-limited; a broad multi-audience token is
+    never issued (SEC-001 §7.3)."
+  - "Exchanged tokens are cached only within the originating BFF session
+    and only until shortly before expiry (SEC-001 §7.2)."
+  - "A revoked BFF session cannot refresh or exchange (SEC-001 §7.3)."
+  - "Browser JavaScript never receives downstream service tokens (AGENTS.md
+    §4)."
+  - "No secret material committed; dev keys generated per documented
+    procedure (I1-IAM-001 convention)."
+
+ownership:
+  owningService: "BFF (exchange client + cache) + Discovery & Insights Service + Station Operations Service (resource-server validation) + Keycloak realm config"
+  dataOwner: "n/a (no new persistent data; exchanged-token cache is session-scoped)"
+  supportingServices:
+    - "Keycloak (exchange policies, client credentials)"
+  prohibitedOwners: []
+
+affectedArtifacts:
+  services:
+    - "apps/bff (token-exchange client, per-session exchanged-token cache,
+      downstream client auth)"
+    - "services/discovery-insights-service (Spring Resource Server
+      validation on internal API)"
+    - "services/station-operations-service (Spring Resource Server
+      validation on internal API)"
+  modules:
+    - "infra/local/keycloak/realms/ev-local-realm.json (svc-* client final
+      config: real JWKS references or placeholder→doc note, audience
+      mappers, exchange permission policies)"
+    - "apps/bff session/exchange Java packages (new)"
+    - "services/*/security or auth Java packages (new resource-server
+      config)"
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations:
+    - "Internal API operations now enforce bearer validation (no contract
+      path changes expected; security schemes already declared)"
+  commands: []
+  events: []
+  schemas: []
+  registries:
+    - "contracts/registries/problem-codes-v1.yaml (add TOKEN_AUDIENCE_INVALID
+      401, INSUFFICIENT_SCOPE 403, TOKEN_INVALID emission note update — per
+      SEC-001 §17 codes now actually emitted)"
+  screens: []
+  infrastructure:
+    - "Keycloak realm import update (exchange policies); no compose changes"
+
+dependencies:
+  tasks:
+    - "I1-IAM-001 (VERIFIED — session store with re-encryption, realm
+      bootstrap, private_key_jwt client wiring; the M-1 fix was the hard
+      prerequisite)"
+    - "I1-DSC-002 (VERIFIED — Discovery internal API exists)"
+    - "I1-CON-004 or equivalent (Station Operations internal API exists)"
+  contracts:
+    - "contracts/openapi/discovery-insights-internal-api-v1.yaml (validation
+      target)"
+    - "contracts/openapi/station-operations-internal-api-v1.yaml (validation
+      target)"
+  infrastructure:
+    - "Keycloak 26.6 (Standard Token Exchange V2 support verified in ADR-009
+      selection; verify policy requirements during implementation)"
+    - "Docker (Testcontainers Keycloak + PostgreSQL)"
+  humanDecisions:
+    - "Owner approval via planning-PR merge (L3: authentication
+      architecture, cross-service token flows)."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "infra/local/keycloak/realms/ev-local-realm.json"
+    - "infra/local/keycloak/realms/README.md"
+    - "apps/bff/src/main/java/com/evplatform/bff/session/**"
+    - "apps/bff/src/main/java/com/evplatform/bff/security/**"
+    - "apps/bff/src/main/java/com/evplatform/bff/exchange/**"
+    - "apps/bff/src/main/resources/application.yml"
+    - "apps/bff/pom.xml"
+    - "apps/bff/src/test/java/**"
+    - "services/discovery-insights-service/src/main/java/** (security/auth
+      packages only)"
+    - "services/discovery-insights-service/src/main/resources/application*.yml"
+    - "services/discovery-insights-service/pom.xml"
+    - "services/discovery-insights-service/src/test/java/**"
+    - "services/station-operations-service/src/main/java/** (security/auth
+      packages only)"
+    - "services/station-operations-service/src/main/resources/application*.yml"
+    - "services/station-operations-service/pom.xml"
+    - "services/station-operations-service/src/test/java/**"
+    - "contracts/registries/problem-codes-v1.yaml"
+    - "delivery/handoffs/I1-IAM-002/**"
+    - "delivery/evidence/I1-IAM-002/**"
+    - "delivery/deviations/I1-IAM-002/**"
+
+  prohibitedFiles:
+    - "docs/**"
+    - "simulator/**"
+    - "libraries/** (consume existing; new kernel code is a separate
+      decision)"
+    - "infra/local/compose.yaml"
+    - "infra/local/postgres/**"
+    - "scripts/**"
+    - "AGENTS.md"
+    - "contracts/openapi/** (internal API contracts already declare the
+      bearer schemes; no path/schema changes expected — if a contract
+      change proves necessary, STOP and request scope amendment)"
+    - "contracts/asyncapi/**"
+    - "contracts/schemas/**"
+    - "apps/web/**"
+    - "apps/bff/src/main/resources/db/migration/** (no new migrations; the
+      exchanged-token cache is session-scoped)"
+    - "delivery/status.yaml"
+    - "delivery/tasks/**"
+    - "delivery/backlog.yaml"
+    - "delivery/iterations/**"
+    - ".github/workflows/**"
+
+  maximumExpectedDiff: >
+    Bounded: realm JSON update (~100 lines), BFF exchange package (~400-600
+    lines incl. tests), resource-server validation in two services
+    (~200-400 lines each incl. tests), registry additions (~30 lines).
+
+  generatedFilesPolicy: >
+    Hand-authored; no generated output.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      The BFF exchanges a user session token for an audience-limited
+      downstream token via Keycloak Standard Token Exchange V2: exchange
+      per target service, response token carries the human subject, acr,
+      authentication time, exactly the intended target audience, BFF as
+      authorized party, approved scopes only, short expiry, token type;
+      no refresh material.
+    authorityReferences:
+      - "SEC-001 §7.1-§7.2"
+    evidenceRequired:
+      - "integration test evidence (Testcontainers Keycloak) with token
+        claim assertions (redacted)"
+    testTypes: ["integration", "security"]
+
+  - id: "AC-02"
+    statement: >
+      All SEC-001 §7.3 negative proofs pass: Account token rejected by
+      Booking-equivalent (audience isolation between the two existing
+      services), unsupported audience exchange fails, scope escalation
+      fails, exchange by an unauthorized client fails, expired subject
+      token fails, revoked BFF session cannot exchange, no broad
+      multi-audience token issued, ID Token rejected as API token.
+    authorityReferences:
+      - "SEC-001 §7.3"
+    evidenceRequired:
+      - "negative test matrix mapped to §7.3 items"
+    testTypes: ["integration", "security"]
+
+  - id: "AC-03"
+    statement: >
+      Exchanged tokens are cached only within the originating BFF session
+      (session-scoped, encrypted at rest with the session key ring, bound
+      to the session row) and only until shortly before expiry; a revoked
+      session's cache is unusable; the cache never persists beyond the
+      session row.
+    authorityReferences:
+      - "SEC-001 §7.2; AGENTS.md §4"
+    evidenceRequired:
+      - "cache lifecycle test evidence"
+    testTypes: ["integration"]
+
+  - id: "AC-04"
+    statement: >
+      Each existing service (Discovery & Insights, Station Operations)
+      validates internal-API bearer tokens per SEC-001 §8.3: signature,
+      allowlisted algorithm, issuer, audience (its own svc-* audience
+      only), expiry, nbf, token type, calling client, required scope;
+      public/user tokens lacking the service audience are rejected 401;
+      wrong-audience tokens from the other service are rejected 401.
+    authorityReferences:
+      - "SEC-001 §8.3; ARC-003 (internal APIs reject tokens lacking service
+        audience)"
+    evidenceRequired:
+      - "resource-server test evidence per service (positive + negative)"
+    testTypes: ["integration", "security"]
+
+  - id: "AC-05"
+    statement: >
+      Service identities: each service client uses Client Credentials with
+      private_key_jwt, unique key pair, ≤60s assertion, unique jti,
+      5-minute access tokens; realm config enforces the assertion
+      constraints of SEC-001 §8.2 (wrong audience/client, expired,
+      excessive lifetime, duplicate jti, unapproved algorithm, unknown
+      kid, invalid signature → rejection); no shared credentials.
+    authorityReferences:
+      - "SEC-001 §8.1-§8.2"
+    evidenceRequired:
+      - "client-credentials test evidence + realm config assertions"
+    testTypes: ["integration", "security"]
+
+  - id: "AC-06"
+    statement: >
+      The realm import finalizes svc-* clients: real JWKS references or
+      documented dev-key procedure, service-account roles, audience
+      mappers, token-exchange permissions (BFF may exchange for each svc-*
+      audience; other clients may not), consistent with SEC-001 §4.2.
+    authorityReferences:
+      - "SEC-001 §4.2, §7.1"
+    evidenceRequired:
+      - "realm config assertions via Admin REST (fresh import demo)"
+    testTypes: ["configuration", "integration"]
+
+  - id: "AC-07"
+    statement: >
+      Problem codes TOKEN_AUDIENCE_INVALID (401) and INSUFFICIENT_SCOPE
+      (403) are registered and emitted by the resource-server validation;
+      TOKEN_INVALID registry comment updated to reflect actual emission;
+      contracts:verify green; full CI green on the PR.
+    authorityReferences:
+      - "SEC-001 §17; AGENTS.md §10"
+    evidenceRequired:
+      - "registry diff + G3 green + CI run reference"
+    testTypes: ["contract", "ci"]
+
+tests:
+  focusedCommands:
+    - ".\\mvnw.cmd -pl apps/bff -am test \"-Dmaven.compiler.release=21\""
+    - ".\\mvnw.cmd -pl services/discovery-insights-service -am test \"-Dmaven.compiler.release=21\""
+    - ".\\mvnw.cmd -pl services/station-operations-service -am test \"-Dmaven.compiler.release=21\""
+    - "npm run contracts:verify"
+  requiredSuites:
+    - "BFF exchange suite (positive + §7.3 negative matrix)"
+    - "Resource-server suites per service (positive + negative)"
+    - "CI: Frontend Tests (bff job) + G3 green on the PR"
+  positiveCases:
+    - "Exchange for svc-station-operations yields an audience-limited token
+      with preserved subject/acr/auth-time."
+    - "Discovery internal API accepts a correctly-audience'd bearer token."
+  negativeCases:
+    - "All SEC-001 §7.3 items (9 negatives)."
+    - "Wrong-audience token rejected by each service; missing/insufficient
+      scope rejected; ID token rejected; user token rejected."
+  boundaryCases:
+    - "Token cached until shortly before expiry then re-exchanged."
+  concurrencyCases: []
+  securityCases:
+    - "Assertion constraints (jti uniqueness, lifetime cap, algorithm
+      allowlist) enforced by realm config and verified."
+    - "No secrets in source/evidence; dev keys per documented procedure."
+  contractCases:
+    - "Registry additions validate; G3 green."
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "Establishes the service identity trust boundary (TB-04/TB-05):
+      audience isolation between services, no shared credentials,
+      assertion replay protection (jti), short-lived tokens, scope
+      minimization. Closes the 'internal APIs accept anything' gap that
+      currently exists."
+  dataClassifications: []
+  authorizationPolicies:
+    - "Per-service audience + required-scope checks at each resource server"
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData:
+    - "No token material in logs/evidence; no committed keys"
+
+reviews:
+  planner: true
+  tester: true
+  generalReviewer: true
+  contractReviewer: true
+  dataReviewer: false
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L3 — authentication architecture, cross-service token flows)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-IAM-002/token-exchange.md"
+    - "delivery/evidence/I1-IAM-002/service-identity.md"
+  requiredCiChecks:
+    - "Frontend Tests (bff job) green on the PR"
+    - "G3 Contract Validation green on the PR"
+  requiredCommitSha: true
+  requiredRunReference: true
+
+assumptions:
+  - "Keycloak 26.6 supports Standard Token Exchange V2 with realm-level
+    exchange policies configurable via realm import (admin console
+    policy objects); if import cannot express the required exchange
+    permission model deterministically, STOP and report (same rule as
+    I1-IAM-001)."
+  - "Spring Security OAuth2 Resource Server supports the §8.3 validation
+    set with NimbusJwtDecoder + issuer/audience/scope validators."
+  - "The exchanged-token cache rides the existing session row
+    (security_event_metadata jsonb or a new encrypted column via a NEW
+    migration if the packet's no-migration constraint conflicts with a
+    clean design — prefer jsonb metadata reuse; if a migration is truly
+    required, STOP and request scope amendment)."
+  - "Station Operations internal API contract exists (verify path during
+    planning; if the file name differs, adjust the authority reference)."
+
+openQuestions: []
+
+recordedDecisions:
+  - "I1-IAM-002 scope = SEC-IMP-04 + SEC-IMP-05 + resource-server
+    validation in the two existing services; Account Service validation
+    deferred to its implementation task (I1-IAM-003/S2). Split consistent
+    with the SEC-001 §19 dependency chain."
+  - "The M-1 re-encryption fix from I1-IAM-001 (sessionRef-bound AAD with
+    rotation re-encryption) is the prerequisite for decrypting session
+    token material for exchange — landed and verified."
