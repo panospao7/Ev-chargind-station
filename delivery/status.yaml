@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-13T22:10:00Z"
+updatedAt: "2026-09-14T12:00:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -779,7 +779,7 @@ tasks:
       status: "NOT_STARTED"
       paths: []
   I1-IAM-001:
-    state: "IMPLEMENTING"
+    state: "SELF_VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-13T21:40:00Z"
 
@@ -791,10 +791,12 @@ tasks:
     blockers: []
 
     deviations: []
-    unresolvedFindings: []
+    unresolvedFindings:
+      - "RESOLVED in fix round 2d5a762d: M-1 (re-encrypt on rotation, AAD binding proven both ways), M-2 (BCL aud check), M-3 (store-backed authorization requests, no JSESSIONID), F6 (cookie-name property-driven); security re-review PASS_NO_BLOCKERS"
+      - "Owner-disposition MINORs: N-1 pre-auth row residence (sweeper/rate-limit follow-up), sid-only BCL 0-rows, in-memory authorized-client duplication, retention purge, problem code member, x-release-wave normalization, detail-text alignment, compose parallel-stack ergonomics"
 
-    handoffSequence: 1
-    latestHandoff: "delivery/handoffs/I1-IAM-001/01-claim.md"
+    handoffSequence: 3
+    latestHandoff: "delivery/handoffs/I1-IAM-001/03-orchestrator-fixround.md"
     reviews:
       planner: "COMPLETED"
       tester: "NOT_STARTED"
@@ -827,8 +829,8 @@ counts:
     READY: 0
     CLAIMED: 0
     BLOCKED: 0
-    IMPLEMENTING: 1
-    SELF_VERIFIED: 0
+    IMPLEMENTING: 0
+    SELF_VERIFIED: 1
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0

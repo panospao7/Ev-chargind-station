@@ -72,3 +72,20 @@ Secure, HttpOnly, Path=/, absence of Domain, and SameSite=Lax.
 | test-support | 16 | PASS |
 
 No secrets or personal data in this evidence.
+## Fix round (security review M-1/M-2/M-3, 2026-09-14)
+
+Commit 2d5a762d on task/i1-iam-001-closeout resolves the three MAJOR findings:
+
+- M-1: rotateRef re-encrypts token material with the new sessionRef as AAD
+  (decrypt-after-rotation round-trip test added; AAD binding proven both
+  ways). The prior byte-identical-copy assertion was a codified defect and
+  was realigned.
+- M-2: back-channel logout now validates aud contains ev-bff (OIDC BCL
+  §2.6); wrong-audience negative test added.
+- M-3: StoreBackedAuthorizationRequestRepository replaces the servlet
+  session for authorization requests (pre-auth rows, state as ref, 10-min
+  TTL, single-use removal, no JSESSIONID); 6 repository tests added.
+- F6: cookie name now property-driven (constant removed).
+
+Suite after fixes: 66/66 bff (was 57) + 16/16 test-support, BUILD SUCCESS.
+contracts:verify 21/21 gates PASS.

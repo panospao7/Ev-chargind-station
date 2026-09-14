@@ -210,7 +210,7 @@ class SecP02CsrfTests {
     }
 
     private Cookie sessionCookie(String ref) {
-        return new Cookie(BffSessionSecurityContextRepository.COOKIE_NAME, ref);
+        return new Cookie("__Host-evsession", ref);
     }
 
     /** Fetches the session-bound CSRF token through the real endpoint. */

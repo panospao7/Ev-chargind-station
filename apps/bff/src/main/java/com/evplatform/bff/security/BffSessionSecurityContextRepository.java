@@ -1,6 +1,7 @@
 package com.evplatform.bff.security;
 
 import com.evplatform.bff.session.BffSession;
+import com.evplatform.bff.session.BffSessionProperties;
 import com.evplatform.bff.session.SessionLifecycleService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -49,25 +50,35 @@ public class BffSessionSecurityContextRepository implements SecurityContextRepos
     /** Value for {@link #SESSION_STATE_ATTR}: cookie present but invalid. */
     public static final String SESSION_STATE_EXPIRED = "expired";
 
-    /** The session cookie name (SEC-001 §2.2 / application.yml bff.session.cookie-name). */
-    public static final String COOKIE_NAME = "__Host-evsession";
-
     private final SessionLifecycleService lifecycle;
+    private final BffSessionProperties properties;
     private final Clock clock;
 
-    public BffSessionSecurityContextRepository(SessionLifecycleService lifecycle, Clock clock) {
+    public BffSessionSecurityContextRepository(SessionLifecycleService lifecycle,
+                                               BffSessionProperties properties,
+                                               Clock clock) {
         this.lifecycle = lifecycle;
+        this.properties = properties;
         this.clock = clock;
     }
 
+    /** The configured session cookie name (SEC-001 §5.2, bff.session.cookie-name). */
+    private String cookieName() {
+        return properties.session() != null
+                && properties.session().cookieName() != null
+                ? properties.session().cookieName()
+                : "__Host-evsession";
+    }
+
     /** Reads the opaque session reference from the request cookies, if any. */
-    public static Optional<String> sessionRef(HttpServletRequest request) {
+    public Optional<String> sessionRef(HttpServletRequest request) {
+        String cookieName = cookieName();
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
             return Optional.empty();
         }
         for (Cookie cookie : cookies) {
-            if (COOKIE_NAME.equals(cookie.getName())) {
+            if (cookieName.equals(cookie.getName())) {
                 return Optional.ofNullable(cookie.getValue());
             }
         }
@@ -115,9 +126,10 @@ public class BffSessionSecurityContextRepository implements SecurityContextRepos
 
     @Override
     public boolean containsContext(HttpServletRequest request) {
-        return sessionRef(request).isPresent()
+        Optional<String> ref = sessionRef(request);
+        return ref.isPresent()
                 && lifecycle.loadValidSession(
-                        sessionRef(request).get(), Instant.now(clock))
+                        ref.get(), Instant.now(clock))
                 instanceof SessionLifecycleService.Loaded.Valid;
     }
 
