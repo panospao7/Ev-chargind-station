@@ -453,6 +453,37 @@ class BackChannelLogoutTests {
     }
 
     // ------------------------------------------------------------------
+    // Item 9 — wrong audience (closeout M-2) → 400 + session still Valid
+    // ------------------------------------------------------------------
+
+    /**
+     * A logout token signed by the IdP but minted for a DIFFERENT audience
+     * must be rejected with 400 and must not revoke any session (OIDC BCL
+     * §2.4 aud check, closeout M-2). The existing valid-token tests use
+     * {@code audience("ev-bff")} and pass; this proves the aud gate itself.
+     */
+    @Test
+    @Order(9)
+    void item9_wrongAudienceIsRejectedWith400AndSessionStaysValid() throws Exception {
+        String ref = loginAs("subject-bcl-item9", "sid-bcl-item9");
+        RSAKey signingKey = stubIdpJwkSource();
+
+        JWTClaimsSet wrongAudClaims = new JWTClaimsSet.Builder(
+                baseLogoutClaims("subject-bcl-item9", "sid-bcl-item9"))
+                .audience("other-client")
+                .build();
+        SignedJWT wrongAud = sign(wrongAudClaims, signingKey);
+
+        MvcResult result = postLogoutToken(wrongAud.serialize());
+        assertThat(result.getResponse().getStatus()).isEqualTo(400);
+        // The rejected notification must not have revoked the session.
+        assertThat(lifecycle.loadValidSession(ref, mutableClock.instant()))
+                .isInstanceOf(SessionLifecycleService.Loaded.Valid.class);
+        assertThat(lifecycle.findActiveBySubjectAndSid(
+                "subject-bcl-item9", "sid-bcl-item9")).isPresent();
+    }
+
+    // ------------------------------------------------------------------
     // Logout-token construction helpers (same wall-clock note as SecP01:
     // Nimbus validates exp against the JVM clock, not the MutableClock)
     // ------------------------------------------------------------------

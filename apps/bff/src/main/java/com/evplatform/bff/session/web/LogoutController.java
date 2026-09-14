@@ -63,7 +63,7 @@ public class LogoutController {
         String cookieName = properties.session() != null
                 && properties.session().cookieName() != null
                 ? properties.session().cookieName()
-                : BffSessionSecurityContextRepository.COOKIE_NAME;
+                : "__Host-evsession";
         ResponseCookie cookie = ResponseCookie.from(cookieName, "")
                 .httpOnly(true)
                 .secure(true)

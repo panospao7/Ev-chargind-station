@@ -17,9 +17,13 @@ import org.springframework.transaction.annotation.Transactional;
  * no business logic beyond row mechanics — validity decisions belong to
  * {@link SessionLifecycleService}.
  *
- * <p>{@link #rotateRef(String, String, Instant)} is a single transaction:
- * the old row is marked REVOKED and the new row inserted atomically, so a
- * stolen pre-rotation reference can never resolve to an ACTIVE row.</p>
+ * <p>{@link #rotateRef(String, String, Instant, byte[], String)} is a single
+ * transaction: the old row is marked REVOKED and the new row inserted
+ * atomically, so a stolen pre-rotation reference can never resolve to an
+ * ACTIVE row. The new row carries the PASSED encrypted token material and
+ * key id (the lifecycle service re-encrypts under the NEW reference as AAD
+ * before calling this method) — the ciphertext is never copied between
+ * rows, because copying would break the AAD binding to the new reference.</p>
  */
 @Component
 public class JdbcSessionStore {
@@ -76,10 +80,49 @@ public class JdbcSessionStore {
                        security_event_metadata::text
                 FROM bff_session.bff_session
                 WHERE session_ref = ?
+                  AND keycloak_subject <> '__pre_auth__'
                 """)
                 .param(sessionRef)
                 .query((rs, i) -> mapRow(rs))
                 .optional();
+    }
+
+    /**
+     * Finds ANY row by its opaque reference, including pre-auth rows
+     * ({@code keycloak_subject = '__pre_auth__'}). Used ONLY by the
+     * store-backed authorization-request repository (SEC-001 §5.1): the
+     * security-context repository must never resolve a pre-auth row, which
+     * is why {@link #findByRef(String)} excludes the sentinel subject.
+     */
+    public Optional<BffSession> findPreAuthByRef(String sessionRef) {
+        return jdbc.sql("""
+                SELECT session_ref, keycloak_subject, keycloak_sid,
+                       encrypted_token_material, token_encryption_key_id, acr,
+                       authn_time, created_at, last_activity_at,
+                       idle_expires_at, absolute_expires_at, revocation_state,
+                       security_event_metadata::text
+                FROM bff_session.bff_session
+                WHERE session_ref = ?
+                """)
+                .param(sessionRef)
+                .query((rs, i) -> mapRow(rs))
+                .optional();
+    }
+
+    /**
+     * Deletes a pre-auth row by its opaque reference (the state value).
+     * The authorization request is single-use: the callback leg removes it.
+     *
+     * @return true when a row was deleted
+     */
+    public boolean deletePreAuthByRef(String sessionRef) {
+        return jdbc.sql("""
+                DELETE FROM bff_session.bff_session
+                WHERE session_ref = ?
+                  AND keycloak_subject = '__pre_auth__'
+                """)
+                .param(sessionRef)
+                .update() == 1;
     }
 
     /** Finds the ACTIVE session for a subject+sid pair (back-channel logout mapping). */
@@ -171,14 +214,20 @@ public class JdbcSessionStore {
      * Atomic rotation (SEC-P01 §5.1 step 10: session ID rotates after
      * authentication): the old reference is marked REVOKED and the new row
      * inserted in ONE transaction, so an observer can never see both
-     * references ACTIVE. The new row starts with an EMPTY
-     * {@code security_event_metadata}: the session-bound CSRF synchronizer
-     * token (SEC-P02 §6.1) must NOT carry over — a stale token from the
-     * pre-rotation session must fail after rotation ("token rotates after
-     * login and session rotation").
+     * references ACTIVE. The new row carries the PASSED
+     * {@code newEncryptedMaterial}/{@code newKeyId} — the caller re-encrypts
+     * the token material under the NEW reference as AAD before invoking this
+     * method, so the ciphertext is never copied between rows (a copied
+     * ciphertext would fail GCM authentication against the new reference's
+     * AAD binding and silently invalidate the session). The new row starts
+     * with an EMPTY {@code security_event_metadata}: the session-bound CSRF
+     * synchronizer token (SEC-P02 §6.1) must NOT carry over — a stale token
+     * from the pre-rotation session must fail after rotation ("token rotates
+     * after login and session rotation").
      */
     @Transactional
-    public void rotateRef(String oldRef, String newRef, Instant now) {
+    public void rotateRef(String oldRef, String newRef, Instant now,
+                          byte[] newEncryptedMaterial, String newKeyId) {
         int revoked = jdbc.sql("""
                 UPDATE bff_session.bff_session
                 SET revocation_state = 'REVOKED'
@@ -200,7 +249,7 @@ public class JdbcSessionStore {
                      idle_expires_at, absolute_expires_at, revocation_state,
                      security_event_metadata)
                 SELECT ?, keycloak_subject, keycloak_sid,
-                       encrypted_token_material, token_encryption_key_id, acr,
+                       ?, ?, acr,
                        authn_time, ?, ?,
                        ?, ?, 'ACTIVE',
                        '{}'::jsonb
@@ -208,6 +257,8 @@ public class JdbcSessionStore {
                 WHERE session_ref = ?
                 """)
                 .param(newRef)
+                .param(newEncryptedMaterial)
+                .param(newKeyId)
                 .param(Timestamp.from(now))
                 .param(Timestamp.from(now))
                 .param(Timestamp.from(idleExpiresAt))

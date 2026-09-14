@@ -256,7 +256,7 @@ class SecP01SessionTests {
     }
 
     private Cookie sessionCookie(String ref) {
-        return new Cookie(BffSessionSecurityContextRepository.COOKIE_NAME, ref);
+        return new Cookie("__Host-evsession", ref);
     }
 
     // ------------------------------------------------------------------
@@ -338,7 +338,7 @@ class SecP01SessionTests {
 
         String setCookie = response.getHeader("Set-Cookie");
         assertThat(setCookie).isNotNull();
-        assertThat(setCookie).startsWith(BffSessionSecurityContextRepository.COOKIE_NAME + "=");
+        assertThat(setCookie).startsWith("__Host-evsession=");
         assertThat(setCookie).contains("Secure");
         assertThat(setCookie).contains("HttpOnly");
         assertThat(setCookie).contains("Path=/");

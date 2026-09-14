@@ -42,7 +42,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
  *
  * <ul>
  *   <li>opaque {@code __Host-evsession} cookie backed by bff_session_db;</li>
- *   <li>Authorization Code + PKCE S256 login against Keycloak;</li>
+ *   <li>Authorization Code + PKCE S256 login against Keycloak, with the
+ *       authorization request persisted as an encrypted pre-auth row in
+ *       the session store (no JSESSIONID);</li>
  *   <li>session rotation + exact cookie contract on login success;</li>
  *   <li>session-bound synchronizer CSRF tokens;</li>
  *   <li>Origin/Referer allowlist for mutations on {@code /api/**};</li>
@@ -469,6 +471,7 @@ public class SecurityConfig {
             BffSessionSecurityContextRepository contextRepository,
             BffSessionCsrfTokenRepository csrfRepository,
             BffSessionProperties properties,
+            StoreBackedAuthorizationRequestRepository storeBackedAuthorizationRequestRepository,
             BffLoginSuccessHandler successHandler,
             BffLoginFailureHandler failureHandler,
             BffAuthenticationEntryPoint entryPoint,
@@ -516,7 +519,14 @@ public class SecurityConfig {
                 .addFilterBefore(originFilter, CsrfFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .authorizationEndpoint(ae -> ae
-                                .authorizationRequestResolver(pkceResolver))
+                                .authorizationRequestResolver(pkceResolver)
+                                // The authorization request is persisted as an
+                                // ENCRYPTED pre-auth row in bff_session_db keyed
+                                // by the state parameter (SEC-001 §5.1/§5.3,
+                                // closeout M-3) — no JSESSIONID is ever created
+                                // (SessionCreationPolicy.NEVER is preserved).
+                                .authorizationRequestRepository(
+                                        storeBackedAuthorizationRequestRepository))
                         // private_key_jwt client authentication on the token
                         // endpoint (SEC-001 §4.2/§5.1).
                         .tokenEndpoint(te -> te.accessTokenResponseClient(

@@ -423,9 +423,10 @@ problemCodes:
       - POST /api/v1/session/logout
     releaseWave: W1
 
-  # TOKEN_INVALID is emitted on the OIDC Back-Channel Logout notification
-  # path (SEC-P08) — an internal IdP→BFF endpoint with no public operation,
-  # so applicableOperations is empty per registry convention (see
+  # TOKEN_INVALID is registered for future downstream validation use
+  # (I1-IAM-002); NOT currently emitted by the BFF. It is an internal
+  # registry entry with no public operation, so applicableOperations is
+  # empty per registry convention (see
   # PRECONDITION_REQUIRED / SESSION_STATE_CONFLICT).
   - code: TOKEN_INVALID
     httpStatus: 401

@@ -8,9 +8,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.evplatform.libraries.testsupport.LocalDependencies;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import javax.sql.DataSource;
@@ -37,9 +39,14 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * Spring {@code @Transactional} proxy arranges in production.
  *
  * <p>Coverage: full-field round-trip, touch semantics (idle moves,
- * absolute never extends), atomic reference rotation, rotation of a
- * non-ACTIVE reference fails without side effects, single revocation,
- * subject+sid-scoped revocation, and ACTIVE-only lookup.</p>
+ * absolute never extends), atomic reference rotation with the PASSED
+ * (re-encrypted) ciphertext/key id, rotation of a non-ACTIVE reference
+ * fails without side effects, decrypt-after-rotation round-trip (new
+ * ciphertext authenticates against the NEW reference as AAD, old ciphertext
+ * no longer authenticates), single revocation, subject+sid-scoped
+ * revocation, ACTIVE-only lookup, and the pre-auth sentinel-subject
+ * filtering contract (findByRef excludes '__pre_auth__' rows;
+ * findPreAuthByRef/deletePreAuthByRef see them).</p>
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class JdbcSessionStoreTests {
@@ -53,8 +60,22 @@ class JdbcSessionStoreTests {
     private static final Instant T0 =
             Instant.parse("2026-09-13T12:00:00Z").truncatedTo(java.time.temporal.ChronoUnit.MICROS);
 
+    /**
+     * Base64-encoded 32-byte AES-256 TEST key for the rotation
+     * decrypt-after-rotation round-trip test (generated at class load; no
+     * key material committed — AGENTS.md §4).
+     */
+    private static final String TEST_KEY_B64;
+
+    static {
+        byte[] aesKey = new byte[32];
+        new SecureRandom().nextBytes(aesKey);
+        TEST_KEY_B64 = Base64.getEncoder().encodeToString(aesKey);
+    }
+
     private static PostgreSQLContainer pg;
     private static DataSource runtimeDataSource;
+    private static JdbcClient jdbcClient;
     private static JdbcSessionStore store;
     private static TransactionTemplate tx;
 
@@ -110,7 +131,7 @@ class JdbcSessionStoreTests {
                 + pg.getMappedPort(5432) + "/" + DB;
         runtimeDataSource = new SimpleDriverDataSource(
                 new org.postgresql.Driver(), url, RUNTIME, PW);
-        JdbcClient jdbcClient = JdbcClient.create(runtimeDataSource);
+        jdbcClient = JdbcClient.create(runtimeDataSource);
         store = new JdbcSessionStore(
                 jdbcClient,
                 java.time.Clock.systemUTC(),
@@ -181,8 +202,10 @@ class JdbcSessionStoreTests {
         BffSession original = activeSession(ref("rot"), "subject-rot", "sid-rot", T0);
         store.insert(original);
         String newRef = ref("rot-new");
+        byte[] reEncrypted = new byte[] {9, 9, 8, 8, 7};
 
-        tx.executeWithoutResult(status -> store.rotateRef(original.sessionRef(), newRef, T0));
+        tx.executeWithoutResult(status -> store.rotateRef(
+                original.sessionRef(), newRef, T0, reEncrypted, "v2"));
 
         Optional<BffSession> oldRow = store.findByRef(original.sessionRef());
         assertTrue(oldRow.isPresent(), "the old row must still exist (marked, not deleted)");
@@ -193,14 +216,25 @@ class JdbcSessionStoreTests {
         assertTrue(newRow.isPresent(), "the new row must exist after rotation");
         assertEquals(BffSession.RevocationState.ACTIVE, newRow.get().revocationState(),
                 "the new reference must be ACTIVE after rotation");
-        // identity and token material carry over; activity windows reset.
-        // The session-bound CSRF synchronizer token does NOT carry over
-        // (SEC-P02 §6.1: the token rotates with the session), so the new
-        // row starts with an empty metadata document.
+        // identity carries over; the PASSED ciphertext/keyId are stored
+        // (the lifecycle service re-encrypts under the new ref before
+        // calling rotateRef — the ciphertext is never copied between rows);
+        // activity windows reset. The session-bound CSRF synchronizer token
+        // does NOT carry over (SEC-P02 §6.1: the token rotates with the
+        // session), so the new row starts with an empty metadata document.
         assertEquals("subject-rot", newRow.get().keycloakSubject());
         assertEquals("sid-rot", newRow.get().keycloakSid());
-        assertArrayEquals(original.encryptedTokenMaterial(),
-                newRow.get().encryptedTokenMaterial());
+        assertArrayEquals(reEncrypted, newRow.get().encryptedTokenMaterial(),
+                "the new row must carry the PASSED re-encrypted material, "
+                        + "not a copy of the old ciphertext");
+        assertFalse(java.util.Arrays.equals(original.encryptedTokenMaterial(),
+                        newRow.get().encryptedTokenMaterial()),
+                "the stored ciphertext must CHANGE across rotation "
+                        + "(re-encryption under the new ref as AAD)");
+        assertEquals("v2", newRow.get().tokenEncryptionKeyId(),
+                "the new row must carry the PASSED key id");
+        assertEquals("urn:evplatform:acr:basic", newRow.get().acr(),
+                "acr must carry over from the old row");
         assertEquals(readJson("{}"), readJson(newRow.get().securityEventMetadata()),
                 "rotation must reset security_event_metadata (stale CSRF token must not survive)");
         assertEquals(T0, newRow.get().lastActivityAt());
@@ -225,7 +259,8 @@ class JdbcSessionStoreTests {
 
         assertThrows(IllegalStateException.class,
                 () -> tx.executeWithoutResult(status ->
-                        store.rotateRef(original.sessionRef(), newRef, T0)),
+                        store.rotateRef(original.sessionRef(), newRef, T0,
+                                new byte[] {1}, "v1")),
                 "rotating a non-ACTIVE reference must fail");
 
         // no partial state: the old row is unchanged and no new row exists
@@ -305,5 +340,128 @@ class JdbcSessionStoreTests {
 
         // unknown pairs resolve to empty
         assertTrue(store.findActiveBySubjectAndSid("subject-active", "sid-unknown").isEmpty());
+    }
+
+    // ------------------------------------------------------------------
+    // Rotation re-encryption contract (I1-IAM-001 closeout M-1)
+    // ------------------------------------------------------------------
+
+    /**
+     * Decrypt-after-rotation round-trip: the lifecycle contract is that
+     * rotation re-encrypts the token material under the NEW reference as
+     * AAD. This test drives the REAL crypto stack (TokenEncryptionService
+     * over a test key ring): encrypt under the old ref → insert → rotate
+     * via the new 5-arg rotateRef with re-encryption under the new ref →
+     * load → decrypt with the new ref succeeds and returns the original
+     * plaintext; the OLD ciphertext no longer authenticates against the new
+     * ref (AAD binding) and the new ciphertext no longer authenticates
+     * against the old ref.
+     */
+    @Test
+    @Order(8)
+    void rotateRefStoresReEncryptedMaterialThatDecryptsWithTheNewRef() throws Exception {
+        SessionKeyRing keyRing = new SessionKeyRing(
+                java.util.Map.of("v1", TEST_KEY_B64));
+        TokenEncryptionService crypto = new TokenEncryptionService(keyRing);
+        String plaintext = "{\"accessToken\":\"rt-plain-token\",\"refreshToken\":null,"
+                + "\"expiresAt\":\"2026-09-13T20:00:00Z\"}";
+
+        BffSession original = activeSession(ref("crypt"), "subject-crypt", "sid-crypt", T0);
+        byte[] oldCiphertext =
+                crypto.encrypt(plaintext.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                        original.sessionRef()).ciphertext();
+        // The fixed activeSession fixture uses a static byte[] placeholder,
+        // so the row is inserted first and the ciphertext is then replaced
+        // via a raw UPDATE with the real old-ref-bound ciphertext.
+        store.insert(original);
+        jdbcClient.sql("""
+                UPDATE bff_session.bff_session
+                SET encrypted_token_material = ?
+                WHERE session_ref = ?
+                """)
+                .param(oldCiphertext)
+                .param(original.sessionRef())
+                .update();
+
+        String newRef = ref("crypt-new");
+        byte[] newCiphertext =
+                crypto.encrypt(plaintext.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                        newRef).ciphertext();
+        tx.executeWithoutResult(status -> store.rotateRef(
+                original.sessionRef(), newRef, T0, newCiphertext, "v1"));
+
+        BffSession rotated = store.findByRef(newRef).orElseThrow();
+        assertArrayEquals(newCiphertext, rotated.encryptedTokenMaterial(),
+                "the rotated row must carry the re-encrypted material");
+        // decrypt with the NEW ref → original plaintext
+        byte[] decrypted = crypto.decrypt(rotated.encryptedTokenMaterial(),
+                rotated.tokenEncryptionKeyId(), rotated.sessionRef());
+        assertEquals(plaintext,
+                new String(decrypted, java.nio.charset.StandardCharsets.UTF_8),
+                "the re-encrypted material must decrypt with the NEW reference as AAD");
+        // the OLD ciphertext must NOT authenticate against the new ref
+        // (AAD binding) — the copy-the-ciphertext defect would break here
+        assertThrows(java.security.GeneralSecurityException.class,
+                () -> crypto.decrypt(oldCiphertext, "v1", newRef),
+                "the old ciphertext is bound to the old ref as AAD and must fail "
+                        + "against the new ref");
+        // and the new ciphertext must NOT authenticate against the old ref
+        assertThrows(java.security.GeneralSecurityException.class,
+                () -> crypto.decrypt(newCiphertext, "v1", original.sessionRef()),
+                "the new ciphertext is bound to the new ref as AAD and must fail "
+                        + "against the old ref");
+    }
+
+    // ------------------------------------------------------------------
+    // Pre-auth sentinel-subject filtering (I1-IAM-001 closeout M-3)
+    // ------------------------------------------------------------------
+
+    /**
+     * The security-context repository must NEVER resolve a pre-auth row:
+     * {@code findByRef} excludes the '__pre_auth__' sentinel subject, while
+     * {@code findPreAuthByRef} and {@code deletePreAuthByRef} operate on
+     * exactly those rows.
+     */
+    @Test
+    @Order(9)
+    void findByRefExcludesPreAuthRowsWhilePreAuthAccessorsSeeThem() {
+        String state = ref("preauth"); // ≥32 chars, satisfies the CHECK
+        BffSession preAuth = new BffSession(
+                state,
+                "__pre_auth__",
+                null,
+                new byte[] {5, 6, 7, 8},
+                "v1",
+                null,
+                T0,
+                T0,
+                T0,
+                T0.plus(Duration.ofMinutes(10)),
+                T0.plus(Duration.ofMinutes(10)),
+                BffSession.RevocationState.ACTIVE,
+                "{}");
+        store.insert(preAuth);
+
+        // the security-context lookup must NOT match the pre-auth row
+        assertTrue(store.findByRef(state).isEmpty(),
+                "findByRef must exclude '__pre_auth__' rows (the security-context "
+                        + "repository must never resolve an authorization request)");
+        // the authorization-request accessors DO see it
+        Optional<BffSession> viaPreAuth = store.findPreAuthByRef(state);
+        assertTrue(viaPreAuth.isPresent(), "findPreAuthByRef must match the pre-auth row");
+        assertEquals("__pre_auth__", viaPreAuth.get().keycloakSubject());
+        // single-use delete
+        assertTrue(store.deletePreAuthByRef(state), "the pre-auth row must delete");
+        assertFalse(store.deletePreAuthByRef(state),
+                "a second delete is a no-op (single-use authorization request)");
+        assertTrue(store.findPreAuthByRef(state).isEmpty(),
+                "the row must be gone after deletePreAuthByRef");
+        // a normal row is untouched by the pre-auth delete
+        BffSession normal = activeSession(ref("preauth-normal"), "subject-pa", "sid-pa", T0);
+        store.insert(normal);
+        assertFalse(store.deletePreAuthByRef(normal.sessionRef()),
+                "deletePreAuthByRef must never delete a real session row");
+        assertTrue(store.findByRef(normal.sessionRef()).isPresent(),
+                "the real session row must survive");
     }
 }

@@ -12,6 +12,7 @@ import com.nimbusds.jwt.SignedJWT;
 import com.nimbusds.jwt.proc.DefaultJWTProcessor;
 import com.nimbusds.jwt.proc.JWTProcessor;
 import java.text.ParseException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -33,7 +34,8 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>Validation order (OIDC Back-Channel Logout 1.0 §2.4 + task decision):
  * JWS signature against the IdP's remote JWKS (RS256 only), then issuer
- * match against the configured Keycloak issuer, then the {@code events}
+ * match against the configured Keycloak issuer, then the {@code aud} claim
+ * containing the {@code ev-bff} client id, then the {@code events}
  * claim containing the back-channel-logout event URI, then presence of
  * {@code sub} and/or {@code sid}, then rejection of any {@code nonce}
  * claim (logout tokens are ID-token-like and MUST NOT carry one). A
@@ -103,6 +105,13 @@ public class BackChannelLogoutController {
             SignedJWT signedJwt = SignedJWT.parse(logoutToken);
             JWTClaimsSet claims = logoutTokenProcessor.process(signedJwt, null);
             if (!issuer.equals(claims.getIssuer())) {
+                return reject();
+            }
+            // Audience check (OIDC BCL §2.4): the logout token MUST carry the
+            // BFF client id in its aud claim — a token minted for another
+            // client must not be able to revoke this deployment's sessions.
+            List<String> aud = claims.getAudience();
+            if (aud == null || !aud.contains("ev-bff")) {
                 return reject();
             }
             if (!hasLogoutEvent(claims)) {

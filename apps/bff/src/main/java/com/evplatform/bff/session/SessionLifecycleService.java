@@ -126,10 +126,37 @@ public class SessionLifecycleService {
      * Atomically rotates the session reference (after authentication /
      * privilege change, SEC-P01 §5.1): old row REVOKED, new row ACTIVE in one
      * transaction. Returns the new reference.
+     *
+     * <p>The token material is re-encrypted under the NEW reference: the old
+     * row is loaded, its token JSON decrypted, and the plaintext re-encrypted
+     * with the new reference as Additional Authenticated Data before the
+     * store's atomic {@code rotateRef} runs. The ciphertext is therefore
+     * never copied between rows — a copied ciphertext would fail GCM
+     * authentication against the new reference's AAD binding (the old
+     * ciphertext is bound to the OLD reference). The decrypt failure path
+     * (AEADBadTagException → {@code Optional.empty()}) aborts the rotation
+     * with {@link IllegalStateException} BEFORE any store mutation, so the
+     * old row stays intact and the caller keeps a valid session.</p>
      */
     public String rotate(String oldRef, Instant now) {
         String newRef = newSessionRef();
-        store.rotateRef(oldRef, newRef, now);
+        BffSession old = store.findByRef(oldRef)
+                .orElseThrow(() -> new IllegalStateException(
+                        "Session rotation failed: old session not found"));
+        java.util.Optional<TokenMaterial> tokens = decryptTokens(old);
+        if (tokens.isEmpty()) {
+            // Abort BEFORE the atomic rotateRef: the old row must stay
+            // intact (still ACTIVE) when its material cannot be
+            // authenticated — no revocation, no new row.
+            throw new IllegalStateException(
+                    "Session rotation failed: stored token material failed "
+                            + "authentication against the old reference");
+        }
+        String tokenJson = serializeTokens(tokens.get());
+        TokenEncryptionService.Encrypted reEncrypted =
+                encryption.encrypt(tokenJson.getBytes(StandardCharsets.UTF_8), newRef);
+        store.rotateRef(oldRef, newRef, now,
+                reEncrypted.ciphertext(), reEncrypted.keyId());
         log.info("BFF session rotated (new ref length={} chars)", newRef.length());
         return newRef;
     }

@@ -1,9 +1,11 @@
 package com.evplatform.bff.security;
 
 import com.evplatform.bff.session.BffSession;
+import com.evplatform.bff.session.BffSessionProperties;
 import com.evplatform.bff.session.SessionLifecycleService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.security.SecureRandom;
@@ -37,12 +39,16 @@ public class BffSessionCsrfTokenRepository implements CsrfTokenRepository {
     private static final int TOKEN_BYTES = 32;
 
     private final SessionLifecycleService lifecycle;
+    private final BffSessionProperties properties;
     private final Clock clock;
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final SecureRandom random = new SecureRandom();
 
-    public BffSessionCsrfTokenRepository(SessionLifecycleService lifecycle, Clock clock) {
+    public BffSessionCsrfTokenRepository(SessionLifecycleService lifecycle,
+                                         BffSessionProperties properties,
+                                         Clock clock) {
         this.lifecycle = lifecycle;
+        this.properties = properties;
         this.clock = clock;
     }
 
@@ -57,7 +63,7 @@ public class BffSessionCsrfTokenRepository implements CsrfTokenRepository {
     @Override
     public void saveToken(CsrfToken token, HttpServletRequest request,
                           HttpServletResponse response) {
-        Optional<String> ref = BffSessionSecurityContextRepository.sessionRef(request);
+        Optional<String> ref = sessionRef(request);
         if (ref.isEmpty()) {
             return; // no session → nothing to bind the token to
         }
@@ -75,7 +81,7 @@ public class BffSessionCsrfTokenRepository implements CsrfTokenRepository {
 
     @Override
     public CsrfToken loadToken(HttpServletRequest request) {
-        Optional<String> ref = BffSessionSecurityContextRepository.sessionRef(request);
+        Optional<String> ref = sessionRef(request);
         if (ref.isEmpty()) {
             return null;
         }
@@ -86,6 +92,30 @@ public class BffSessionCsrfTokenRepository implements CsrfTokenRepository {
             return token == null ? null : new BffCsrfToken(token);
         }
         return null;
+    }
+
+    /**
+     * Extracts the session reference from the request cookies using the
+     * CONFIGURED cookie name (SEC-001 §5.2, {@code bff.session.cookie-name}).
+     * The cookie name is instance state from {@link BffSessionProperties} —
+     * the former static {@code COOKIE_NAME} constant was removed so the
+     * cookie contract has a single configuration source.
+     */
+    private Optional<String> sessionRef(HttpServletRequest request) {
+        String cookieName = properties.session() != null
+                && properties.session().cookieName() != null
+                ? properties.session().cookieName()
+                : "__Host-evsession";
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return Optional.empty();
+        }
+        for (Cookie cookie : cookies) {
+            if (cookieName.equals(cookie.getName())) {
+                return Optional.ofNullable(cookie.getValue());
+            }
+        }
+        return Optional.empty();
     }
 
     /** Reads the stored CSRF token from a session row's metadata document. */
