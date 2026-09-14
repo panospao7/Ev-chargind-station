@@ -12,8 +12,6 @@ import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Optional;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
@@ -68,15 +66,12 @@ public class BffSessionCsrfTokenRepository implements CsrfTokenRepository {
             return; // no session → nothing to bind the token to
         }
         if (token == null) {
-            // Null token means "remove" — clear the metadata key.
-            updateMetadata(ref.get(), metadata -> {
-                metadata.remove(METADATA_KEY);
-            });
+            // Null token means "remove" — the fragment sets the key to JSON
+            // null, which the load path treats as absent.
+            updateMetadata(ref.get(), null);
             return;
         }
-        updateMetadata(ref.get(), metadata -> {
-            metadata.put(METADATA_KEY, token.getToken());
-        });
+        updateMetadata(ref.get(), token.getToken());
     }
 
     @Override
@@ -132,25 +127,30 @@ public class BffSessionCsrfTokenRepository implements CsrfTokenRepository {
         }
     }
 
-    private void updateMetadata(String sessionRef,
-                                java.util.function.Consumer<Map<String, Object>> mutator) {
-        String current = lifecycle.storeMetadata(sessionRef);
-        Map<String, Object> doc = new LinkedHashMap<>();
-        if (current != null && !current.isBlank()) {
-            try {
-                JsonNode node = objectMapper.readTree(current);
-                node.fields().forEachRemaining(e -> doc.put(e.getKey(), e.getValue()));
-            } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
-                // start from an empty document
-            }
-        }
-        mutator.accept(doc);
+    /**
+     * Writes ONLY the {@code {"csrfToken": ...}} fragment via the store's
+     * single-statement jsonb merge (I1-IAM-002): the merge preserves all
+     * other top-level metadata keys (notably the exchanged-token cache),
+     * eliminating the former read-modify-write overwrite race between this
+     * repository and the exchanged-token cache. A {@code null} fragment
+     * value sets the key to JSON null, which the load path
+     * ({@code hasNonNull}) treats as absent — the "remove" case of
+     * {@link #saveToken}.
+     */
+    private void updateMetadata(String sessionRef, String tokenValueOrNull) {
+        // Map.of rejects null VALUES (would NPE on the removal path); a
+        // single-entry map via Collections.singletonMap carries the JSON
+        // null through Jackson, producing {"csrfToken": null} — exactly the
+        // removal fragment the jsonb merge and the load path (hasNonNull)
+        // expect.
+        String fragment;
         try {
-            lifecycle.storeMetadataUpdate(sessionRef,
-                    objectMapper.writeValueAsString(doc));
+            fragment = objectMapper.writeValueAsString(
+                    java.util.Collections.singletonMap(METADATA_KEY, tokenValueOrNull));
         } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
             throw new IllegalStateException("CSRF metadata serialization failed", e);
         }
+        lifecycle.mergeMetadata(sessionRef, fragment);
     }
 
     /** CsrfToken implementation over the synchronizer value. */

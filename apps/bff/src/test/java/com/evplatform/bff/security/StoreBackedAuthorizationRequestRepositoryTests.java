@@ -136,7 +136,8 @@ class StoreBackedAuthorizationRequestRepositoryTests {
                         new BffSessionProperties.Session(
                                 Duration.ofMinutes(30), Duration.ofHours(8),
                                 "__Host-evsession", List.of(), null),
-                        new BffSessionProperties.OAuth(null)));
+                        new BffSessionProperties.OAuth(null),
+                        null));
         SessionKeyRing keyRing = new SessionKeyRing(Map.of("v1", TEST_KEY_B64));
         crypto = new TokenEncryptionService(keyRing);
         repository = new StoreBackedAuthorizationRequestRepository(

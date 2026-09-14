@@ -5,6 +5,38 @@
   "registrationAllowed": false,
   "resetPasswordAllowed": false,
   "verifyEmail": true,
+  "clientProfiles": {
+    "profiles": [
+      {
+        "name": "ev-token-exchange-downscope",
+        "executors": [
+          {
+            "executor": "downscope-assertion-grant-enforcer"
+          }
+        ]
+      }
+    ]
+  },
+  "clientPolicies": {
+    "policies": [
+      {
+        "name": "ev-bff-token-exchange-policy",
+        "conditions": [
+          {
+            "condition": "client-attributes",
+            "configuration": {
+              "attributes": {
+                "standard.token.exchange.enabled": "true"
+              }
+            }
+          }
+        ],
+        "profiles": [
+          "ev-token-exchange-downscope"
+        ]
+      }
+    ]
+  },
   "clients": [
     {
       "id": "ev-bff",
@@ -36,7 +68,8 @@
         "token.endpoint.auth.signing.alg": "RS256",
         "backchannel.logout.url": "http://127.0.0.1:8081/api/internal/back-channel-logout",
         "backchannel.logout.session.required": "true",
-        "backchannel.logout.revoke.offline.tokens": "false"
+        "backchannel.logout.revoke.offline.tokens": "false",
+        "standard.token.exchange.enabled": "true"
       }
     },
     {
@@ -54,7 +87,21 @@
         "use.jwks.string": "true",
         "jwks.string": "<PLACEHOLDER_JWKS_SVC_ACCOUNT>",
         "token.endpoint.auth.signing.alg": "RS256"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "self-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-account",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "id": "svc-station-operations",
@@ -71,7 +118,21 @@
         "use.jwks.string": "true",
         "jwks.string": "<PLACEHOLDER_JWKS_SVC_STATION_OPERATIONS>",
         "token.endpoint.auth.signing.alg": "RS256"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "self-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-station-operations",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "id": "svc-booking-session",
@@ -88,7 +149,21 @@
         "use.jwks.string": "true",
         "jwks.string": "<PLACEHOLDER_JWKS_SVC_BOOKING_SESSION>",
         "token.endpoint.auth.signing.alg": "RS256"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "self-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-booking-session",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "id": "svc-device-integration",
@@ -105,7 +180,21 @@
         "use.jwks.string": "true",
         "jwks.string": "<PLACEHOLDER_JWKS_SVC_DEVICE_INTEGRATION>",
         "token.endpoint.auth.signing.alg": "RS256"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "self-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-device-integration",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "id": "svc-discovery-insights",
@@ -122,7 +211,21 @@
         "use.jwks.string": "true",
         "jwks.string": "<PLACEHOLDER_JWKS_SVC_DISCOVERY_INSIGHTS>",
         "token.endpoint.auth.signing.alg": "RS256"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "self-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-discovery-insights",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "id": "svc-notification",
@@ -139,7 +242,21 @@
         "use.jwks.string": "true",
         "jwks.string": "<PLACEHOLDER_JWKS_SVC_NOTIFICATION>",
         "token.endpoint.auth.signing.alg": "RS256"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "self-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-notification",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "id": "svc-governance-support",
@@ -156,7 +273,21 @@
         "use.jwks.string": "true",
         "jwks.string": "<PLACEHOLDER_JWKS_SVC_GOVERNANCE_SUPPORT>",
         "token.endpoint.auth.signing.alg": "RS256"
-      }
+      },
+      "protocolMappers": [
+        {
+          "name": "self-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-governance-support",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "id": "security-test-client",
@@ -170,6 +301,22 @@
       "serviceAccountsEnabled": false,
       "clientAuthenticatorType": "client-secret",
       "secret": "evplatform_dev_only",
+      "attributes": {
+        "client_credentials.use_refresh_token": "false"
+      }
+    },
+    {
+      "id": "rogue-exchange-client",
+      "clientId": "rogue-exchange-client",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "evplatform_dev_only_rogue",
       "attributes": {
         "client_credentials.use_refresh_token": "false"
       }

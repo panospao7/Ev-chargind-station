@@ -77,3 +77,17 @@ bff:
     # Env-supplied path to the ev-bff client signing key (PEM); empty default,
     # never committed.
     client-private-key-path: ${BFF_OAUTH_CLIENT_PRIVATE_KEY_PATH:}
+  # ---------------------------------------------------------------------------
+  # Token-exchange cache + downstream internal targets (I1-IAM-002, SEC-P03).
+  # `targets` maps each downstream audience (the target service client id) to
+  # its base URL; `cache-expiry-skew` is subtracted from a cached token's
+  # expiresAt so a token within the skew window is re-exchanged instead of
+  # being sent and rejected downstream.
+  # ---------------------------------------------------------------------------
+  exchange:
+    cache-expiry-skew: 30s
+    targets:
+      svc-station-operations:
+        base-url: http://127.0.0.1:8080
+      svc-discovery-insights:
+        base-url: http://127.0.0.1:8090

@@ -17,7 +17,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * values (idle 30m, absolute 8h).</p>
  */
 @ConfigurationProperties(prefix = "bff")
-public record BffSessionProperties(Session session, OAuth oauth) {
+public record BffSessionProperties(Session session, OAuth oauth, Exchange exchange) {
 
     public record Session(
             Duration idleTimeout,
@@ -31,5 +31,19 @@ public record BffSessionProperties(Session session, OAuth oauth) {
     }
 
     public record OAuth(String clientPrivateKeyPath) {
+    }
+
+    /**
+     * Token-exchange cache + downstream target configuration (I1-IAM-002,
+     * SEC-P03). {@code targets} maps a downstream audience (the target
+     * service client id) to its base URL; {@code cache-expiry-skew} is
+     * subtracted from a cached token's {@code expiresAt} so a token that is
+     * within the skew window of expiry is re-exchanged rather than sent
+     * (avoids racing the downstream validator's clock).
+     */
+    public record Exchange(Duration cacheExpirySkew, Map<String, Target> targets) {
+
+        public record Target(String baseUrl) {
+        }
     }
 }

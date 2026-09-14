@@ -1,0 +1,102 @@
+schemaVersion: "1.0"
+
+deviationId: "I1-IAM-002-PLAN-001"
+taskId: "I1-IAM-002"
+type: "DESIGN_PIVOT"
+status: "DECIDED"
+raisedBy: "planner agent (planning PR #48, 3 planning rounds)"
+createdAt: "2026-09-14T00:00:00Z"
+decidedBy: "Project Owner (planning PR #48 merged)"
+decidedAt: "2026-09-14"
+decision: "Standard Token Exchange V2 mechanism"
+decisionSummary: >
+  Replace the originally assumed Keycloak V1 token-exchange mechanism
+  (FGAP admin-permission objects) with the V2 mechanism per the official
+  Keycloak documentation (https://www.keycloak.org/securing-apps/token-exchange,
+  accessed 2026-09-14), which states FGAP admin-permission objects are NOT
+  needed for standard token exchange. The V2 mechanism consists of:
+
+  1. A per-client "Standard token exchange" switch
+     (client attribute "standard.token.exchange.enabled" = "true") on ev-bff.
+  2. A client policy enforcing the downscope-assertion-grant-enforcer
+     executor (via clientProfiles + clientPolicies in the realm import),
+     bound by a client-attributes condition so it applies only to clients
+     carrying the switch attribute.
+  3. Per-service audience mappers (oidc-audience-mapper) on each svc-*
+     client so the exchanged token carries the intended audience.
+
+  No FGAP admin-permission objects are created.
+
+implementedIn: "this task branch (task/i1-iam-002-ci)"
+
+summary: >
+  The planning packet originally assumed the Keycloak V1 token-exchange
+  mechanism, which relies on FGAP-based admin permission objects
+  (token-exchange permission on the target client plus a policy binding).
+  The official Keycloak securing-apps documentation for token exchange
+  (accessed 2026-09-14) describes the V2 mechanism: a per-client
+  "Standard token exchange" switch plus a
+  downscope-assertion-grant-enforcer client policy and audience mappers,
+  and explicitly states FGAP is not needed for standard token exchange.
+  Implementing V1 FGAP objects would produce configuration that does not
+  match the documented, supported mechanism.
+
+affected:
+  - "infra/local/keycloak/realms/ev-local-realm.json"
+  - "infra/local/keycloak/realms/README.md"
+  - "apps/bff exchange package (new)"
+  - "contracts/registries/problem-codes-v1.yaml (phase 2/3)"
+
+options:
+  - id: "V2"
+    label: "Standard Token Exchange V2 (switch + policy + audience mappers)"
+    assessment: >
+      Matches official Keycloak documentation for the version in use
+      (Keycloak 26.6). No FGAP objects. Audience parameter downscopes only;
+      it cannot grant an audience the subject token does not already carry
+      (enforced by the downscope-assertion-grant-enforcer policy).
+    selected: true
+  - id: "V1-FGAP"
+    label: "V1 FGAP admin-permission objects"
+    assessment: >
+      Rejected: official docs state FGAP is not needed for standard token
+      exchange; V1 configuration would be undocumented surface and could
+      behave differently across Keycloak versions.
+
+negative-proof-approach:
+  unauthorized-client: >
+    A rogue confidential client (rogue-exchange-client, service account
+    enabled, NO standard-token-exchange attribute) attempts the same
+    token-exchange grant. Expected: Keycloak rejects the grant (the
+    client-attributes condition does not match, so the exchange policy/
+    executor does not apply). This proves the per-client switch gates
+    exchange eligibility.
+
+doc-absence-items:
+  - id: "DA-1"
+    item: "Exact realm-import attribute key string for the standard token exchange switch"
+    currentAssumption: "\"standard.token.exchange.enabled\": \"true\" on the ev-bff client attributes"
+    closureMethod: >
+      Empirical confirmation via Admin REST round-trip in the
+      Testcontainers harness: create/update the client with the attribute,
+      read it back, and verify the exchange grant succeeds for ev-bff and
+      fails for the rogue client. If the key string is inexpressible or
+      ineffective, STOP and report.
+  - id: "DA-2"
+    item: "Exact realm-import representation keys for clientProfiles and clientPolicies"
+    currentAssumption: >
+      Top-level realm keys "clientProfiles" and "clientPolicies" with
+      profiles [{name, executors [{executor}]}] and policies
+      [{name, conditions [{condition, configuration}], profiles}]
+      (no configuration object on the executor — docs specify none).
+    closureMethod: >
+      Empirical confirmation via Admin REST round-trip in the
+      Testcontainers harness: import the realm, read back profiles and
+      policies through the Admin API, and verify the policy binds to the
+      ev-bff client and not the rogue client. If the representation keys
+      are inexpressible or ignored on import, STOP and report.
+
+residualRisk: >
+  Until DA-1/DA-2 are closed empirically, the realm import may silently
+  ignore the attribute or policy blocks. The Testcontainers harness
+  (phase 3) must verify both round-trips before evidence is accepted.

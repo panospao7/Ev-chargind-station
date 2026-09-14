@@ -139,7 +139,8 @@ class JdbcSessionStoreTests {
                         new BffSessionProperties.Session(
                                 Duration.ofMinutes(30), Duration.ofHours(8),
                                 "__Host-evsession", List.of(), null),
-                        new BffSessionProperties.OAuth(null)));
+                        new BffSessionProperties.OAuth(null),
+                        null));
         tx = new TransactionTemplate(new DataSourceTransactionManager(runtimeDataSource));
     }
 

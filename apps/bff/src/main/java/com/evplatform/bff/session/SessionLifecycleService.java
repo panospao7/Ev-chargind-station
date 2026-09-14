@@ -189,6 +189,20 @@ public class SessionLifecycleService {
     }
 
     /**
+     * MERGES a JSON-object fragment into the session row's
+     * {@code security_event_metadata} (I1-IAM-002). The merge is performed
+     * by the database in a single statement
+     * ({@code COALESCE(metadata,'{}') || fragment}), so concurrent writers
+     * of DISJOINT keys (the CSRF repository and the exchanged-token cache)
+     * no longer overwrite each other's entries via a read-modify-write
+     * race. {@code jsonFragment} must be a JSON object; its top-level keys
+     * replace same-named keys, all other keys are preserved.
+     */
+    public void mergeMetadata(String sessionRef, String jsonFragment) {
+        store.updateSecurityEventMetadata(sessionRef, jsonFragment);
+    }
+
+    /**
      * Decrypts the stored token material for a session. Tamper/wrong-key
      * failures ({@link javax.crypto.AEADBadTagException}) are mapped to an
      * empty result — the caller treats the session as invalid rather than

@@ -162,14 +162,23 @@ public class JdbcSessionStore {
     }
 
     /**
-     * Updates the security-event metadata JSON document for a session.
-     * Used by the CSRF synchronizer repository (SEC-P02 §6.1: the
-     * session-bound token lives in the row, so it rotates with the session).
+     * Updates the security-event metadata JSON document for a session by
+     * MERGING a JSON fragment into the existing document (I1-IAM-002): the
+     * database-side expression {@code COALESCE(security_event_metadata,
+     * '{}'::jsonb) || ?::jsonb} performs a shallow jsonb merge — top-level
+     * keys in the fragment win, all other keys are preserved. This removes
+     * the read-modify-write overwrite race between the CSRF repository and
+     * the exchanged-token cache (both now write disjoint fragments
+     * atomically in a single statement). {@code metadataJson} MUST be a
+     * valid JSON object; a fragment key set to JSON null REPLACES the
+     * previous value (jsonb merge semantics — callers use key removal
+     * semantics deliberately, e.g. CSRF clearing).
      */
     public void updateSecurityEventMetadata(String sessionRef, String metadataJson) {
         jdbc.sql("""
                 UPDATE bff_session.bff_session
-                SET security_event_metadata = ?::jsonb
+                SET security_event_metadata =
+                    COALESCE(security_event_metadata, '{}'::jsonb) || ?::jsonb
                 WHERE session_ref = ?
                 """)
                 .param(metadataJson)

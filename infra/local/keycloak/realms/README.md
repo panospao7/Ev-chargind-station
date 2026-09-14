@@ -1,4 +1,4 @@
-# Keycloak realm imports — `ev-local` (I1-IAM-001)
+# Keycloak realm imports — `ev-local` (I1-IAM-001 / I1-IAM-002)
 
 This directory is mounted read-only into the Keycloak container at
 `/opt/keycloak/data/import` (see `infra/local/compose.yaml`). With
@@ -16,10 +16,53 @@ realm separation — one realm per environment; this is the non-production
 | `ev-bff` | Authorization Code + PKCE S256 (standard flow) | no | `private_key_jwt` (`client-jwt`) |
 | `svc-account`, `svc-station-operations`, `svc-booking-session`, `svc-device-integration`, `svc-discovery-insights`, `svc-notification`, `svc-governance-support` | none (service identity only; SEC-P04) | yes | `private_key_jwt` (`client-jwt`) |
 | `security-test-client` | direct-access grants only (dev-only negative tests) | no | `client-secret` |
+| `rogue-exchange-client` | service account only (dev-only token-exchange negative test) | yes | `client-secret` |
 
 All browser flows (implicit, ROPC/password grant) are disabled on every
 client except the ROPC-only `security-test-client`, which exists solely for
 automated negative tests (SEC-001 §4.2).
+
+## Standard Token Exchange mechanism (I1-IAM-002, SEC-P03)
+
+The BFF exchanges a user session access token for an audience-limited
+downstream token via **Standard Token Exchange V2** (decision record:
+`delivery/deviations/I1-IAM-002/PLAN-001-v2-exchange-mechanism.yaml`;
+official docs: https://www.keycloak.org/securing-apps/token-exchange,
+accessed 2026-09-14 — "FGAP not needed for standard token exchange"). The
+realm configures the V2 mechanism as follows; **no FGAP admin-permission
+objects are created**:
+
+1. **Per-client switch** — the `ev-bff` client carries the attribute
+   `standard.token.exchange.enabled: "true"` (Standard token exchange
+   switch). Only clients with this attribute may use the token-exchange
+   grant.
+2. **Client policy** — top-level realm keys `clientProfiles` and
+   `clientPolicies` define profile `ev-token-exchange-downscope` with the
+   `downscope-assertion-grant-enforcer` executor (no configuration object —
+   the docs specify none), bound by policy `ev-bff-token-exchange-policy`
+   through a `client-attributes` condition matching
+   `standard.token.exchange.enabled: "true"`. This enforces that the
+   `audience` parameter can only **downscope**: it cannot grant an audience
+   the subject token does not already carry.
+3. **Audience mappers** — each of the 7 `svc-*` clients carries an
+   `oidc-audience-mapper` protocol mapper (`self-audience`) that adds its
+   own client id to the access-token `aud` claim, so an exchanged token for
+   a target service carries that service's audience.
+4. **Rogue client** — `rogue-exchange-client` (confidential, service
+   account enabled, client secret `evplatform_dev_only_rogue`, all flows
+   off except the service account, **no** standard-token-exchange attribute)
+   exists solely for the unauthorized-client negative proof: the same
+   token-exchange request from this client must be rejected by Keycloak.
+
+**Empirical-confirmation note (doc-absence items DA-1/DA-2 of the decision
+record):** the exact attribute key string
+(`standard.token.exchange.enabled`) and the exact realm-import
+representation keys for `clientProfiles`/`clientPolicies` are not stated
+verbatim in the official documentation. Both are to be confirmed
+empirically via an Admin REST round-trip in the Testcontainers harness
+(import → read back → exchange succeeds for `ev-bff`, fails for
+`rogue-exchange-client`). If either item proves inexpressible or
+ineffective, implementation STOPS and reports.
 
 Test users (SEC-001 §3 — synthetic identities only, `@evplatform.local`):
 
@@ -46,6 +89,7 @@ never be replaced with, or reused as, real credentials.
 |---|---|
 | All 7 test users (password) | `evplatform_dev_only` |
 | `security-test-client` (client secret) | `evplatform_dev_only` |
+| `rogue-exchange-client` (client secret) | `evplatform_dev_only_rogue` |
 
 Passwords are hashed by Keycloak at import time; the JSON file contains no
 private key material by design (SEC-001 §4.1: realm configuration is
@@ -132,5 +176,17 @@ environment (e.g. `BFF_OAUTH_CLIENT_PRIVATE_KEY_PATH`), never commit it.
 ## Scope note
 
 This realm supports the I1-IAM-001 slice (realm/client bootstrap + BFF
-session proof). Realm roles, group structure, MFA policy enforcement and
-token-exchange scopes arrive with I1-IAM-002/I1-IAM-003.
+session proof) and the I1-IAM-002 slice (Standard Token Exchange V2
+mechanism: per-client switch, downscope client policy, svc-* audience
+mappers, rogue-exchange-client negative-test identity). Realm roles, group
+structure and MFA policy enforcement arrive with I1-IAM-003.
+
+## Dev-key procedure reminder
+
+The `private_key_jwt` flow (both the ev-bff login and every svc-* service
+identity) still requires the developer-generated JWKS from the section
+above: generate one RSA key pair per client **outside the repository**,
+derive the public JWKS, and paste it into each client's `jwks.string`
+placeholder before starting the stack. The BFF exchange client signs its
+own client assertions with the ev-bff key via
+`BFF_OAUTH_CLIENT_PRIVATE_KEY_PATH` — the same key the login flow uses.

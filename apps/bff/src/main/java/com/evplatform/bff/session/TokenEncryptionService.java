@@ -43,6 +43,18 @@ public class TokenEncryptionService {
      * {@code sessionRef} using the current key-ring key.
      */
     public Encrypted encrypt(byte[] plaintext, String sessionRef) {
+        return encryptWithAad(plaintext, sessionRef);
+    }
+
+    /**
+     * Encrypts {@code plaintext} binding {@code aad} as the Additional
+     * Authenticated Data. Introduced for the exchanged-token cache
+     * (I1-IAM-002): the cache entry uses {@code sessionRef + ":" + aud} so
+     * a ciphertext copied between sessions OR between audiences fails
+     * authentication. The session-material path delegates with
+     * {@code aad = sessionRef} — behavior for existing callers is unchanged.
+     */
+    public Encrypted encryptWithAad(byte[] plaintext, String aad) {
         String keyId = keyRing.currentKeyId();
         byte[] key = keyRing.keyFor(keyId);
         byte[] iv = new byte[IV_LENGTH_BYTES];
@@ -51,7 +63,7 @@ public class TokenEncryptionService {
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
             cipher.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(key, "AES"),
                     new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
-            cipher.updateAAD(sessionRef.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            cipher.updateAAD(aad.getBytes(java.nio.charset.StandardCharsets.UTF_8));
             byte[] ct = cipher.doFinal(plaintext);
             byte[] out = new byte[IV_LENGTH_BYTES + ct.length];
             System.arraycopy(iv, 0, out, 0, IV_LENGTH_BYTES);
@@ -72,6 +84,21 @@ public class TokenEncryptionService {
      */
     public byte[] decrypt(byte[] ciphertext, String keyId, String sessionRef)
             throws GeneralSecurityException {
+        return decryptWithAad(ciphertext, keyId, sessionRef);
+    }
+
+    /**
+     * Decrypts {@code ciphertext} (IV prepended) with the key identified by
+     * {@code keyId}, authenticating {@code aad} as the Additional
+     * Authenticated Data. The AAD must match the value used at encryption
+     * time exactly ({@code sessionRef} for session material,
+     * {@code sessionRef + ":" + aud} for exchanged-token cache entries).
+     *
+     * @throws javax.crypto.AEADBadTagException on tamper/wrong-key/wrong
+     *         AAD binding — callers treat the material as invalid
+     */
+    public byte[] decryptWithAad(byte[] ciphertext, String keyId, String aad)
+            throws GeneralSecurityException {
         if (ciphertext == null || ciphertext.length <= IV_LENGTH_BYTES) {
             throw new GeneralSecurityException("Ciphertext too short");
         }
@@ -81,7 +108,7 @@ public class TokenEncryptionService {
         Cipher cipher = Cipher.getInstance(TRANSFORMATION);
         cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"),
                 new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
-        cipher.updateAAD(sessionRef.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        cipher.updateAAD(aad.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         return cipher.doFinal(ciphertext, IV_LENGTH_BYTES,
                 ciphertext.length - IV_LENGTH_BYTES);
     }
