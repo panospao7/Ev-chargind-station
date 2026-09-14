@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-14T12:00:00Z"
+updatedAt: "2026-09-14T13:00:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -779,14 +779,14 @@ tasks:
       status: "NOT_STARTED"
       paths: []
   I1-IAM-001:
-    state: "SELF_VERIFIED"
+    state: "VERIFIED"
     assignedAgent: "ZCode coding-agent session (orchestrator+coder+tester roles, disclosed)"
     claimedAt: "2026-09-13T21:40:00Z"
 
     baselineCommit: "78a8ae9c4f9ff1c5180e2f7a58e5baed8d09f77a"
-    branch: "task/i1-iam-001-ci"
+    branch: "task/i1-iam-001-ci (implementation PR #45) + task/i1-iam-001-closeout (fix round PR #46)"
     candidateCommit: null
-    pullRequest: null
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/45 (implementation); https://github.com/panospao7/Ev-chargind-station/pull/46 (fix round)"
 
     blockers: []
 
@@ -795,33 +795,37 @@ tasks:
       - "RESOLVED in fix round 2d5a762d: M-1 (re-encrypt on rotation, AAD binding proven both ways), M-2 (BCL aud check), M-3 (store-backed authorization requests, no JSESSIONID), F6 (cookie-name property-driven); security re-review PASS_NO_BLOCKERS"
       - "Owner-disposition MINORs: N-1 pre-auth row residence (sweeper/rate-limit follow-up), sid-only BCL 0-rows, in-memory authorized-client duplication, retention purge, problem code member, x-release-wave normalization, detail-text alignment, compose parallel-stack ergonomics"
 
-    handoffSequence: 3
-    latestHandoff: "delivery/handoffs/I1-IAM-001/03-orchestrator-fixround.md"
+    handoffSequence: 4
+    latestHandoff: "delivery/handoffs/I1-IAM-001/04-closeout.md"
     reviews:
       planner: "COMPLETED"
       tester: "NOT_STARTED"
       generalReviewer: "NOT_STARTED"
       contractReviewer: "NOT_STARTED"
       dataReviewer: "NOT_STARTED"
-      securityReviewer: "NOT_STARTED"
-      humanReview: "NOT_STARTED"
+      securityReviewer: "PASS_NO_BLOCKERS (re-review after fix round; all MAJORs resolved)"
+      humanReview: "APPROVED (owner merges PR #45 4cc632b2 + PR #46 4a137ad0)"
 
     ci:
       status: "NOT_REQUIRED"
-      candidateRunReference: null
-      mergeRunReference: null
-      requiredChecks: []
+      candidateRunReference: "Frontend Tests 34807244222 + G3 (PR #45, head 001349b9); Frontend Tests + G3 green on PR #46 head 1efc9be0"
+      mergeRunReference: "candidate runs; closeout commits delivery-only"
+      requiredChecks: ["Frontend Tests (web+bff)", "G3 Contract Validation", "DB Migrations (PR #45)"]
 
     humanApproval:
       required: true
-      reference: "L3 authentication/session security + new migration + contract change; owner approval via planning-PR merge; also records the S1-04 three-task split and the OQ-IAM-1 local-HTTPS decision"
-      approvedCandidateCommit: null
+      reference: "L3 owner approvals: planning PR #44 (packet+split), implementation PR #45, fix round PR #46 (security re-review PASS_NO_BLOCKERS presented)"
+      approvedCandidateCommit: "1efc9be031a62b5e15faac8a1c047bc8a710e3e9"
 
     evidence:
-      status: "NOT_STARTED"
-      paths: []
+      status: "COMPLETE"
+      paths:
+        - "delivery/evidence/I1-IAM-001/realm-bootstrap.md"
+        - "delivery/evidence/I1-IAM-001/sec-p01-session.md"
+        - "delivery/evidence/I1-IAM-001/sec-p02-csrf.md"
+        - "delivery/evidence/I1-IAM-001/tester-verification.md"
 summary:
-  activeTask: "I1-IAM-001"
+  activeTask: null
   nextRecommendedTask: "I1-IAM-001"
 
 counts:
@@ -830,13 +834,13 @@ counts:
     CLAIMED: 0
     BLOCKED: 0
     IMPLEMENTING: 0
-    SELF_VERIFIED: 1
+    SELF_VERIFIED: 0
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
     CI_PENDING: 0
     HUMAN_REVIEW: 0
     MERGED: 0
-    VERIFIED: 17
+    VERIFIED: 18
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
