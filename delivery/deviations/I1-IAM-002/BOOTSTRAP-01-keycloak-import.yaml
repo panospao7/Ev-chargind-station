@@ -45,6 +45,30 @@ options:
       Weakest determinism; CI proofs (Testcontainers) would still need
       option A's code.
 recommendation: "Option A (with the phase-3 Testcontainers suite as the proof harness)."
+empiricalFindings (2026-09-15, Option A probe on clean KC 26.6):
+  - bare-realm Admin-REST import (users included): 201, users import with
+    emailVerified honored (ROPC then resolves past verifyEmail only after
+    user-level re-check — see remaining quirk below)
+  - client-level POST with FULL representation: 201 x9, zero failures
+  - GET read-back immediately after creation hides custom attributes and
+    protocolMappers (representation stale until a subsequent write)
+  - protocol-mappers/add-models (array body): 204, mappers created and
+    then visible on read-back (aud-svc-* x7 verified)
+  - client PUT with attributes: 204 on master realm; 409 Duplicate
+    resource on the probe realm even for minimal payloads — under
+    investigation (suspected polluted-state artifact of the double
+    import in the probe; clean-container re-run required)
+  - ROPC on security-test-client: still invalid_grant "Account is not
+    fully set up" despite users[].emailVerified=true in the import and
+    empty requiredActions on read-back — user-representation import
+    quirk; workaround candidates: Admin-REST user PUT (set emailVerified
+    post-import) or a set-single-attribute UPDATE, to be re-run on a
+    clean container
+  - consequence: Option A (Admin-REST bootstrap) is viable; the exact
+    finalization sequence must run against a CLEAN container in one pass
+    (realm-bare import → client POSTs → attributes PUT → add-models →
+    STX permission wiring), encoded as the phase-3 test fixture
+
 stopRuleApplied: >
   Packet assumption: "if import cannot express the required exchange
   permission model deterministically, STOP and report (same rule as
