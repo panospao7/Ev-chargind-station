@@ -69,6 +69,23 @@ empiricalFindings (2026-09-15, Option A probe on clean KC 26.6):
     (realm-bare import → client POSTs → attributes PUT → add-models →
     STX permission wiring), encoded as the phase-3 test fixture
 
+confirmedRootCause (2026-09-15, minimal repro):
+  Keycloak 26.6.4 with feature token-exchange-standard enabled: ANY client
+  PUT containing an attributes map returns 409 Duplicate resource error —
+  even {"x-foo":"bar"} on a pristine master realm, on freshly POSTed
+  clients, independent of attribute content. Mechanism: with the feature
+  on, every client update re-registers the Standard-Token-Exchange
+  permission resource → duplicate → 409. This is an upstream Keycloak
+  defect (interplay of the token-exchange-standard feature and client
+  updates), NOT a repository defect. Creation (POST) with attributes
+  works (they persist); UPDATE is the broken path. Consequence: the
+  realm import alone cannot finalize clients (import strips), and the
+  import-then-update recipe hits the 409. Phase status: phase 1 done
+  (registry); phase 2 finalization blocked on this upstream defect.
+  Disposition options unchanged (A needs a workaround for the 409 —
+  e.g. PATCH-free attribute updates via the client registration API, or
+  B version probe: verify whether 26.6.x patch releases or 26.7 fix it).
+
 stopRuleApplied: >
   Packet assumption: "if import cannot express the required exchange
   permission model deterministically, STOP and report (same rule as
