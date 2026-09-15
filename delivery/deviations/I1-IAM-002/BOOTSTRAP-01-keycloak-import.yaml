@@ -86,6 +86,21 @@ confirmedRootCause (2026-09-15, minimal repro):
   e.g. PATCH-free attribute updates via the client registration API, or
   B version probe: verify whether 26.6.x patch releases or 26.7 fix it).
 
+crossVersionConfirmation (2026-09-15):
+  Probed 26.5.0, 26.6.4, 26.7.0 (all with and without the
+  token-exchange-standard feature): custom client attributes are dropped
+  on client creation via the Admin API, and attribute-bearing client PUTs
+  return 409 Duplicate resource error — CONSISTENTLY, independent of the
+  STX feature. Master realm (pristine) reproduces identically. The Admin
+  API does process the attributes map (computed defaults like
+  post.logout.redirect.uris=+ are materialized), so the payload parsing
+  works; the custom-key persistence/update path is what fails. This is an
+  upstream/environment-level Keycloak defect requiring owner disposition
+  (upstream issue, image digest pinning to a known-good build, or an
+  approved alternative finalization workflow). Phase 2 remains BLOCKED;
+  the Option-A fixture and probe test are complete and will pass against
+  a Keycloak build where this defect is absent.
+
 stopRuleApplied: >
   Packet assumption: "if import cannot express the required exchange
   permission model deterministically, STOP and report (same rule as
