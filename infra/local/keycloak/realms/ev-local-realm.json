@@ -7,7 +7,6 @@
   "verifyEmail": true,
   "clients": [
     {
-      "id": "ev-bff",
       "clientId": "ev-bff",
       "enabled": true,
       "protocol": "openid-connect",
@@ -31,7 +30,7 @@
       ],
       "attributes": {
         "use.jwks.string": "true",
-        "jwks.string": "<PLACEHOLDER_JWKS_EV_BFF>",
+        "jwks.string": "{\"keys\":[{\"alg\":\"RS256\",\"use\":\"sig\",\"kty\":\"RSA\",\"n\":\"lcl2dStG3wes82VLYUowJvxxZCkB6-W2YM3KnOjZyFc9rRZraPj1zIAnxF5FEtLfwlRjMI0WddpwRQ04hSDmQ5JMuaSexOJipbjOc_WKDv40I9k_J343IBqk9HY6F7RyWoGGToszVcLb2K5jP95_2yKlZa80l2R9daQYjjsJA0U8zqNyX7Bq0kca1GOAFjdNR5muoRVDeVdznbWJWSXaqUD7taCoEt1VMgPoMXpv-eALwKo5EMvpp9VLDhi_2JcidukJbXUj3bDk0HC4zS4nkLBGCGMxvkAv6KFYFNdwk6ODp5lnavN6TRhdiiv1hxLKwKtJ5mkiNCynn-n3L_aDsw\",\"e\":\"AQAB\"}]}",
         "pkce.code.challenge.method": "S256",
         "token.endpoint.auth.signing.alg": "RS256",
         "backchannel.logout.url": "http://127.0.0.1:8081/api/internal/back-channel-logout",
@@ -40,7 +39,6 @@
       }
     },
     {
-      "id": "svc-account",
       "clientId": "svc-account",
       "enabled": true,
       "protocol": "openid-connect",
@@ -52,12 +50,25 @@
       "clientAuthenticatorType": "client-jwt",
       "attributes": {
         "use.jwks.string": "true",
-        "jwks.string": "<PLACEHOLDER_JWKS_SVC_ACCOUNT>",
-        "token.endpoint.auth.signing.alg": "RS256"
-      }
+        "jwks.string": "{\"keys\":[{\"alg\":\"RS256\",\"use\":\"sig\",\"kty\":\"RSA\",\"n\":\"2ZFrlfN8wQKLXtWy4-9zrJSvtiCRAe37aOJ30ydFUN2OKE-dU9X-cCOgxL1UBtWo7---gKYyn8vmrCkeKGTVdhqZVp5mYhubUdQogIgw_vTdct0g9zgPU0HKlTQ7MHbFdgN4-l-0tvQiCQwE-ipoi4WBZwKTYBSOACR7y7ivN_Ldi-WpSJMopSKyEz66StEHQMoB_6Oraqtci2Vd3B__ch-4abjEDv7sQyRgcqlvCmvnzrnYDSqypbHL41zHiKquqhUkGI_437TfjQ_0I0V4hlwA5785MOv1KlSS9v2K-Q3DlbAbDvpppjbAbWQlttRBvG0HMN7SBsLXqcddhGM0Rw\",\"e\":\"AQAB\"}]}",
+        "token.endpoint.auth.signing.alg": "RS256",
+        "standard.token.exchange.enabled": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-svc-account",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-account",
+            "id.token": "false",
+            "access.token": "true"
+          }
+        }
+      ]
     },
     {
-      "id": "svc-station-operations",
       "clientId": "svc-station-operations",
       "enabled": true,
       "protocol": "openid-connect",
@@ -69,12 +80,25 @@
       "clientAuthenticatorType": "client-jwt",
       "attributes": {
         "use.jwks.string": "true",
-        "jwks.string": "<PLACEHOLDER_JWKS_SVC_STATION_OPERATIONS>",
-        "token.endpoint.auth.signing.alg": "RS256"
-      }
+        "jwks.string": "{\"keys\":[{\"alg\":\"RS256\",\"use\":\"sig\",\"kty\":\"RSA\",\"n\":\"m0VKo9oZQOI4IofTpI-oc35crysHebFTjvaCAFKCsrU3-d-cARMcLlmw66UT4_wQ9C6oDwOZ2DrziIXUDwm6-SKWz9QPX-OXcE4RuV-iDh7xSZVjTvDtJ1heOhEfFm4fd7k7PvY4ezcTEoS1WPw8ErlxCawyyxuG9KEvqpwCFrE8PG5CZcTo_azH2hsJANr4HGlIAkd7TGadGFvB0ZkQFAXn4jT-KKIJ5HXo_yANeYnPpmdX_CjNmavbsZ6umrAA46uj2IdggLWTaeAu9hV2C5HuCUVRXrO9cVek9gocHUzNL9t1wD64FHy09Yek5a9faTiOlrcbpkFgKwAvxbxRnQ\",\"e\":\"AQAB\"}]}",
+        "token.endpoint.auth.signing.alg": "RS256",
+        "standard.token.exchange.enabled": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-svc-station-operations",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-station-operations",
+            "id.token": "false",
+            "access.token": "true"
+          }
+        }
+      ]
     },
     {
-      "id": "svc-booking-session",
       "clientId": "svc-booking-session",
       "enabled": true,
       "protocol": "openid-connect",
@@ -86,12 +110,25 @@
       "clientAuthenticatorType": "client-jwt",
       "attributes": {
         "use.jwks.string": "true",
-        "jwks.string": "<PLACEHOLDER_JWKS_SVC_BOOKING_SESSION>",
-        "token.endpoint.auth.signing.alg": "RS256"
-      }
+        "jwks.string": "{\"keys\":[{\"alg\":\"RS256\",\"use\":\"sig\",\"kty\":\"RSA\",\"n\":\"pAsgsio5VgMFsyOFqaqWLuVWsJzpExKAlwTv8UMGZdgmEoi5Xv869pT2IxOBwLx16K2HMlAtXA5Sl2ipHTxWzxeD-p7iAJVY623n86q_kCpzU6JRbR4QDlMymLLI9guP0OO7CTRbtm5AzCw1M4F78b32QX4SvRl8bEWUnDMYRZoVOiSZuTViFmnKtuCOrsVUq9Rxw1dRBuIr4bz9mVPBept7fFLwjny1pW-GRyCdSEFIllbOTq0WbG7JQ8c9CL4BYMQQ3QJWh6Ovmfjgi2xQ41l_NF1MsJ-AuTkmFysU4GIH5Kg-mCMxKxvZcRLv_UYP1Y2zXgNqYJbKs6AtaFn5gw\",\"e\":\"AQAB\"}]}",
+        "token.endpoint.auth.signing.alg": "RS256",
+        "standard.token.exchange.enabled": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-svc-booking-session",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-booking-session",
+            "id.token": "false",
+            "access.token": "true"
+          }
+        }
+      ]
     },
     {
-      "id": "svc-device-integration",
       "clientId": "svc-device-integration",
       "enabled": true,
       "protocol": "openid-connect",
@@ -103,12 +140,25 @@
       "clientAuthenticatorType": "client-jwt",
       "attributes": {
         "use.jwks.string": "true",
-        "jwks.string": "<PLACEHOLDER_JWKS_SVC_DEVICE_INTEGRATION>",
-        "token.endpoint.auth.signing.alg": "RS256"
-      }
+        "jwks.string": "{\"keys\":[{\"alg\":\"RS256\",\"use\":\"sig\",\"kty\":\"RSA\",\"n\":\"zSS21CHY0foBhz09f5MvAR_AvJp5hx2G-tgClg7m7fKf01W_hksCMWyOqs7MPFkK1j5NoYMFg9FjyXY7OIuK-aK1oy9PugnMy4EiuZIx1xJEK9FBEqyI2APqfrngPvX46Eru25O1iTfb6Q3jxrrAOgLG_6kOdn0Mp4O8ms4ooUejYBM_olL2dlssll6a_OjgdZnxNkl0XyKHma20NQ2Bsuxv1JhIChOxPjHnSsPkkiPdgCwy21-0hAfZt1Ibebs8jFl1bKfHRr1MieOAyuORZcLW3GYJ2F9zolcmYvt8EHRlTSp9R9B1SQs-BxXgdw5DpvLwHyczZjjcYJv1AztUWw\",\"e\":\"AQAB\"}]}",
+        "token.endpoint.auth.signing.alg": "RS256",
+        "standard.token.exchange.enabled": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-svc-device-integration",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-device-integration",
+            "id.token": "false",
+            "access.token": "true"
+          }
+        }
+      ]
     },
     {
-      "id": "svc-discovery-insights",
       "clientId": "svc-discovery-insights",
       "enabled": true,
       "protocol": "openid-connect",
@@ -120,12 +170,25 @@
       "clientAuthenticatorType": "client-jwt",
       "attributes": {
         "use.jwks.string": "true",
-        "jwks.string": "<PLACEHOLDER_JWKS_SVC_DISCOVERY_INSIGHTS>",
-        "token.endpoint.auth.signing.alg": "RS256"
-      }
+        "jwks.string": "{\"keys\":[{\"alg\":\"RS256\",\"use\":\"sig\",\"kty\":\"RSA\",\"n\":\"qprnQFk3nwkPpNlud_wc9NsQPgQanVRwkTsArbg4ns3MO3yWcgzNHCKc-noc9iXP6mnqlyrbEJXVrnyFku_6Sline9DAQ9zsdfJbNJ-S2dRnjAJnIA0WVLFupiH6QC-7X-pbx4LDv6qJxcrXC6PvdSQ0tWTDB0FBpp9X79oiPFiuqu9cc6RRx2bEPaLKB7WD0cFFJU6ffAyhnQTnTy3Egmv3ShB8Kw6zVoqIOzXhuq_BoZJCbujwAJ8-EWEL5HIwX_PApW01lGDKad66x8clK1KaEwGOvEOC0230fNqoy16dm_AkK4zJTqoWvpB1MEH8mNzU9LA46tw2-9J4Hrz0NQ\",\"e\":\"AQAB\"}]}",
+        "token.endpoint.auth.signing.alg": "RS256",
+        "standard.token.exchange.enabled": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-svc-discovery-insights",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-discovery-insights",
+            "id.token": "false",
+            "access.token": "true"
+          }
+        }
+      ]
     },
     {
-      "id": "svc-notification",
       "clientId": "svc-notification",
       "enabled": true,
       "protocol": "openid-connect",
@@ -137,12 +200,25 @@
       "clientAuthenticatorType": "client-jwt",
       "attributes": {
         "use.jwks.string": "true",
-        "jwks.string": "<PLACEHOLDER_JWKS_SVC_NOTIFICATION>",
-        "token.endpoint.auth.signing.alg": "RS256"
-      }
+        "jwks.string": "{\"keys\":[{\"alg\":\"RS256\",\"use\":\"sig\",\"kty\":\"RSA\",\"n\":\"lTDS0_SEL5OID_X3GF3OcEq6jxhsC6vsBnqPCQmkg19kAYUUWBswF8JhFgGxdvfDMNVnzb5QlCFQjgS5fhjllOOpU3M-pUK3HhYO9Jn-25HHIia-uc3yJcCIok8CRQnYbBl1on-nTaHiWTiYDpnbr4JXfUej_JSzsypooLgNFkGxkinYQW2ary7Ukn6Q0x4kkgHggqgD5sEXE7Cm9rOJzu1kIHSWhiOaXBfxHSRAflndFOAQmj11cUPVDw1uphSdb8LvfvAiy3KqEoKAKXTmwiZMW5SkLTkpwHb5lwbY-qU3oQpK8PSsiFzuCmLDSjcuN2o1syFX51h182sXXID17w\",\"e\":\"AQAB\"}]}",
+        "token.endpoint.auth.signing.alg": "RS256",
+        "standard.token.exchange.enabled": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-svc-notification",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-notification",
+            "id.token": "false",
+            "access.token": "true"
+          }
+        }
+      ]
     },
     {
-      "id": "svc-governance-support",
       "clientId": "svc-governance-support",
       "enabled": true,
       "protocol": "openid-connect",
@@ -154,12 +230,25 @@
       "clientAuthenticatorType": "client-jwt",
       "attributes": {
         "use.jwks.string": "true",
-        "jwks.string": "<PLACEHOLDER_JWKS_SVC_GOVERNANCE_SUPPORT>",
-        "token.endpoint.auth.signing.alg": "RS256"
-      }
+        "jwks.string": "{\"keys\":[{\"alg\":\"RS256\",\"use\":\"sig\",\"kty\":\"RSA\",\"n\":\"n1GhFI6mqs_sU3cnaBCIl9LHiji0vW3KPZDzQfmWu3rsGzw29WbXFJ-tmTDXHdGcOcZnLpVoHg6jxbf_3vRclfk7gPqxjjcK2dDVFwG4xtfQahc54CAhgp9qVzqmamzJZeg2p0w2jQNfVCLdFMm05ND_tQF3hjz_WXX_gDeC2ejaonhZBI1QrvzfPk4ZDLa7z8HHQ6aV02QNOz2WGMQ2TIxFrN8eSdFFUetwk_emT9nuo8LTULo-RHlJSMM5mkTmqE7bJA7elSVoiJbdL8WzJjadwTG3YGBNuOqQkcrgwIvtwlv4BcaU2t-O-Zb8D_hTvpAEo-djfLkGnwsAURGy3Q\",\"e\":\"AQAB\"}]}",
+        "token.endpoint.auth.signing.alg": "RS256",
+        "standard.token.exchange.enabled": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "aud-svc-governance-support",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "svc-governance-support",
+            "id.token": "false",
+            "access.token": "true"
+          }
+        }
+      ]
     },
     {
-      "id": "security-test-client",
       "clientId": "security-test-client",
       "enabled": true,
       "protocol": "openid-connect",
@@ -169,7 +258,7 @@
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "evplatform_dev_only",
+      "secret": "security-test-client-only-dev",
       "attributes": {
         "client_credentials.use_refresh_token": "false"
       }

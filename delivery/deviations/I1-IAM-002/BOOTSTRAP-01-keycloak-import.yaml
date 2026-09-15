@@ -1,0 +1,51 @@
+schemaVersion: "1.0"
+deviationId: "I1-IAM-002-BOOTSTRAP-01"
+type: "DEPENDENCY_BLOCKER"
+taskId: "I1-IAM-002"
+date: "2026-09-15"
+status: "OPEN_REQUIRES_OWNER_DECISION"
+title: "Keycloak 26.6 realm import cannot deterministically express the svc-* client finalization"
+description: >
+  Phase 2 (AC-06) assumed the realm import expresses the full svc-* client
+  configuration (attributes incl. Standard Token Exchange V2 toggle,
+  audience protocol mappers). Empirical probing on Keycloak 26.6
+  (quay.io/keycloak/keycloak:26.6, feature token-exchange-standard) found:
+  (1) the directory import (--import-realm) succeeds but SILENTLY strips
+  client attributes and protocolMappers while importing the rest; (2) the
+  Admin-REST full-realm import returns 201 but the same stripping occurs on
+  read-back; (3) after such an import, any client PUT returns 409 Duplicate
+  resource error even for a minimal attribute change; (4) protocolMappers
+  CAN be added via the protocol-mappers/add-models endpoint (verified:
+  aud-svc-station-operations created, 204). Non-UUID pinned client ids in
+  the realm file make the REST full import 409 outright (removing them lets
+  the import pass). The probe test (apps/bff RealmImportProbeTest) asserts
+  the current failing state and will encode the final recipe.
+options:
+  - id: A
+    label: "Admin-REST bootstrap component (code)"
+    detail: >
+      Approve a small service-owned bootstrap (KeycloakAdminRestBootstrap:
+      import realm, then per-client PUT/mappers/permission calls via Admin
+      REST, executed at dev-stack startup or as a test fixture). The
+      attribute-stripped import becomes a known first step; finalization is
+      code against the Admin API. Proven workable (mappers created via REST
+      in this probe). Requires: scope amendment adding an infra/bootstrap
+      code location to allowedFiles.
+  - id: B
+    label: "Different Keycloak version"
+    detail: >
+      Probe Keycloak 25.x or 26.x patch variants for an import path that
+      preserves attributes/mappers; re-run the same probe test against the
+      chosen version. Risk: STX-v2 availability and support matrix change.
+  - id: C
+    label: "Documented manual console configuration (dev-only)"
+    detail: >
+      Keep import as-is (clients/roles/users) and document a one-time manual
+      Admin-console checklist per developer for attributes/mappers/STX.
+      Weakest determinism; CI proofs (Testcontainers) would still need
+      option A's code.
+recommendation: "Option A (with the phase-3 Testcontainers suite as the proof harness)."
+stopRuleApplied: >
+  Packet assumption: "if import cannot express the required exchange
+  permission model deterministically, STOP and report (same rule as
+  I1-IAM-001)."
