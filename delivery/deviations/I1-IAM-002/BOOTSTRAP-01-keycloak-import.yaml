@@ -69,37 +69,18 @@ empiricalFindings (2026-09-15, Option A probe on clean KC 26.6):
     (realm-bare import → client POSTs → attributes PUT → add-models →
     STX permission wiring), encoded as the phase-3 test fixture
 
-confirmedRootCause (2026-09-15, minimal repro):
-  Keycloak 26.6.4 with feature token-exchange-standard enabled: ANY client
-  PUT containing an attributes map returns 409 Duplicate resource error —
-  even {"x-foo":"bar"} on a pristine master realm, on freshly POSTed
-  clients, independent of attribute content. Mechanism: with the feature
-  on, every client update re-registers the Standard-Token-Exchange
-  permission resource → duplicate → 409. This is an upstream Keycloak
-  defect (interplay of the token-exchange-standard feature and client
-  updates), NOT a repository defect. Creation (POST) with attributes
-  works (they persist); UPDATE is the broken path. Consequence: the
-  realm import alone cannot finalize clients (import strips), and the
-  import-then-update recipe hits the 409. Phase status: phase 1 done
-  (registry); phase 2 finalization blocked on this upstream defect.
-  Disposition options unchanged (A needs a workaround for the 409 —
-  e.g. PATCH-free attribute updates via the client registration API, or
-  B version probe: verify whether 26.6.x patch releases or 26.7 fix it).
-
-crossVersionConfirmation (2026-09-15):
-  Probed 26.5.0, 26.6.4, 26.7.0 (all with and without the
-  token-exchange-standard feature): custom client attributes are dropped
-  on client creation via the Admin API, and attribute-bearing client PUTs
-  return 409 Duplicate resource error — CONSISTENTLY, independent of the
-  STX feature. Master realm (pristine) reproduces identically. The Admin
-  API does process the attributes map (computed defaults like
-  post.logout.redirect.uris=+ are materialized), so the payload parsing
-  works; the custom-key persistence/update path is what fails. This is an
-  upstream/environment-level Keycloak defect requiring owner disposition
-  (upstream issue, image digest pinning to a known-good build, or an
-  approved alternative finalization workflow). Phase 2 remains BLOCKED;
-  the Option-A fixture and probe test are complete and will pass against
-  a Keycloak build where this defect is absent.
+correctedRootCause (2026-09-20 — supersedes the upstream-defect hypothesis):
+  The 409/attribute-loss was NOT an upstream Keycloak defect. Root cause:
+  per-client Admin-REST lookups (GET /clients?client_id=X) returned
+  unstable/wrong results in this environment, so finalization PUTs and
+  add-models calls landed on wrong client UUIDs (the all-7-mappers-
+  on-every-client read-back was cross-contamination from the same bug).
+  Fix: fetch the client list ONCE, index locally by clientId. With that,
+  the full Option-A recipe works on KC 26.6.4: bare-realm import (users),
+  bare client POSTs, attributes-only PUT finalization (clientId MUST be
+  omitted from PUT payloads — including it triggers rename-duplicate 409),
+  add-models mappers. Probe test: 2/2 PASS (config survival + semantic
+  STX grant). Earlier claims of upstream defect are retracted.
 
 stopRuleApplied: >
   Packet assumption: "if import cannot express the required exchange
