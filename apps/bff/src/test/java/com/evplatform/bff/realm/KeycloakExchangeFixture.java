@@ -92,6 +92,17 @@ public final class KeycloakExchangeFixture {
 
     public HttpResponse<String> admin(String method, String path, String jsonBody)
             throws Exception {
+        HttpResponse<String> r = adminOnce(method, path, jsonBody);
+        if (r.statusCode() == 401) {
+            // cached admin token expired — refresh once and retry
+            cachedAdminToken = null;
+            r = adminOnce(method, path, jsonBody);
+        }
+        return r;
+    }
+
+    private HttpResponse<String> adminOnce(String method, String path, String jsonBody)
+            throws Exception {
         HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(base() + path))
                 .header("Authorization", "Bearer " + adminToken())
                 .header("Content-Type", "application/json");
@@ -260,19 +271,26 @@ public final class KeycloakExchangeFixture {
         jwks.putArray("keys").add(jwk);
 
         // 4. finalize: attributes via PUT, mappers via add-models
+        // fetch the client list ONCE and index by clientId — avoids any
+        // server-side query-parameter filtering anomalies on this build
+        JsonNode allClients = MAPPER.readTree(admin("GET", "/admin/realms/" + REALM
+                + "/clients?max=500", null).body());
+        java.util.Map<String, String> uuidByClientId = new java.util.HashMap<>();
+        for (JsonNode c : allClients) {
+            uuidByClientId.put(c.path("clientId").asText(), c.path("id").asText());
+        }
         for (JsonNode client : realm.path("clients")) {
             String clientId = client.path("clientId").asText();
             boolean target = clientId.startsWith("svc-");
-            JsonNode idNode = MAPPER.readTree(admin("GET", "/admin/realms/" + REALM
-                    + "/clients?client_id=" + clientId, null).body());
-            String clientUuid = idNode.path(0).path("id").asText();
+            String clientUuid = uuidByClientId.get(clientId);
             ObjectNode attrs = client.path("attributes").deepCopy();
             attrs.put("standard.token.exchange.enabled", target ? "true" : "false");
             if (clientId.equals(BFF_CLIENT)) {
                 attrs.put("jwks.string", jwks.toString());
             }
+            // attributes-ONLY PUT: including clientId in an update payload
+            // triggers KC 26.x rename-duplicate validation → 409
             ObjectNode putBody = MAPPER.createObjectNode();
-            putBody.put("clientId", clientId);
             putBody.set("attributes", attrs);
             HttpResponse<String> put = admin("PUT", "/admin/realms/" + REALM
                     + "/clients/" + clientUuid, putBody.toString());
