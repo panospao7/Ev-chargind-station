@@ -178,6 +178,24 @@ public class JdbcSessionStore {
     }
 
     /**
+     * @return the raw security-event metadata JSON document for the session,
+     *         or {@code null} when the session does not exist. Callers in
+     *         the exchange flow must verify session validity through the
+     *         lifecycle service first; this read makes no state checks.
+     */
+    public String findSecurityEventMetadata(String sessionRef) {
+        return jdbc.sql("""
+                SELECT security_event_metadata::text
+                FROM bff_session.bff_session
+                WHERE session_ref = ?
+                """)
+                .param(sessionRef)
+                .query(String.class)
+                .optional()
+                .orElse(null);
+    }
+
+    /**
      * Marks a single session REVOKED.
      *
      * @return true when an ACTIVE row was found and revoked

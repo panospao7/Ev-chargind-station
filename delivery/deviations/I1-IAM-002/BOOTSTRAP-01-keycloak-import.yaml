@@ -82,6 +82,29 @@ correctedRootCause (2026-09-20 — supersedes the upstream-defect hypothesis):
   add-models mappers. Probe test: 2/2 PASS (config survival + semantic
   STX grant). Earlier claims of upstream defect are retracted.
 
+phase3ClientKeysFinding (2026-09-20, DEBUG-level evidence):
+  With the realm/client/required-action bootstrap fully working (ROPC token
+  acquisition OK; sessions; the negative exchange case passing), the STX-v2
+  exchange itself fails client authentication: KC 26.6 client-jwt key
+  loading returns ZERO keys for ev-bff regardless of configuration path:
+  - jwks.string attribute (verified persisted; kid and no-kid variants;
+    minimal {kty,n,e} JWK)
+  - jwks.url attribute (fixture-served JWKS over host.testcontainers.internal)
+  - with/without serviceAccountsEnabled, with/without signing.alg attribute
+  KC DEBUG: InfinispanPublicKeyStorageProvider 'Public keys retrieved
+  successfully ... New kids: []' → 'PublicKey wasn't found ... Available
+  kids: []' → client-jwt FAILED → TOKEN_EXCHANGE_ERROR
+  error="client_credentials_setup_required".
+  The assertion itself is correctly formed (kid header, iss/sub=ev-bff,
+  aud=issuer, 60s, unique jti) and the identical key signs fine in node.
+  Suspected KC 26.6 client-keys storage behavior (console-vs-API attribute
+  handling or an additional required credential setup step); needs a fresh
+  focused investigation (KC source for client_credentials_setup_required /
+  console-generated-JWKS comparison / newer KC).
+  Phase-3 state: exchange client + session cache + service implemented and
+  compiling; §7.3 negative case (unsupported audience) PASSES; positive
+  cases blocked on this finding.
+
 stopRuleApplied: >
   Packet assumption: "if import cannot express the required exchange
   permission model deterministically, STOP and report (same rule as

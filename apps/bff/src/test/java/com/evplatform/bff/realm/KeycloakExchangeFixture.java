@@ -55,6 +55,7 @@ public final class KeycloakExchangeFixture {
     public final GenericContainer<?> keycloak;
     private static volatile PrivateKey fixturePrivateKey;
     private static volatile String fixtureKid;
+    private static volatile java.security.interfaces.RSAPublicKey fixturePublicKey;
 
     private volatile String cachedAdminToken;
 
@@ -120,7 +121,6 @@ public final class KeycloakExchangeFixture {
     public String ropcUserToken(String username, String password) throws Exception {
         HttpResponse<String> r = postForm("/realms/" + REALM + "/protocol/openid-connect/token",
                 "grant_type=password&client_id=security-test-client"
-                        + "&client_secret=security-test-client-only-dev"
                         + "&username=" + username + "&password=" + password
                         + "&scope=openid");
         JsonNode body = MAPPER.readTree(r.body());
@@ -222,6 +222,29 @@ public final class KeycloakExchangeFixture {
                     + realmPost.statusCode() + " " + realmPost.body());
         }
 
+        // 1b. disable KC 26.x default required actions (CONFIGURE_TOTP,
+        //    UPDATE_PASSWORD, VERIFY_PROFILE) — they fire on every direct-grant
+        //    login for API-provisioned users and block the probe ROPC flow
+        //    (dev/test realm only; browser-flow MFA policy is a later slice)
+        for (String alias : new String[] {
+                "CONFIGURE_TOTP", "UPDATE_PASSWORD", "VERIFY_PROFILE" }) {
+            HttpResponse<String> raGet = admin("GET",
+                    "/admin/realms/" + REALM + "/authentication/required-actions/"
+                            + alias, null);
+            if (raGet.statusCode() != 200) {
+                continue; // unknown alias on future builds — nothing to disable
+            }
+            ObjectNode ra = (ObjectNode) MAPPER.readTree(raGet.body());
+            ra.put("enabled", false);
+            HttpResponse<String> raPut = admin("PUT",
+                    "/admin/realms/" + REALM + "/authentication/required-actions/"
+                            + alias, ra.toString());
+            if (raPut.statusCode() != 204) {
+                throw new IllegalStateException("required-action disable failed for "
+                        + alias + ": " + raPut.statusCode() + " " + raPut.body());
+            }
+        }
+
         // 2. create clients bare, then finalize attributes via PUT and mappers
         //    via add-models (creation drops attributes/mappers on KC 26.6)
         for (JsonNode client : realm.path("clients")) {
@@ -237,9 +260,15 @@ public final class KeycloakExchangeFixture {
                     client.path("clientAuthenticatorType").asText("client-jwt"));
             bareClient.put("standardFlowEnabled",
                     client.path("standardFlowEnabled").asBoolean(false));
+            // the probe client is PUBLIC with direct access: no secret to
+            // manage (KC 26.x drops inline secrets and rotates on regenerate —
+            // a public ROPC client is the deterministic test path)
+            boolean probeClient = clientId.equals("security-test-client");
             bareClient.put("directAccessGrantsEnabled",
-                    client.path("directAccessGrantsEnabled").asBoolean(false));
-            if (client.hasNonNull("secret")) {
+                    probeClient || client.path("directAccessGrantsEnabled").asBoolean(false));
+            if (probeClient) {
+                bareClient.put("clientAuthenticatorType", "public");
+            } else if (client.hasNonNull("secret")) {
                 bareClient.put("secret", client.path("secret").asText());
             }
             HttpResponse<String> post = admin("POST", "/admin/realms/" + REALM
@@ -282,6 +311,7 @@ public final class KeycloakExchangeFixture {
         for (JsonNode client : realm.path("clients")) {
             String clientId = client.path("clientId").asText();
             boolean target = clientId.startsWith("svc-");
+            boolean probeClient = clientId.equals("security-test-client");
             String clientUuid = uuidByClientId.get(clientId);
             ObjectNode attrs = client.path("attributes").deepCopy();
             attrs.put("standard.token.exchange.enabled", target ? "true" : "false");
@@ -292,6 +322,11 @@ public final class KeycloakExchangeFixture {
             // triggers KC 26.x rename-duplicate validation → 409
             ObjectNode putBody = MAPPER.createObjectNode();
             putBody.set("attributes", attrs);
+            if (probeClient) {
+                putBody.put("publicClient", true);
+                putBody.put("directAccessGrantsEnabled", true);
+                putBody.put("clientAuthenticatorType", "public");
+            }
             HttpResponse<String> put = admin("PUT", "/admin/realms/" + REALM
                     + "/clients/" + clientUuid, putBody.toString());
             if (put.statusCode() != 204) {
@@ -310,6 +345,7 @@ public final class KeycloakExchangeFixture {
             }
         }
 
+        fixturePublicKey = pub;
         fixturePrivateKey = priv;
         fixtureKid = kid;
     }
@@ -317,6 +353,18 @@ public final class KeycloakExchangeFixture {
 
     public PrivateKey privateKey() {
         return fixturePrivateKey;
+    }
+
+    public java.security.interfaces.RSAPublicKey publicKey() {
+        return fixturePublicKey;
+    }
+
+    /** Nimbus RSAKey view of the fixture key (kid = probe-key-1). */
+    public com.nimbusds.jose.jwk.RSAKey evBffRsaKey() {
+        return new com.nimbusds.jose.jwk.RSAKey.Builder(publicKey())
+                .privateKey(privateKey())
+                .keyID(kid())
+                .build();
     }
 
     public String kid() {
