@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-15T09:00:00Z"
+updatedAt: "2026-09-20T20:40:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -825,7 +825,7 @@ tasks:
         - "delivery/evidence/I1-IAM-001/sec-p02-csrf.md"
         - "delivery/evidence/I1-IAM-001/tester-verification.md"
   I1-IAM-002:
-    state: "CLAIMED"
+    state: "IMPLEMENTING"
     assignedAgent: null
     claimedAt: null
 
@@ -866,15 +866,12 @@ tasks:
       status: "NOT_STARTED"
       paths: []
 summary:
-  activeTask: null
-  nextRecommendedTask: "I1-IAM-002"
-
-counts:
+  counts:
     BACKLOG: 0
     READY: 0
     CLAIMED: 0
-    BLOCKED: 1
-    IMPLEMENTING: 0
+    BLOCKED: 0
+    IMPLEMENTING: 1
     SELF_VERIFIED: 0
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
@@ -887,3 +884,6 @@ counts:
     SPEC_CONFLICT: 0
     SUPERSEDED: 0
     CANCELLED: 0
+
+  activeTask: "I1-IAM-002"
+  nextRecommendedTask: null
