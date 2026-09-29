@@ -105,6 +105,34 @@ phase3ClientKeysFinding (2026-09-20, DEBUG-level evidence):
   compiling; §7.3 negative case (unsupported audience) PASSES; positive
   cases blocked on this finding.
 
+phase3RecipeLadder (2026-09-20, final state of this round):
+  Advances beyond the client-keys finding — the recipe now progresses to
+  the STX permission layer on KC 26.6 via the REGISTRATION API path:
+  1. bare-realm Admin-REST import (users) + required-actions disable → OK
+  2. client creation via /realms/{r}/clients-registrations/default with an
+     initial access token (POST /admin/realms/{r}/clients-initial-access)
+     — clientAuthenticatorType and directAccess SURVIVE creation on this
+     path (admin-POST strips them)
+  3. attributes-only PUT finalization (STX attr, jwks.string, mappers) →
+     attributes persist
+  4. ROPC on the public probe client → subject token OK
+  5. exchange: client authentication PASSES (private_key_jwt via jwks.string
+     attribute set by PUT — the earlier zero-kids failure was an artifact of
+     admin-POST-created clients where authType/jwks state diverged), and the
+     flow now reaches the STX permission layer:
+     403 access_denied "Client is not within the token audience"
+  Remaining: KC 26.6 STX authorization requires either (a) the subject
+  token to carry the target audience (probe: audience mapper on the probe
+  client persisted but did not reach the ROPC token aud — mapper-vs-ROPC
+  quirk, unresolved) or (b) a token-exchange permission granting ev-bff —
+  the v1 /management/permissions endpoint returns 501 Feature not enabled
+  even with admin-fine-grained-authz(:v2) enabled, and the v2 permissions
+  REST surface was not locatable within this round. NEXT: locate the KC
+  26.6 STX permission configuration surface (console-captured request,
+  KC source for StandardTokenExchangePolicyProvider, or KC 26.7+ probe).
+  Phase-3 code (client/cache/service/tests) is complete and compiles; the
+  6 positive tests await this last configuration step.
+
 stopRuleApplied: >
   Packet assumption: "if import cannot express the required exchange
   permission model deterministically, STOP and report (same rule as
