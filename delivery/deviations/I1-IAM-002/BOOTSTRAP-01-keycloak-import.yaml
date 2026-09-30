@@ -133,6 +133,24 @@ phase3RecipeLadder (2026-09-20, final state of this round):
   Phase-3 code (client/cache/service/tests) is complete and compiles; the
   6 positive tests await this last configuration step.
 
+audienceMapperFindings (2026-09-21, closing this round):
+  The STX audience check requires the REQUESTING client (ev-bff) inside the
+  subject token audience — matching the real BFF flow (subject token issued
+  FOR ev-bff). Probe attempts to add an audience to the probe client token:
+  - included.client.audience mapper via PUT protocolMappers: persists on the
+    client, does NOT reach the ROPC token aud
+  - included.custom.audience (ev-bff) same result
+  - mapper inline in the registration POST: registration 403s (registration
+    policy rejects mappers)
+  Working hypothesis for the next session: the probe client needs the
+  audience via a REALM/CLIENT-SCOPE mapper (default client scopes apply to
+  ROPC tokens where client-level PUT mappers may not), OR the ROPC token
+  subject should come from the authorization-code flow with ev-bff itself
+  as the client (the true production shape — subject token aud=ev-bff
+  natively), possibly using the fixture to drive a headless code+PKCE
+  login for driver-local. The latter is the semantically exact simulation
+  of the SEC-001 §7.1 flow and is the recommended next step.
+
 stopRuleApplied: >
   Packet assumption: "if import cannot express the required exchange
   permission model deterministically, STOP and report (same rule as
