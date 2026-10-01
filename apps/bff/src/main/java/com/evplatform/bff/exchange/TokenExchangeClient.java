@@ -73,7 +73,7 @@ public class TokenExchangeClient {
         public ExchangeFailedException(int statusCode, String oauthError, String body) {
             super("token exchange failed: HTTP " + statusCode
                     + (oauthError == null ? "" : " (" + oauthError + ")")
-                    + (body == null ? "" : " body redacted"));
+                    + (body == null ? "" : " detail=" + body));
             this.statusCode = statusCode;
             this.oauthError = oauthError;
         }

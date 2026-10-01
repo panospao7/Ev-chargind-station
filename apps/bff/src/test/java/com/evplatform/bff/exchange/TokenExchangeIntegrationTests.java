@@ -42,12 +42,14 @@ class TokenExchangeIntegrationTests {
         return Fixtures.exchangeService(FX);
     }
 
+    /** Production-exact subject token: code+PKCE login as ev-bff (§7.1). */
     private static BffSession newSession() throws Exception {
+        KeycloakExchangeFixture.EvBffLogin login =
+                FX.headlessCodeLogin("driver-local", "evplatform_dev_only");
         return lifecycle().createSession(
                 "user-phase3-1", "sid-phase3-1",
                 new SessionLifecycleService.TokenMaterial(
-                        FX.ropcUserToken("driver-local", "evplatform_dev_only"),
-                        null, NOW.plusSeconds(300)),
+                        login.accessToken(), login.refreshToken(), NOW.plusSeconds(300)),
                 "urn:evplatform:acr:basic", NOW);
     }
 

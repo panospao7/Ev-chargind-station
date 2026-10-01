@@ -151,6 +151,30 @@ audienceMapperFindings (2026-09-21, closing this round):
   login for driver-local. The latter is the semantically exact simulation
   of the SEC-001 §7.1 flow and is the recommended next step.
 
+headlessLoginRound (2026-10-01):
+  BREAKTHROUGH: the headless code+PKCE login as ev-bff WORKS end to end
+  (auth request → login form POST with manual Cookie header → code →
+  private_key_jwt code exchange → session created with the production-exact
+  subject token aud=ev-bff/azp=ev-bff). The exchange audience check now
+  PASSES (no more not-within-token-audience) and the flow reaches the last
+  gate: "Requested audience not available: svc-station-operations".
+  Disproven hypotheses (recorded so they are not retried):
+  - audience mapper on the requesting client (add-models, persisted): does
+    NOT satisfy the availability check
+  - custom-vs-client audience mapper variants: no difference
+  - KC-side cache/re-PUT: no difference
+  Also fixed this round: STX toggle must be true on the REQUESTING client
+  as well (KC checks both sides); login POST needs credentialId+login
+  fields; CookieHandler does not reliably attach KC cookies — manual
+  Set-Cookie → Cookie header is deterministic.
+  NEXT (single remaining gate): determine how KC 26.6 decides the AVAILABLE
+  audiences for an STX-v2 request. Best leads: (1) drive the admin console
+  STX flow once and capture what it configures (browser devtools), (2) read
+  KC 26.6 source StandardTokenExchangeV2Provider.getRequestedAudiences /
+  validateAudience, (3) probe KC 26.7/27 where the model may differ. Once
+  the audience set is configured correctly, the 6 positive tests run
+  unchanged (client, cache, service, session flow all proven).
+
 stopRuleApplied: >
   Packet assumption: "if import cannot express the required exchange
   permission model deterministically, STOP and report (same rule as

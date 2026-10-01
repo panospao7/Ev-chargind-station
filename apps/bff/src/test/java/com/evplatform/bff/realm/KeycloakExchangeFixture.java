@@ -2,6 +2,7 @@ package com.evplatform.bff.realm;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -128,6 +129,120 @@ public final class KeycloakExchangeFixture {
             throw new IllegalStateException("ROPC failed: " + r.body());
         }
         return body.get("access_token").asText();
+    }
+
+    /**
+     * Production-exact subject token: a headless authorization-code + PKCE
+     * login as {@code ev-bff} (SEC-001 §7.1 steps 1–4) — the resulting access
+     * token natively carries aud=ev-bff / azp=ev-bff / acr / auth_time, which
+     * is what the Standard Token Exchange audience check requires.
+     */
+    public record EvBffLogin(String accessToken, String refreshToken) {
+    }
+
+    public EvBffLogin headlessCodeLogin(String username, String password) throws Exception {
+        java.security.SecureRandom random = new java.security.SecureRandom();
+        byte[] verifierBytes = new byte[32];
+        random.nextBytes(verifierBytes);
+        String verifier = Base64.getUrlEncoder().withoutPadding().encodeToString(verifierBytes);
+        String challenge = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                java.security.MessageDigest.getInstance("SHA-256")
+                        .digest(verifier.getBytes(java.nio.charset.StandardCharsets.US_ASCII)));
+        String state = UUID.randomUUID().toString();
+        String nonce = UUID.randomUUID().toString();
+        String redirectUri = "http://127.0.0.1:8081/login/oauth2/code/ev-bff";
+
+        HttpClient browser = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10))
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+
+        // 1. authorization request → login page (cookies set)
+        HttpResponse<String> loginPage = browser.send(HttpRequest.newBuilder(
+                        URI.create(issuer() + "/protocol/openid-connect/auth"
+                                + "?client_id=" + BFF_CLIENT
+                                + "&response_type=code"
+                                + "&scope=openid"
+                                + "&redirect_uri=" + java.net.URLEncoder.encode(redirectUri,
+                                        java.nio.charset.StandardCharsets.UTF_8)
+                                + "&state=" + state
+                                + "&nonce=" + nonce
+                                + "&code_challenge=" + challenge
+                                + "&code_challenge_method=S256"))
+                        .GET().build(),
+                HttpResponse.BodyHandlers.ofString());
+        if (loginPage.statusCode() != 200) {
+            throw new IllegalStateException("authorization request failed: "
+                    + loginPage.statusCode());
+        }
+        StringBuilder cookieHeader = new StringBuilder();
+        loginPage.headers().allValues("set-cookie").forEach(v -> {
+            String pair = v.split(";", 2)[0];
+            if (cookieHeader.length() > 0) cookieHeader.append("; ");
+            cookieHeader.append(pair.trim());
+        });
+
+        // 2. parse the login form action (HTML-escaped ampersands included)
+        java.util.regex.Matcher action = java.util.regex.Pattern
+                .compile("action=\"([^\"]*login-actions/authenticate[^\"]*)\"")
+                .matcher(loginPage.body());
+        if (!action.find()) {
+            throw new IllegalStateException("login form action not found; page head: "
+                    + loginPage.body().substring(0, Math.min(300, loginPage.body().length())));
+        }
+        String formAction = action.group(1).replace("&amp;", "&");
+
+        // 3. POST credentials (302 → redirect_uri?code=…)
+        HttpResponse<String> login = browser.send(HttpRequest.newBuilder(
+                        URI.create(formAction))
+                        .header("Cookie", cookieHeader.toString())
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .POST(HttpRequest.BodyPublishers.ofString(
+                                "username=" + java.net.URLEncoder.encode(username,
+                                        java.nio.charset.StandardCharsets.UTF_8)
+                                + "&password=" + java.net.URLEncoder.encode(password,
+                                        java.nio.charset.StandardCharsets.UTF_8)
+                                + "&credentialId="
+                                + "&login=Sign+In"))
+                        .build(),
+                HttpResponse.BodyHandlers.ofString());
+        String location = login.headers().firstValue("Location").orElse(null);
+        if (login.statusCode() != 302 || location == null || !location.contains("code=")) {
+            java.util.regex.Matcher kcMsg = java.util.regex.Pattern
+                    .compile("message-?[a-z]*\\s*[^>]*>\\s*([^<]{5,140})")
+                    .matcher(login.body());
+            throw new IllegalStateException("login POST did not produce a code redirect: "
+                    + login.statusCode()
+                    + " kc-message=" + (kcMsg.find() ? kcMsg.group(1).trim() : "n/a")
+                    + " location=" + location);
+        }
+
+        java.util.regex.Matcher codeMatcher = java.util.regex.Pattern
+                .compile("[?&]code=([^&]+)").matcher(location);
+        if (!codeMatcher.find()) {
+            throw new IllegalStateException("no code in redirect: " + location);
+        }
+        String code = codeMatcher.group(1);
+
+        // 4. code exchange with private_key_jwt (§7.1 step 4) + code_verifier
+        HttpResponse<String> token = postForm("/realms/" + REALM + "/protocol/openid-connect/token",
+                "grant_type=authorization_code"
+                        + "&code=" + java.net.URLEncoder.encode(code, java.nio.charset.StandardCharsets.UTF_8)
+                        + "&redirect_uri=" + java.net.URLEncoder.encode(redirectUri, java.nio.charset.StandardCharsets.UTF_8)
+                        + "&client_id=" + BFF_CLIENT
+                        + "&client_assertion_type=" + java.net.URLEncoder.encode(
+                                "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
+                                java.nio.charset.StandardCharsets.UTF_8)
+                        + "&client_assertion=" + java.net.URLEncoder.encode(
+                                evBffClientAssertion(), java.nio.charset.StandardCharsets.UTF_8)
+                        + "&code_verifier=" + java.net.URLEncoder.encode(verifier,
+                                java.nio.charset.StandardCharsets.UTF_8));
+        JsonNode body = MAPPER.readTree(token.body());
+        if (!body.hasNonNull("access_token")) {
+            throw new IllegalStateException("code exchange failed: " + token.body());
+        }
+        return new EvBffLogin(body.get("access_token").asText(),
+                body.hasNonNull("refresh_token") ? body.get("refresh_token").asText() : null);
     }
 
     /** Signs a private_key_jwt client assertion for ev-bff (§8.2: ≤60 s, unique jti). */
@@ -314,14 +429,44 @@ public final class KeycloakExchangeFixture {
             boolean probeClient = clientId.equals("security-test-client");
             String clientUuid = uuidByClientId.get(clientId);
             ObjectNode attrs = client.path("attributes").deepCopy();
-            attrs.put("standard.token.exchange.enabled", target ? "true" : "false");
+            // KC 26.6 checks the toggle on BOTH the requesting client (ev-bff)
+            // and the target — the ev-bff side must be enabled too
+            attrs.put("standard.token.exchange.enabled",
+                    (target || clientId.equals(BFF_CLIENT)) ? "true" : "false");
             if (clientId.equals(BFF_CLIENT)) {
                 attrs.put("jwks.string", jwks.toString());
+            }
+            // KC 26 STX-v2: requested audiences must be among the requesting
+            // client's audience mappers — one mapper per svc target on ev-bff
+            if (clientId.equals(BFF_CLIENT)) {
+                for (JsonNode other : realm.path("clients")) {
+                    if (!other.path("clientId").asText().startsWith("svc-")) continue;
+                    String aud = other.path("clientId").asText();
+                    JsonNode am = MAPPER.createObjectNode()
+                            .put("name", "exchange-aud-" + aud)
+                            .put("protocol", "openid-connect")
+                            .put("protocolMapper", "oidc-audience-mapper")
+                            .put("consentRequired", false);
+                    ((ObjectNode) am).set("config", MAPPER.createObjectNode()
+                            .put("included.client.audience", aud)
+                            .put("id.token", "false")
+                            .put("access.token", "true"));
+                    JsonNode existing = client.path("protocolMappers");
+                    if (!existing.isArray()) {
+                        ((ObjectNode) client).putArray("protocolMappers").add(am);
+                    } else {
+                        ((ArrayNode) existing).add(am);
+                    }
+                }
             }
             // attributes-ONLY PUT: including clientId in an update payload
             // triggers KC 26.x rename-duplicate validation → 409
             ObjectNode putBody = MAPPER.createObjectNode();
             putBody.set("attributes", attrs);
+            if (clientId.equals(BFF_CLIENT) && client.hasNonNull("redirectUris")) {
+                // the headless code+PKCE login needs the registered redirect URI
+                putBody.set("redirectUris", client.path("redirectUris").deepCopy());
+            }
             if (probeClient) {
                 putBody.put("publicClient", true);
                 putBody.put("directAccessGrantsEnabled", true);
