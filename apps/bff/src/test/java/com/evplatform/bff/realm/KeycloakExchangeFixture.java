@@ -488,8 +488,68 @@ public final class KeycloakExchangeFixture {
                             + clientId + ": " + mm.statusCode() + " " + mm.body());
                 }
             }
+            if (clientId.equals(BFF_CLIENT)) {
+                JsonNode readBack = MAPPER.readTree(admin("GET", "/admin/realms/" + REALM
+                        + "/clients/" + clientUuid + "/protocol-mappers/models", null).body());
+                System.err.println("[fixture] ev-bff mappers AFTER add-models: "
+                        + readBack.findValuesAsText("name"));
+            }
         }
 
+        // exchange-audience client scopes (KC 26 STX-v2 availability model:
+        // requested audiences must come from client scopes attached to the
+        // requesting client — client-level mappers do not count)
+        for (JsonNode other : realm.path("clients")) {
+            String aud = other.path("clientId").asText();
+            if (!aud.startsWith("svc-")) continue;
+            ObjectNode scope = MAPPER.createObjectNode();
+            scope.put("name", "exchange-" + aud);
+            scope.put("description", "Exchanged-token audience for " + aud);
+            scope.put("protocol", "openid-connect");
+            HttpResponse<String> scopePost = admin("POST", "/admin/realms/" + REALM
+                    + "/client-scopes", scope.toString());
+            if (scopePost.statusCode() != 201) {
+                throw new IllegalStateException("client scope create failed for "
+                        + aud + ": " + scopePost.statusCode() + " " + scopePost.body());
+            }
+            // resolve the scope id by name (create-response id extraction is
+            // unreliable on this build; empty id produced // URLs → 400)
+            String scopeId = "";
+            for (JsonNode cs : MAPPER.readTree(admin("GET", "/admin/realms/" + REALM
+                    + "/client-scopes?max=500", null).body())) {
+                if (aud.equals(cs.path("name").asText())
+                        || ("exchange-" + aud).equals(cs.path("name").asText())) {
+                    scopeId = cs.path("id").asText();
+                    break;
+                }
+            }
+            if (scopeId.isBlank()) {
+                throw new IllegalStateException("client scope not found after create: exchange-" + aud);
+            }
+            ObjectNode audMapper = MAPPER.createObjectNode();
+            audMapper.put("name", "exchange-aud-" + aud);
+            audMapper.put("protocol", "openid-connect");
+            audMapper.put("protocolMapper", "oidc-audience-mapper");
+            audMapper.put("consentRequired", false);
+            ((ObjectNode) audMapper).set("config", MAPPER.createObjectNode()
+                    .put("included.custom.audience", aud)
+                    .put("id.token", "false")
+                    .put("access.token", "true"));
+            HttpResponse<String> mapperPost = admin("POST", "/admin/realms/" + REALM
+                    + "/client-scopes/" + scopeId + "/protocol-mappers/models",
+                    audMapper.toString());
+            if (mapperPost.statusCode() != 201) {
+                throw new IllegalStateException("scope mapper create failed for "
+                        + aud + ": " + mapperPost.statusCode() + " " + mapperPost.body());
+            }
+            HttpResponse<String> attach = admin("PUT", "/admin/realms/" + REALM
+                    + "/clients/" + uuidByClientId.get(BFF_CLIENT)
+                    + "/default-client-scopes/" + scopeId, null);
+            if (attach.statusCode() != 204) {
+                throw new IllegalStateException("scope attach failed for "
+                        + aud + ": " + attach.statusCode() + " " + attach.body());
+            }
+        }
         fixturePublicKey = pub;
         fixturePrivateKey = priv;
         fixtureKid = kid;

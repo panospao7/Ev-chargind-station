@@ -175,6 +175,25 @@ headlessLoginRound (2026-10-01):
   the audience set is configured correctly, the 6 positive tests run
   unchanged (client, cache, service, session flow all proven).
 
+clientScopeRound (2026-10-01, closing):
+  Implemented the client-scope availability mechanism: per-target client
+  scopes (exchange-svc-*) with audience mappers, attached to ev-bff as
+  default scopes; the exchange now REQUESTS the scope (scope=openid
+  exchange-svc-*) — TokenExchangeClient.exchange takes a scope parameter
+  and ExchangedTokenService builds it per target. Scope name validates
+  (no INVALID_SCOPE), yet the built token still lacks the audience —
+  same "Requested audience not available". Also disproven: custom-vs-
+  client audience mapper config on the scope; PUT-vs-POST attach semantics
+  (PUT is correct); scopeId lookup robustness (fixed).
+  Remaining hypothesis for next session: verify the exchange
+  clientSessionCtx actually includes the requested scope (debug the built
+  token claims, or read KC source TokenManager.attachAuthenticationSession
+  restrictedScopes handling and AudienceProtocolMapper application order in
+  transformAccessToken). Alternative pragmatic path: drive the KC admin
+  console STX setup once manually and capture its stored state (definitive
+  configuration reference). All phase-3 code is committed and compiling;
+  6 positive tests await only this audience-availability resolution.
+
 stopRuleApplied: >
   Packet assumption: "if import cannot express the required exchange
   permission model deterministically, STOP and report (same rule as

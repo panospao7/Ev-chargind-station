@@ -64,8 +64,13 @@ public class ExchangedTokenService {
                 .orElseThrow(() -> new IllegalStateException(
                         "session token material could not be decrypted"));
         try {
+            // KC 26 STX-v2: the exchange builds its token from the restricted
+            // request scopes — requesting the exchange-audience client scope is
+            // what makes the target audience available (W1 convention:
+            // "exchange-<target>" scopes on ev-bff, attached by the realm fixture)
+            String exchangeScope = "openid exchange-" + targetAudience;
             TokenExchangeClient.ExchangedToken exchanged =
-                    exchangeClient.exchange(subjectToken, targetAudience);
+                    exchangeClient.exchange(subjectToken, targetAudience, exchangeScope);
             Instant expiresAt = now.plusSeconds(
                     exchanged.expiresInSeconds() > 0 ? exchanged.expiresInSeconds() : 60);
             cache.put(sessionRef, targetAudience, exchanged.accessToken(), expiresAt, now);

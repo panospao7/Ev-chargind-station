@@ -81,11 +81,14 @@ public class TokenExchangeClient {
 
     /**
      * Exchanges {@code subjectToken} for a token for {@code targetAudience}.
+     * The {@code scope} must include the exchange-audience client scope for
+     * the target (KC 26 STX-v2 builds the token from the restricted request
+     * scopes — the audience arrives via that scope's audience mapper).
      *
      * @throws ExchangeFailedException on any non-200 token-endpoint response
      *         (the §7.3 negative proofs assert against these semantics)
      */
-    public ExchangedToken exchange(String subjectToken, String targetAudience)
+    public ExchangedToken exchange(String subjectToken, String targetAudience, String scope)
             throws Exception {
         String form = "grant_type=" + urlEncode(GRANT_TYPE)
                 + "&client_id=" + urlEncode(bffClientId)
@@ -95,7 +98,7 @@ public class TokenExchangeClient {
                 + "&subject_token_type=" + urlEncode(ACCESS_TOKEN_TYPE)
                 + "&requested_token_type=" + urlEncode(ACCESS_TOKEN_TYPE)
                 + "&audience=" + urlEncode(targetAudience)
-                + "&scope=openid";
+                + "&scope=" + urlEncode(scope);
 
         HttpRequest request = HttpRequest.newBuilder(
                         URI.create(issuer + "/protocol/openid-connect/token"))
