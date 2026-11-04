@@ -26,9 +26,16 @@ This command verifies evidence. It does not merge, approve risk, deploy, or mark
    - candidate commit;
    - branch;
    - worktree status.
-5. Require a committed candidate with a clean worktree.
-6. Confirm the candidate has not changed since independent review.
-7. Require exact CI evidence for that candidate commit.
+5. Require a committed candidate, as produced by `/ship-task $1`, and a clean worktree apart from the records this command writes: `delivery/status.yaml`, and this task's handoffs and evidence.
+6. Confirm the candidate has not changed since independent review. Recompute the fingerprint exactly as `/review-task` defines it, using the new-file list saved in `delivery/evidence/$1/review-fingerprint.md`, and compare against the saved hashes. Do not expect `git ls-files --others` to list those files now that they are committed.
+7. Require exact CI evidence for the pull request head. Accept that head for the candidate only if `git diff --name-only <candidateCommit> <head>` lists nothing except `delivery/status.yaml`, and that diff changes only the `candidateCommit` and `branch` fields.
+8. CI workflows are path-filtered, so a control-plane change may trigger none. If no workflow ran and the packet's `requiredCiChecks` is empty, report `NOT_RUN` with that reason. Never report it as passing. If the packet requires a check, that check must have run.
+
+Do not commit in this command, because that would change the candidate. Instead:
+
+- write the verification result to `delivery/evidence/$1/verification.md`, and any handoff to `delivery/handoffs/$1/`;
+- for `HUMAN_REVIEW`, leave those records uncommitted, for `/close-task` to carry onto its closeout branch after merge;
+- for any other result, also set that state in `delivery/status.yaml`, so that `/review-task` or the fix path can continue from it.
 
 If the candidate changed after review, return `SELF_VERIFIED` and require `/review-task $1` again.
 
@@ -68,13 +75,13 @@ Confirm:
 
 ### 2. Verify CI
 
-For the exact candidate commit, require:
+For the pull request head accepted under precondition 7, require:
 
 - all mandatory checks completed;
 - all mandatory checks passed;
 - no allowed-failure result for a required gate;
 - no skipped required job without a valid path-applicability reason;
-- no stale CI result from another commit.
+- no stale CI result from a commit other than the pull request head.
 
 Never infer green CI from local tests.
 

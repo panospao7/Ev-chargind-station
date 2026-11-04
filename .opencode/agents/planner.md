@@ -8,13 +8,39 @@ permission:
     "*": allow
     ".env": deny
     ".env.*": deny
-    ".env.example": allow
     "**/.env": deny
     "**/.env.*": deny
-    "**/.env.example": allow
-    "**/*.pem": deny
-    "**/*.key": deny
+    "*.pem": deny
+    "*.key": deny
+    "*.p12": deny
+    "*.jks": deny
+    "*.pfx": deny
+    "*.keystore": deny
+    "*.ppk": deny
+    "*.pkcs12": deny
+    "id_rsa*": deny
+    "**/id_rsa*": deny
+    "id_ed25519*": deny
+    "**/id_ed25519*": deny
+    "id_ecdsa*": deny
+    "**/id_ecdsa*": deny
+    "id_dsa*": deny
+    "**/id_dsa*": deny
+    ".netrc": deny
+    "**/.netrc": deny
+    ".git-credentials": deny
+    "**/.git-credentials": deny
+    "credentials.json": deny
+    "**/credentials.json": deny
+    ".aws/**": deny
+    "**/.aws/**": deny
+    "secrets/**": deny
     "**/secrets/**": deny
+    ".npmrc": deny
+    "**/.npmrc": deny
+    ".git/config": deny
+    ".env.example": allow
+    "**/.env.example": allow
   edit: deny
   glob: allow
   grep: allow
@@ -28,7 +54,6 @@ permission:
   external_directory: deny
   doom_loop: ask
   bash:
-    "*": ask
     "git status": allow
     "git status *": allow
     "git diff": allow
@@ -36,22 +61,250 @@ permission:
     "git log": allow
     "git log *": allow
     "git show *": allow
-    "git branch --show-current": allow
     "git rev-parse *": allow
-    "git grep *": allow
+    "git merge-base *": allow
+    "git blame *": allow
+    "git ls-files": allow
+    "git ls-files *": allow
+    "git check-ignore *": allow
+    "git fetch": allow
+    "git fetch origin": allow
+    "git remote -v": allow
+    "git remote get-url *": allow
+    "git show-*": ask
+    "git diff-*": ask
+    "git -*": deny
     "git add*": deny
     "git commit*": deny
     "git push*": deny
     "git pull*": deny
-    "git merge*": deny
+    "git merge": deny
+    "git merge *": deny
     "git rebase*": deny
     "git reset*": deny
     "git restore*": deny
     "git clean*": deny
+    "git tag*": deny
+    "git stash*": deny
     "git checkout*": deny
     "git switch*": deny
+    "git branch *": deny
+    "git update-ref*": deny
+    "git symbolic-ref*": deny
+    "git filter-branch*": deny
+    "git filter-repo*": deny
+    "git reflog *": deny
+    "git gc*": deny
+    "git worktree *": deny
+    "git replace*": deny
+    "git prune*": deny
+    "git config*": deny
+    "git remote add*": deny
+    "git remote set-url*": deny
+    "git remote remove*": deny
+    "git remote rm*": deny
+    "git remote rename*": deny
+    "git rm*": deny
+    "git mv*": deny
+    "git am*": deny
+    "git cherry-pick*": deny
+    "git revert*": deny
+    "git difftool*": deny
+    "git mergetool*": deny
+    "git fetch-pack*": deny
+    "git send-pack*": deny
+    "git receive-pack*": deny
+    "git upload-pack*": deny
+    "git daemon*": deny
+    "git submodule*": deny
+    "git bundle*": deny
+    "git hook*": deny
+    "git sparse-checkout*": deny
+    "git notes*": deny
+    "git update-index*": deny
+    "git read-tree*": deny
+    "git commit-tree*": deny
+    "git write-tree*": deny
+    "git clone*": deny
+    "git fetch *:*": deny
+    "git fetch *--upload-pack*": deny
+    "git *--output*": deny
+    "git *--no-index*": deny
+    "git *--ext-diff*": deny
+    "git *--contents*": deny
+    "git grep *--untracked*": deny
+    "git grep -O*": deny
+    "git grep * -O*": deny
+    "git grep *--op*": deny
+    "git grep -?O*": deny
+    "git grep * -?O*": deny
+    "git grep *--no-i*": deny
+    "git grep *--untr*": deny
+    "git grep *--no-excl*": deny
+    "git blame *--con*": deny
+    "git diff *:/*": deny
+    "git diff /*": deny
+    "git diff * /*": deny
+    "git diff ~*": deny
+    "git diff * ~*": deny
+    "git diff *../*": deny
+    "git diff *$*": deny
+    "git *secrets/*": deny
+    "git *.env*": deny
+    "git *.pem*": deny
+    "git *.key": deny
+    "git *.key *": deny
+    "gh -*": deny
+    "gh api*": deny
+    "gh alias*": deny
+    "gh auth*": deny
+    "gh pr merge*": deny
+    "gh pr review*": deny
+    "gh pr close*": deny
+    "gh pr edit*": deny
+    "gh pr ready*": deny
+    "gh pr reopen*": deny
+    "gh pr comment*": deny
+    "gh pr checkout*": deny
+    "gh repo*": deny
+    "gh release*": deny
+    "gh secret*": deny
+    "gh variable*": deny
+    "gh workflow*": deny
+    "gh issue*": deny
+    "gh extension*": deny
+    "gh config*": deny
+    "gh gist*": deny
+    "gh ssh-key*": deny
+    "gh gpg-key*": deny
+    "gh cache*": deny
+    "gh run rerun*": deny
+    "gh run cancel*": deny
+    "gh run delete*": deny
     "rm *": deny
+    "rmdir *": deny
+    "del *": deny
+    "erase *": deny
+    "rd *": deny
+    "ri *": deny
+    "Remove-Item *": deny
+    "*/rm *": deny
+    "find * -delete*": deny
+    "find *-exec*": deny
+    "xargs *": deny
     "sudo *": deny
+    "powershell*": deny
+    "pwsh*": deny
+    "cmd *": deny
+    "cmd.exe*": deny
+    "bash *": deny
+    "sh *": deny
+    "python *": deny
+    "python3 *": deny
+    "py *": deny
+    "perl *": deny
+    "ruby *": deny
+    "node -e*": deny
+    "node --eval*": deny
+    "node -p*": deny
+    "node --print*": deny
+    "node *..*": deny
+    "Set-Content *": deny
+    "Add-Content *": deny
+    "Out-File *": deny
+    "Clear-Content *": deny
+    "Move-Item *": deny
+    "Invoke-Expression *": deny
+    "iex *": deny
+    "docker system prune*": deny
+    "docker volume rm*": deny
+    "docker compose down -v*": deny
+    "flyway clean*": deny
+    "flyway *clean*": deny
+    "flyway migrate*": deny
+    "terraform apply*": deny
+    "terraform destroy*": deny
+    "tofu apply*": deny
+    "tofu destroy*": deny
+    "kubectl apply*": deny
+    "kubectl delete*": deny
+    "npm publish*": deny
+    "npm install -g*": deny
+    "npm i -g*": deny
+    "npm *--global*": deny
+    "npm *--script-shell*": deny
+    "npm exec *--output*": deny
+    "npm *--prefix*": deny
+    "npm *--script-s*": deny
+    "npm *--node-options*": deny
+    "npm *--userconfig*": deny
+    "npm *--globalconfig*": deny
+    "make *-f*": deny
+    "make *--file*": deny
+    "make *--eval*": deny
+    "make *SHELL=*": deny
+    "./mvnw *:*": deny
+    "./mvnw deploy*": deny
+    "./mvnw * deploy*": deny
+    "./mvnw install*": deny
+    "./mvnw * install*": deny
+    "./mvnw clean*": deny
+    "./mvnw * clean*": deny
+    "./mvnw -f*": deny
+    "./mvnw * -f*": deny
+    "./mvnw *--file*": deny
+    "./mvnw -s*": deny
+    "./mvnw * -s*": deny
+    "./mvnw *--settings*": deny
+    "./mvnw *-gs*": deny
+    "./mvnw *--global-settings*": deny
+    "./mvnw *-Dexec*": deny
+    "./mvnw *-Djvm*": deny
+    "./mvnw *-DargLine*": deny
+    "./mvnw *-Dmaven.ext*": deny
+    "./mvnw *-Dmaven.repo.local*": deny
+    "./mvnw *-DforkMode*": deny
+    "./mvnw * -l *": deny
+    "./mvnw *--log-file*": deny
+    "./mvnw *--activate-profiles*": deny
+    "./mvnw * site*": deny
+    "./mvnw site*": deny
+    "./mvnw *-Dmaven.test.skip*": deny
+    "./mvnw *-DskipTests*": deny
+    ".\\mvnw.cmd *:*": deny
+    ".\\mvnw.cmd deploy*": deny
+    ".\\mvnw.cmd * deploy*": deny
+    ".\\mvnw.cmd install*": deny
+    ".\\mvnw.cmd * install*": deny
+    ".\\mvnw.cmd clean*": deny
+    ".\\mvnw.cmd * clean*": deny
+    ".\\mvnw.cmd -f*": deny
+    ".\\mvnw.cmd * -f*": deny
+    ".\\mvnw.cmd *--file*": deny
+    ".\\mvnw.cmd -s*": deny
+    ".\\mvnw.cmd * -s*": deny
+    ".\\mvnw.cmd *--settings*": deny
+    ".\\mvnw.cmd *-gs*": deny
+    ".\\mvnw.cmd *--global-settings*": deny
+    ".\\mvnw.cmd *-Dexec*": deny
+    ".\\mvnw.cmd *-Djvm*": deny
+    ".\\mvnw.cmd *-DargLine*": deny
+    ".\\mvnw.cmd *-Dmaven.ext*": deny
+    ".\\mvnw.cmd *-Dmaven.repo.local*": deny
+    ".\\mvnw.cmd *-DforkMode*": deny
+    ".\\mvnw.cmd * -l *": deny
+    ".\\mvnw.cmd *--log-file*": deny
+    ".\\mvnw.cmd *--activate-profiles*": deny
+    ".\\mvnw.cmd * site*": deny
+    ".\\mvnw.cmd site*": deny
+    ".\\mvnw.cmd *-Dmaven.test.skip*": deny
+    ".\\mvnw.cmd *-DskipTests*": deny
+    "*>*": deny
+    "git branch --show-current": allow
+    "git branch": allow
+    "git branch --list": allow
+    "git branch -a": allow
+    "git branch -r": allow
 ---
 
 # Role

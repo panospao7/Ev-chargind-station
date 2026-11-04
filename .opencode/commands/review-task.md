@@ -30,11 +30,38 @@ Do not edit implementation files or fix findings during this command.
 4. Confirm the task is:
    - `SELF_VERIFIED`; or
    - `FIX_REQUIRED` with a newer `FIXED_SELF_VERIFIED` debugger handoff.
-5. Confirm changed files remain within approved scope.
+5. Confirm changed files remain within approved scope. Exclude the records the orchestrator owns (`delivery/status.yaml`, and this task's handoffs and evidence); `/ship-task` raises any conflict with the packet.
 6. Confirm no unrelated human changes would be overwritten.
 7. Confirm acceptance criteria and required reviewers are known.
 
 If these conditions fail, do not invoke reviewers.
+
+## Review fingerprint
+
+This records exactly what was reviewed, so later commands can prove it did not change. It stays comparable after staging and committing because new files are hashed separately by their saved paths. It excludes the records this command writes.
+
+1. Immediately before the first subagent, save the sorted output of this as the **new-file list**:
+
+   ```text
+   git ls-files --others --exclude-standard -- . ":(exclude)delivery/handoffs/$1/**" ":(exclude)delivery/evidence/$1/**"
+   ```
+
+2. Compute the **tracked hash**, adding one `":(exclude)<path>"` for each path on the new-file list:
+
+   ```text
+   git diff <baselineCommit> -- . ":(exclude)delivery/handoffs/$1/**" ":(exclude)delivery/evidence/$1/**" ":(exclude)delivery/status.yaml" ":(exclude)<path>" | git hash-object --stdin
+   ```
+
+3. Compute the **new-file hashes**, in list order. Skip this if the list is empty:
+
+   ```text
+   git hash-object -- <paths from the new-file list>
+   ```
+
+4. Repeat steps 1 to 3 after the last subagent. If the new-file list or a hash differs, because the tester added a test for example, return `SELF_VERIFIED` and require a new review.
+5. Save the list, both hash results, and the shell used to `delivery/evidence/$1/review-fingerprint.md`.
+
+Compare only results from the same shell. If any of these commands fails or prints nothing where output is expected, return `BLOCKED`.
 
 ## Procedure
 
@@ -147,11 +174,13 @@ Set the recommended result to:
   - required specialist reviews pass;
   - general review has no unresolved `BLOCKER` or `MAJOR`;
   - scope compliance is confirmed;
-  - no files changed during review.
+  - the review fingerprint is unchanged.
 
 Do not invoke `debugger` automatically. Recommend a debugger handoff with exact failure IDs when appropriate.
 
-Do not commit, push, merge, deploy, or mark the task verified.
+Do not commit or push during this command. Apart from the excluded records, files must not change while they are under review. Do not merge, deploy, or mark the task verified.
+
+Save each subagent's complete result, unedited, to `delivery/handoffs/$1/<SEQUENCE>-<ROLE>.md` before determining the result, and update `reviews` in `delivery/status.yaml` to match. A summary written by the orchestrator does not count as review evidence.
 
 ## Required output
 
@@ -184,6 +213,7 @@ Allowed resulting states:
 
 ```text
 CI_PENDING
+SELF_VERIFIED
 FIX_REQUIRED
 BLOCKED
 CLARIFICATION_REQUIRED
@@ -193,5 +223,5 @@ SPEC_CONFLICT
 When successful, recommend:
 
 ```text
-/verify-task $1
+/ship-task $1
 ```

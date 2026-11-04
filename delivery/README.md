@@ -69,9 +69,21 @@ Only `delivery/status.yaml` stores the current state.
 /plan-task TASK-ID
 /implement-task TASK-ID
 /review-task TASK-ID
+/ship-task TASK-ID
 /verify-task TASK-ID
 /close-task TASK-ID MERGE_SHA=<sha> HUMAN_APPROVAL=<ref> FINAL_VERIFY=YES
 ```
+
+## OpenCode operating rules
+
+Permission rules are guardrails against mistakes, not a security boundary. See `delivery/evidence/I1-DEL-001/agent-permissions.md` for what they cannot stop.
+
+- `opencode.json` pins `"shell": "bash"`, because under PowerShell everyday syntax such as `git checkout -- .` may skip permission checks entirely. Do not remove it.
+- Commands run in Git Bash, so use `./mvnw`, not `.\mvnw.cmd`, even where an older packet shows the Windows form.
+- Answer "once" to permission prompts, never "always". An "always" answer can override deny rules for the rest of the session.
+- Do not use `opencode --auto` in this repository. It approves everything that is not explicitly denied.
+- After changing `opencode.json` or `.opencode/agents/`, run `node scripts/delivery/check-agent-permissions.mjs`.
+- Owner exception (2026-11-04): the orchestrator may commit its own records, namely this task's `delivery/status.yaml` entry and this task's handoffs and evidence, even when the packet prohibits `delivery/status.yaml`. Nothing else outside `allowedFiles` may be committed.
 
 ## Task IDs
 

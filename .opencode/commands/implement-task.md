@@ -51,7 +51,7 @@ Procedure:
    - stop conditions.
 8. Invoke the `coder`.
 9. Inspect the coder handoff and resulting worktree diff.
-10. Confirm changed files remain within scope.
+10. Confirm changed files remain within scope. Exclude the records the orchestrator owns (`delivery/status.yaml`, and this task's handoffs and evidence); `/ship-task` raises any conflict with the packet.
 11. Record actual commands and results without embellishment.
 12. If coder returns `SELF_VERIFIED`:
     - record the handoff;
@@ -62,7 +62,7 @@ Procedure:
     - set the corresponding state;
     - do not claim completion.
 14. Do not invoke tester or reviewer as part of this command.
-15. Do not commit, merge, release, deploy, or mark work verified.
+15. Do not merge, release, deploy, or mark work verified. Commit and push only through `/ship-task` after review.
 
 Return:
 
@@ -91,5 +91,6 @@ FIX_REQUIRED
 BLOCKED
 CLARIFICATION_REQUIRED
 SPEC_CONFLICT
-SCOPE_EXPANSION_REQUIRED
 ```
+
+When the coder needs files outside `allowedFiles`, use `BLOCKED`, list the request under `BLOCKERS`, and do not expand scope without a recorded deviation and human approval.

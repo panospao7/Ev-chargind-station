@@ -27,13 +27,13 @@ This command records a human decision. It does not create the approval itself.
    - all handoffs;
    - CI and verification evidence;
    - deviations and accepted limitations.
-3. Confirm the previous state is `HUMAN_REVIEW` or `MERGED`.
+3. Confirm the state on the merged branch is `CI_PENDING`, `HUMAN_REVIEW`, or `MERGED`. `/ship-task` commits `CI_PENDING`, and `/verify-task` does not commit its result, so `CI_PENDING` here is expected after a normal merge. Require `delivery/evidence/$1/verification.md` to show `HUMAN_REVIEW`, rather than relying on that state.
 4. Confirm the human approval reference is explicit and applicable to this task.
 5. Confirm the supplied merge SHA is immutable and exists in repository history.
 6. Confirm the approved candidate is contained in the merge commit.
-7. Confirm the worktree is clean.
+7. Confirm the worktree is clean apart from the records `/verify-task` left: `delivery/status.yaml`, and this task's handoffs and evidence.
 8. Confirm required CI passed for:
-   - the approved candidate; and
+   - the pull request head, which `/verify-task` accepts for the candidate only when it differs by the `delivery/status.yaml` record alone; and
    - the merge commit, when post-merge checks are required.
 9. Confirm no unresolved `BLOCKER`, `MAJOR`, `SPEC_CONFLICT`, or W1-critical gap remains.
 10. Confirm documentation, traceability, and evidence are complete.
@@ -42,7 +42,7 @@ Do not accept:
 
 - verbal approval without a reference;
 - a branch name instead of a SHA;
-- CI evidence from another commit;
+- CI evidence from any commit other than the accepted pull request head or the merge commit;
 - an approval predating material changes;
 - screenshots as the only verification evidence;
 - approval supplied by an AI agent.
@@ -57,7 +57,7 @@ Record:
 - candidate commit;
 - merge commit;
 - target branch;
-- human approver/reference;
+- human approver/reference, recording the candidate commit as `humanApproval.approvedCandidateCommit`;
 - merge date;
 - CI run/reference.
 
@@ -99,7 +99,9 @@ If merge is proven but final post-merge verification is incomplete:
 - list missing evidence;
 - do not set `VERIFIED`.
 
-If documentation metadata changes are created by this command, report that those control-plane changes still require a human commit. Do not commit them yourself.
+If this command creates control-plane changes, commit them on a dedicated `task/<id>-closeout` branch using the `/ship-task` pre-commit gate, push that branch, and open a pull request for human merge. Never commit them to `main`. If local `main` is behind `origin/main`, ask the human to update it first, because agents cannot pull.
+
+Owner exception (2026-11-04): the orchestrator may commit its own records, namely this task's `delivery/status.yaml` entry and this task's handoffs and evidence, even when the packet prohibits `delivery/status.yaml`. Nothing else outside `allowedFiles` may be committed.
 
 ## Required output
 

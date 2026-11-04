@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-09-20T20:40:00Z"
+updatedAt: "2026-11-04T00:00:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -825,23 +825,30 @@ tasks:
         - "delivery/evidence/I1-IAM-001/sec-p02-csrf.md"
         - "delivery/evidence/I1-IAM-001/tester-verification.md"
   I1-IAM-002:
-    state: "IMPLEMENTING"
-    assignedAgent: null
-    claimedAt: null
+    state: "BLOCKED"
+    assignedAgent: "ZCode coding-agent session (per branch records)"
+    claimedAt: "2026-09-15T09:00:00Z"
 
     baselineCommit: "589a36f7e863a6c0fdabbc10560839ac874ff7ec"
-    branch: "task/i1-iam-002-token-exchange"
+    branch: null
     candidateCommit: null
     pullRequest: null
 
     blockers:
-      - "Owner packet approval pending (L3; planning-PR merge = approval precedent)"
+      - "Waits for I1-DEL-001 to merge; then /start-task and /plan-task to port origin/task/i1-iam-002-ci onto main"
+      - "Owner disposition of BOOTSTRAP-01 (still OPEN_REQUIRES_OWNER_DECISION), to settle during re-planning"
 
-    deviations: []
-    unresolvedFindings: []
+    deviations:
+      - "I1-IAM-002-BOOTSTRAP-01: Keycloak 26.6 realm import cannot deterministically express the svc-* client finalization (open; the -ci line reports otherwise, see RECON-01)"
+      - "I1-IAM-002-RECON-01: diverged implementation lines and the out-of-scope scripts/dev file (open)"
+    unresolvedFindings:
+      - "Merged to main without task completion: PRs #49, #50, #51 (phased work on this task)"
+      - "Owner selected origin/task/i1-iam-002-ci (tip 431392f6) on 2026-11-04; re-run PASS on JDK 21 (BFF 78/78 including exchange 12/12, Discovery 27/27, Station Operations 36/36); no CI or independent review yet"
+      - "Must resolve on that line: header-based JwtTypeValidator may reject real Keycloak tokens; AC-05 standalone cases NOT_RUN (see delivery/evidence/I1-IAM-002/ci-line-rerun.md)"
+      - "Unmerged origin/task/i1-iam-002-phase3 (tip 0067c9c2) reports exchange still gated by 'Requested audience not available'"
 
-    handoffSequence: 0
-    latestHandoff: null
+    handoffSequence: 4
+    latestHandoff: "delivery/handoffs/I1-IAM-002/04-orchestrator.md"
     reviews:
       planner: "NOT_STARTED"
       tester: "NOT_STARTED"
@@ -865,17 +872,64 @@ tasks:
     evidence:
       status: "NOT_STARTED"
       paths: []
+
+  I1-DEL-001:
+    state: "CI_PENDING"
+    assignedAgent: "Claude Code session (orchestrator+coder roles, disclosed)"
+    claimedAt: "2026-11-04T00:00:00Z"
+
+    baselineCommit: "811b81ed39ca954217cf785f5f9c3135f14b2263"
+    branch: "task/i1-del-001-opencode-controls"
+    candidateCommit: null
+    pullRequest: null
+
+    blockers: []
+    deviations: []
+    unresolvedFindings:
+      - "Rounds 1 and 2: general and security reviews FAIL_FINDINGS; round 3 re-check PASS_NO_BLOCKERS for the listed corrections"
+      - "Owner accepted the guardrail threat model and R2-02 and R2-05 on 2026-11-04 (12-orchestrator.md); no OS-level isolation for now"
+      - "R2-01 closed by pinning the shell on 2026-11-04, after a live test showed Git Bash and a real deny"
+      - "No new full security review ran after round 3; a narrow verifier confirmed the listed corrections"
+      - "Follow-up: DEC-AGENT-01 and AGENTS.md §12 need a separate task to record the orchestrator-records exception"
+      - "Still open, not blocking: per-agent models, commit wrapper, test-skip denies, unlisted tool names, grep tool reading .env, tester waiver"
+
+    handoffSequence: 13
+    latestHandoff: "delivery/handoffs/I1-DEL-001/13-orchestrator.md"
+    reviews:
+      planner: "NOT_REQUIRED"
+      tester: "NOT_REQUIRED"
+      generalReviewer: "PASS_WITH_FINDINGS"
+      contractReviewer: "NOT_REQUIRED"
+      dataReviewer: "NOT_REQUIRED"
+      securityReviewer: "FAIL_RISK_ACCEPTED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "PENDING"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "Owner directed the work and accepted its recommendations in session on 2026-11-04; merge approval still pending"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I1-DEL-001/agent-permissions.md"
 summary:
   counts:
     BACKLOG: 0
     READY: 0
     CLAIMED: 0
-    BLOCKED: 0
-    IMPLEMENTING: 1
+    BLOCKED: 1
+    IMPLEMENTING: 0
     SELF_VERIFIED: 0
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
-    CI_PENDING: 0
+    CI_PENDING: 1
     HUMAN_REVIEW: 0
     MERGED: 0
     VERIFIED: 18
@@ -885,5 +939,5 @@ summary:
     SUPERSEDED: 0
     CANCELLED: 0
 
-  activeTask: "I1-IAM-002"
+  activeTask: "I1-DEL-001"
   nextRecommendedTask: null
