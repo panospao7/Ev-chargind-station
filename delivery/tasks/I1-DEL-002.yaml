@@ -1,0 +1,233 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-DEL-002"
+  title: "Set OpenCode agent models on the zai provider, keeping production-code writers and reviewers on different models"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-00"
+  releaseWave: "W1"
+  sliceApplicability: "cross-cutting"
+  impactLevel: "L2"
+  owner: "Project Owner"
+  createdAt: "2026-11-04"
+  baselineCommit: "e02db33e82eb0c30788cd9d12c8374bd4891e255"
+
+objective: >
+  The owner chose the zai provider for this repository's agents, at each
+  model's highest thinking setting, with a provider limit of 2 concurrent
+  requests. Pin every project agent and checked built-in to its model, make the
+  orchestrator run subagents one at a time, and have the permission check fail
+  if the assignment drifts.
+
+nonGoals:
+  - "Changing any permission rule."
+  - "Editing ~/.config/opencode or moving the global agents (owner action)."
+  - "Storing, reading or changing any provider key."
+  - "Resolving ARC-AI-OQ-01 in the rules document, which is prohibited here (owner decision)."
+  - "The I1-DEL-001 tester findings, or DEC-AGENT-01 and AGENTS.md §12."
+
+useCases:
+  - "None; delivery control plane only."
+
+authority:
+  governance:
+    - path: "AGENTS.md"
+      section: "§8 the authoring agent may not be the final independent reviewer"
+    - path: "docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md"
+      section: "§26 external network and tool use; ARC-AI-OQ-01"
+    - path: "delivery/README.md"
+      section: "OpenCode operating rules"
+  requirements: []
+  domain: []
+  architecture: []
+  contracts: []
+
+invariants:
+  - "Secrets, credentials and private keys never appear in source, logs or evidence (AGENTS.md §4)."
+  - "No validator is weakened or disabled (AGENTS.md §11)."
+
+ownership:
+  owningService: "n/a (delivery control plane)"
+  dataOwner: "n/a"
+  supportingServices: []
+  prohibitedOwners: []
+
+affectedArtifacts:
+  services: []
+  modules:
+    - "opencode.json"
+    - ".opencode/agents/*.md (model and variant; one rule in the orchestrator)"
+    - ".opencode/commands/review-task.md"
+    - "scripts/delivery/check-agent-permissions.mjs"
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations: []
+  commands: []
+  events: []
+  schemas: []
+  registries: []
+  screens: []
+  infrastructure: []
+
+dependencies:
+  tasks:
+    - "I1-DEL-001"
+  contracts: []
+  infrastructure:
+    - "OpenCode CLI 1.19.0, with the zai provider supplied by the owner's global config and credentials on the owner's machine"
+  humanDecisions:
+    - "Owner directed this work on 2026-11-04 and chose the provider."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "opencode.json"
+    - ".opencode/agents/*.md"
+    - ".opencode/commands/review-task.md"
+    - "scripts/delivery/check-agent-permissions.mjs"
+    - "delivery/README.md"
+    - "delivery/backlog.yaml"
+    - "delivery/status.yaml"
+    - "delivery/tasks/I1-DEL-002.yaml"
+    - "delivery/handoffs/I1-DEL-002/**"
+    - "delivery/evidence/I1-DEL-002/**"
+
+  prohibitedFiles:
+    - "AGENTS.md"
+    - "docs/**"
+    - "contracts/**"
+    - "services/**"
+    - "apps/**"
+    - "libraries/**"
+    - "simulator/**"
+    - "infra/**"
+    - ".github/workflows/**"
+    - ".opencode/skills/**"
+    - "scripts/contracts/**"
+    - "scripts/delivery/validate.mjs"
+    - "scripts/delivery/validate.ps1"
+    - "scripts/delivery/self-test.mjs"
+
+  maximumExpectedDiff: >
+    Bounded: two frontmatter lines in 10 agent files, a few lines in
+    opencode.json, one rule each in the orchestrator, review-task and README,
+    one assertion block in the check, delivery records.
+
+  generatedFilesPolicy: >
+    Hand-authored; no generated output.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      Resolved config gives orchestrator, coder, debugger, documentation, build,
+      plan, general and explore zai/glm-5.3-flash at max, and planner, tester,
+      reviewer, security-reviewer, data-reviewer and contract-reviewer
+      zai/gemini-4-argon at high, with and without the owner's global config.
+    authorityReferences:
+      - "Owner direction 2026-11-04"
+    evidenceRequired:
+      - "opencode debug agent results; permission check result in both configurations"
+    testTypes: ["configuration"]
+
+  - id: "AC-02"
+    statement: >
+      The permission check fails if an agent's resolved model or variant
+      drifts, and permission results are unchanged.
+    authorityReferences:
+      - "AGENTS.md §8, §11"
+    evidenceRequired:
+      - "mutation run; 5187/5187 result"
+    testTypes: ["configuration"]
+
+  - id: "AC-03"
+    statement: >
+      The orchestrator, /review-task and the README tell agents to invoke
+      subagents one at a time because of the provider's limit.
+    authorityReferences:
+      - "Owner direction 2026-11-04"
+    evidenceRequired:
+      - "diff review"
+    testTypes: ["review"]
+
+  - id: "AC-04"
+    statement: >
+      No provider key or other secret appears in the repository or evidence.
+    authorityReferences:
+      - "AGENTS.md §4"
+    evidenceRequired:
+      - "secret-scan command executed"
+    testTypes: ["security"]
+
+tests:
+  focusedCommands:
+    - "node scripts/delivery/check-agent-permissions.mjs"
+    - "node scripts/delivery/validate.mjs"
+    - "node scripts/delivery/self-test.mjs"
+  requiredSuites:
+    - "Permission check with the owner's global config and with an empty config directory"
+  positiveCases:
+    - "A live call through this repository's config reaches zai/glm-5.3-flash."
+  negativeCases:
+    - "A reviewer moved to the writer model fails the check."
+  boundaryCases:
+    - "The owner's global orchestrator.md and debugger.md set another provider and must not win."
+  concurrencyCases:
+    - "Five calls at once and three parallel subagents in a disposable repository."
+  securityCases: []
+  contractCases: []
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "Repository content goes to the zai provider, and to Google's model for Argon if zai serves it that way, instead of merge-gateway."
+  dataClassifications: []
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData:
+    - "No secret values or provider credentials in evidence"
+
+reviews:
+  planner: false
+  tester: false
+  generalReviewer: true
+  contractReviewer: false
+  dataReviewer: false
+  securityReviewer: false
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L2; provider choice)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-DEL-002/agent-models.md"
+  requiredCiChecks: []
+  requiredCommitSha: true
+  requiredRunReference: false
+
+assumptions:
+  - "The owner's OpenCode zai login is the key the owner meant. Its value was not read, and this was not confirmed."
+  - "L2 with no security review is the orchestrator's classification. The owner confirms or changes it at merge, because only a human may accept privacy risk."
+
+openQuestions: []
+
+recordedDecisions:
+  - "Owner on 2026-11-04: use provider zai, at maximum thinking, with a limit of 2 concurrent requests."
+  - "glm-5.3-flashx returned model not found on zai, so the owner accepted glm-5.3-flash ('use flash yes')."
+  - "The owner left the choice open ('if you think argon is better use argon in all agents I don't mind'). The orchestrator recommended and kept the split. One model on all agents would still meet AGENTS.md §8, which defines independence by agent and role, but it would lose model diversity between production code and its review. The owner can confirm or change this at merge."
+  - "Argon's highest available setting is high; it has no max."

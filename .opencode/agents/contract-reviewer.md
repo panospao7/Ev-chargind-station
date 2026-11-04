@@ -1,6 +1,8 @@
 ---
 description: Reviews OpenAPI, AsyncAPI, JSON Schema, executable registries, examples, compatibility, security surfaces, and traceability without modifying files.
 mode: subagent
+model: zai/gemini-4-argon
+variant: high
 temperature: 0.1
 steps: 60
 permission:

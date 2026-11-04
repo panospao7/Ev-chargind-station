@@ -1,6 +1,8 @@
 ---
 description: Independently verifies acceptance criteria, adds tests only in approved test locations, and reports reproducible defects without repairing production code.
 mode: subagent
+model: zai/gemini-4-argon
+variant: high
 temperature: 0.1
 steps: 55
 permission:

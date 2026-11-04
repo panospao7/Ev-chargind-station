@@ -1,6 +1,8 @@
 ---
 description: Performs an independent read-only review for correctness, scope, maintainability, invariant compliance, and test sufficiency.
 mode: subagent
+model: zai/gemini-4-argon
+variant: high
 temperature: 0.1
 steps: 45
 permission:

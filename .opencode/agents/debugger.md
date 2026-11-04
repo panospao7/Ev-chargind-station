@@ -1,6 +1,8 @@
 ---
 description: Diagnoses a concrete reproduced failure and applies the smallest valid fix without weakening tests, contracts, or invariants.
 mode: subagent
+model: zai/glm-5.3-flash
+variant: max
 temperature: 0.1
 steps: 65
 permission:

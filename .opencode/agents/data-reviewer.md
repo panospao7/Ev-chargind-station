@@ -1,6 +1,8 @@
 ---
 description: Reviews PostgreSQL, Flyway, persistence ownership, constraints, indexes, locking, migrations, roles, seed/reset, retention, and concurrency evidence without modifying files.
 mode: subagent
+model: zai/gemini-4-argon
+variant: high
 temperature: 0.1
 steps: 60
 permission:

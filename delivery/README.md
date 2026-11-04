@@ -83,6 +83,9 @@ Permission rules are guardrails against mistakes, not a security boundary. See `
 - Answer "once" to permission prompts, never "always". An "always" answer can override deny rules for the rest of the session.
 - Do not use `opencode --auto` in this repository. It approves everything that is not explicitly denied.
 - After changing `opencode.json` or `.opencode/agents/`, run `node scripts/delivery/check-agent-permissions.mjs`.
+- Writers (`orchestrator`, `coder`, `debugger`, `documentation`) use `zai/glm-5.3-flash`, and `planner`, `tester` and the reviewers use `zai/gemini-4-argon`, so the model that wrote production code does not review it. Each runs at its highest thinking setting: `max` and `high`. The owner chose the provider and thinking level; the split is the orchestrator's recommendation, for the owner to confirm or change. See `delivery/tasks/I1-DEL-002.yaml`.
+- The `zai` provider comes from the owner's global OpenCode config, not this repository. Without it, these agents name a provider OpenCode cannot find, so another machine or contributor needs that setup first.
+- The provider allows 2 concurrent requests, probably across every session using the key. Invoke subagents one at a time, and avoid running other OpenCode sessions on the same key at the same time.
 - Owner exception (2026-11-04): the orchestrator may commit its own records, namely this task's `delivery/status.yaml` entry and this task's handoffs and evidence, even when the packet prohibits `delivery/status.yaml`. Nothing else outside `allowedFiles` may be committed.
 
 ## Task IDs

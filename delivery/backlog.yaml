@@ -320,4 +320,18 @@ items:
       - security
       - l3
 
+  - id: "I1-DEL-002"
+    order: 47
+    priority: "P0"
+    iteration: "I1"
+    epic: "EPIC-00"
+    title: "Set OpenCode agent models on the zai provider, keeping production-code writers and reviewers on different models"
+    packet: "delivery/tasks/I1-DEL-002.yaml"
+    dependsOn:
+      - "I1-DEL-001"
+    tags:
+      - delivery
+      - ai-agents
+      - l2
+
 nextRecommendedTask: "I1-IAM-002"
