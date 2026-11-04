@@ -1,0 +1,34 @@
+schemaVersion: "1.0"
+deviationId: "I1-DEL-001-CLOSE-01"
+type: "TEMPORARY_EXCEPTION"
+taskId: "I1-DEL-001"
+date: "2026-11-04"
+status: "PENDING_OWNER_ACCEPTANCE_BY_MERGE"
+title: "I1-DEL-001 merged before /verify-task ran, and it has no review fingerprint"
+description: >
+  PR #52 merged as 60c261e37fbe7df6686fd02e1011f4dc5aa0d06b on the owner's
+  instruction ("if it's green merge it") while the task was CI_PENDING, so
+  /verify-task had not run. /verify-task precondition 6 needs
+  delivery/evidence/I1-DEL-001/review-fingerprint.md, and /close-task
+  precondition 3 needs verification.md showing HUMAN_REVIEW. Neither existed.
+  This task created the fingerprint step, so its own reviews ran on an
+  uncommitted worktree without one. Some files also changed after the last
+  independent look (10-verifier-recheck.md), including the shell pin in
+  opencode.json and the owner exception text in /ship-task and /close-task.
+compensatingCheck: >
+  An independent verification-only tester ran after the merge
+  (delivery/handoffs/I1-DEL-001/14-tester-verification.md): PASS_NO_BLOCKERS,
+  0 BLOCKER, 0 MAJOR, 7 MINOR, 8 NOTE. Resolved permissions for 17 agents in 2
+  configurations matched the recheck's saved dumps, apart from the ordering of
+  skill allow rules. The check script differs only by the pin assertion, and
+  removing the pin makes it fail. Post-recheck command text was read in full.
+notCovered: >
+  This does not reproduce a fingerprint, which cannot be rebuilt after the fact.
+  It is not a new full security review, and the last specialist result stays
+  FAIL_RISK_ACCEPTED. No live session or end-to-end command run took place in
+  this check. Frontend, service and migration workflows did not run because
+  their path filters do not match this change.
+ownerDecisionRequired: >
+  Accept this deviation and confirm final verification of I1-DEL-001 by merging
+  the closeout pull request. AI agents may draft this record but cannot approve
+  it. If the owner does not accept it, the task stays MERGED.

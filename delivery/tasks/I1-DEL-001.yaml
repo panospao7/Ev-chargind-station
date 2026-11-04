@@ -107,6 +107,7 @@ scope:
     - "delivery/deviations/I1-IAM-002/RECON-01-diverged-lines.yaml"
     - "delivery/handoffs/I1-IAM-002/04-orchestrator.md"
     - "delivery/evidence/I1-IAM-002/ci-line-rerun.md"
+    - "delivery/deviations/I1-DEL-001/CLOSE-01-verified-after-merge.yaml"
 
   prohibitedFiles:
     - "AGENTS.md"
@@ -279,6 +280,7 @@ assumptions:
 openQuestions: []
 
 recordedDecisions:
+  - "Closeout added the CLOSE-01 deviation file to allowedFiles on 2026-11-04; the owner accepts or rejects it at the closeout merge."
   - "Owner confirmed on 2026-11-04 that ZCode built the work so far and delivery continues in OpenCode for now."
   - "Owner directed these repo fixes on 2026-11-04 (\"can you make those for me\"). Merge remains the owner's decision."
   - "Owner accepted the guardrail threat model on 2026-11-04, including R2-02 and R2-05 (handoff 12)."
