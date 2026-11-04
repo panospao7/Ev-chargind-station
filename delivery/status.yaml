@@ -880,7 +880,7 @@ tasks:
 
     baselineCommit: "811b81ed39ca954217cf785f5f9c3135f14b2263"
     branch: "task/i1-del-001-opencode-controls"
-    candidateCommit: null
+    candidateCommit: "3a134b3cd7b31dbf012be097d709f089059cb2b3"
     pullRequest: null
 
     blockers: []
