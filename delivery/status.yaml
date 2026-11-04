@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-11-04T00:00:00Z"
+updatedAt: "2026-11-04T12:19:39Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -874,17 +874,19 @@ tasks:
       paths: []
 
   I1-DEL-001:
-    state: "CI_PENDING"
+    state: "VERIFIED"
     assignedAgent: "Claude Code session (orchestrator+coder roles, disclosed)"
     claimedAt: "2026-11-04T00:00:00Z"
 
     baselineCommit: "811b81ed39ca954217cf785f5f9c3135f14b2263"
     branch: "task/i1-del-001-opencode-controls"
     candidateCommit: "3a134b3cd7b31dbf012be097d709f089059cb2b3"
-    pullRequest: null
+    mergeCommit: "60c261e37fbe7df6686fd02e1011f4dc5aa0d06b"
+    pullRequest: "https://github.com/panospao7/Ev-chargind-station/pull/52"
 
     blockers: []
-    deviations: []
+    deviations:
+      - "delivery/deviations/I1-DEL-001/CLOSE-01-verified-after-merge.yaml"
     unresolvedFindings:
       - "Rounds 1 and 2: general and security reviews FAIL_FINDINGS; round 3 re-check PASS_NO_BLOCKERS for the listed corrections"
       - "Owner accepted the guardrail threat model and R2-02 and R2-05 on 2026-11-04 (12-orchestrator.md); no OS-level isolation for now"
@@ -892,33 +894,35 @@ tasks:
       - "No new full security review ran after round 3; a narrow verifier confirmed the listed corrections"
       - "Follow-up: DEC-AGENT-01 and AGENTS.md §12 need a separate task to record the orchestrator-records exception"
       - "Still open, not blocking: per-agent models, commit wrapper, test-skip denies, unlisted tool names, grep tool reading .env, tester waiver"
+      - "Post-merge tester PASS_NO_BLOCKERS: 7 MINOR and 8 NOTE open (14-tester-verification.md); MINOR-2 must be resolved before /ship-task I1-IAM-002; MINOR-7 needs owner decisions"
 
-    handoffSequence: 13
-    latestHandoff: "delivery/handoffs/I1-DEL-001/13-orchestrator.md"
+    handoffSequence: 15
+    latestHandoff: "delivery/handoffs/I1-DEL-001/15-closeout.md"
     reviews:
       planner: "NOT_REQUIRED"
-      tester: "NOT_REQUIRED"
+      tester: "PASS_NO_BLOCKERS (verification-only, after merge, 14-tester-verification.md)"
       generalReviewer: "PASS_WITH_FINDINGS"
       contractReviewer: "NOT_REQUIRED"
       dataReviewer: "NOT_REQUIRED"
       securityReviewer: "FAIL_RISK_ACCEPTED"
-      humanReview: "NOT_STARTED"
+      humanReview: "APPROVED (owner authorized the merge of PR #52 if green; confirms closure by merging the closeout)"
 
     ci:
-      status: "PENDING"
-      candidateRunReference: null
-      mergeRunReference: null
+      status: "GREEN_ON_PR"
+      candidateRunReference: "G3 Contract Validation 41812033525 (PR head 2296f7dd); packet requires no checks; frontend, service and migration workflows NOT_RUN by path filter"
+      mergeRunReference: "G3 Contract Validation 41823540316"
       requiredChecks: []
 
     humanApproval:
       required: true
-      reference: "Owner directed the work and accepted its recommendations in session on 2026-11-04; merge approval still pending"
-      approvedCandidateCommit: null
+      reference: "Owner in session on 2026-11-04: 'if it's green merge it' (PR #52) and 'do the still todos' (closure); merging the closeout accepts CLOSE-01 and confirms final verification"
+      approvedCandidateCommit: "3a134b3cd7b31dbf012be097d709f089059cb2b3"
 
     evidence:
-      status: "SELF_TEST_PASS"
+      status: "COMPLETE"
       paths:
         - "delivery/evidence/I1-DEL-001/agent-permissions.md"
+        - "delivery/evidence/I1-DEL-001/verification.md"
 summary:
   counts:
     BACKLOG: 0
@@ -929,15 +933,15 @@ summary:
     SELF_VERIFIED: 0
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
-    CI_PENDING: 1
+    CI_PENDING: 0
     HUMAN_REVIEW: 0
     MERGED: 0
-    VERIFIED: 18
+    VERIFIED: 19
 
     CLARIFICATION_REQUIRED: 0
     SPEC_CONFLICT: 0
     SUPERSEDED: 0
     CANCELLED: 0
 
-  activeTask: "I1-DEL-001"
-  nextRecommendedTask: null
+  activeTask: null
+  nextRecommendedTask: "I1-IAM-002"

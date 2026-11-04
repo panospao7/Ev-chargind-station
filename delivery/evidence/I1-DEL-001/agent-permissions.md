@@ -2,7 +2,7 @@
 
 - **Task ID:** I1-DEL-001
 - **Baseline commit:** 811b81ed39ca954217cf785f5f9c3135f14b2263
-- **Candidate commit:** none yet; results are from the uncommitted worktree on `task/i1-del-001-opencode-controls`
+- **Candidate commit:** `3a134b3cd7b31dbf012be097d709f089059cb2b3`, merge commit `60c261e37fbe7df6686fd02e1011f4dc5aa0d06b`. Results below came from the uncommitted worktree before that commit; see `verification.md`
 - **Date:** 2026-11-04 (per-run timestamps not captured)
 - **Environment:** Windows 11, Node 24.21.0, OpenCode 1.19.0; checks ran from Git Bash
 
@@ -44,8 +44,8 @@ by a shell parser, so a passing check does not prove live behaviour.
 
 - Allow rules name exact commands. The orchestrator can push one literal task branch.
 - One shared deny list comes last for every agent, because global files merge in ahead of it.
-- `git add` and `git commit` prompt a human. This is stricter than DEC-AGENT-01 permits, and the owner
-  chose to keep it on 2026-11-04.
+- `git add` and `git commit` prompt a human. This is stricter than DEC-AGENT-01 permits. Whether to keep it or
+  add a commit wrapper is still an open owner decision.
 - `"*_*": "ask"` covers MCP-style tool names, replacing the root catch-all.
 
 ## Other checks
@@ -58,7 +58,8 @@ by a shell parser, so a passing check does not prove live behaviour.
 | Branch protection on `main` (GitHub API) | Present: pull request required with 0 approvals, admins enforced, no force-push, no deletion, no required status checks |
 | Live OpenCode session, disposable repository, started from PowerShell with `SHELL` unset, project rules plus the shell pin | PASS: `uname -a` reported MINGW64, so Git Bash and not WSL. `git checkout -- .` was denied by the rule, and an uncommitted file survived. One session only; other live behaviour remains NOT_RUN |
 | `/review-task`, `/ship-task`, `/verify-task`, `/close-task` end to end | NOT_RUN |
-| `npm run contracts:verify`, Maven suites, GitHub CI | NOT_RUN; no contract or product code changed, nothing committed |
+| `npm run contracts:verify`, Maven suites | NOT_RUN; no contract or product code changed |
+| GitHub CI | PASS after commit: G3 on the PR head and merge commit. See `verification.md` |
 
 ## Limitations that remain
 
