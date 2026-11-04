@@ -65,6 +65,8 @@ Compare only results from the same shell. If any of these commands fails or prin
 
 ## Procedure
 
+Run the steps below in order, one subagent at a time. The model provider allows 2 concurrent requests.
+
 ### 1. Independent testing
 
 Build a bounded context package containing:

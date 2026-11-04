@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 
 // Evaluates OpenCode's resolved agent rules against expected outcomes.
 // Rules come from `opencode debug agent`. Matching copies OpenCode 1.19.0:
@@ -338,7 +338,40 @@ driftFailures.forEach((line) => console.log(line));
 const pinnedShell = JSON.parse(readFileSync('opencode.json', 'utf8')).shell;
 if (pinnedShell !== 'bash') console.log(`  FAIL opencode.json shell must be bash, found: ${pinnedShell}`);
 
-const failed = failures.length + unexpected.length + missing.length + driftFailures.length + (pinnedShell === 'bash' ? 0 : 1);
+// Agents that write production code stay on a different model from the agents that review it.
+const WRITER_MODEL = { providerID: 'zai', modelID: 'glm-5.3-flash', variant: 'max' };
+const REVIEWER_MODEL = { providerID: 'zai', modelID: 'gemini-4-argon', variant: 'high' };
+const EXPECTED_MODELS = {
+  orchestrator: WRITER_MODEL, coder: WRITER_MODEL, debugger: WRITER_MODEL, documentation: WRITER_MODEL,
+  build: WRITER_MODEL, plan: WRITER_MODEL, general: WRITER_MODEL, explore: WRITER_MODEL,
+  planner: REVIEWER_MODEL, tester: REVIEWER_MODEL, reviewer: REVIEWER_MODEL,
+  'security-reviewer': REVIEWER_MODEL, 'data-reviewer': REVIEWER_MODEL, 'contract-reviewer': REVIEWER_MODEL
+};
+const modelFailures = [];
+for (const [agent, want] of Object.entries(EXPECTED_MODELS)) {
+  const got = JSON.parse(opencode(`debug agent ${agent}`));
+  const found = `${got.model?.providerID}/${got.model?.modelID} ${got.variant}`;
+  if (found !== `${want.providerID}/${want.modelID} ${want.variant}`) modelFailures.push(`  FAIL ${agent} model: ${found}`);
+}
+for (const agent of [...PROJECT_AGENTS, ...BUILT_IN_CHECKED]) {
+  if (!EXPECTED_MODELS[agent]) modelFailures.push(`  FAIL ${agent} has no expected model in this check`);
+}
+for (const agent of BUILT_IN.filter((name) => !BUILT_IN_CHECKED.includes(name))) {
+  const { model } = JSON.parse(opencode(`debug agent ${agent}`));
+  if (model) modelFailures.push(`  FAIL ${agent} pins its own model: ${model.providerID}/${model.modelID}`);
+}
+const rootConfig = JSON.parse(readFileSync('opencode.json', 'utf8'));
+const WRITER_ID = `${WRITER_MODEL.providerID}/${WRITER_MODEL.modelID}`;
+for (const key of ['model', 'small_model']) {
+  if (rootConfig[key] !== WRITER_ID) modelFailures.push(`  FAIL opencode.json ${key} must be ${WRITER_ID}, found: ${rootConfig[key]}`);
+}
+// A second project config file could override the values read above without this check seeing them.
+for (const path of ['opencode.jsonc', '.opencode.json', '.opencode/opencode.json', '.opencode/opencode.jsonc']) {
+  if (existsSync(path)) modelFailures.push(`  FAIL unexpected project config file: ${path}`);
+}
+modelFailures.forEach((line) => console.log(line));
+
+const failed = failures.length + unexpected.length + missing.length + driftFailures.length + modelFailures.length + (pinnedShell === 'bash' ? 0 : 1);
 console.log(`\n${EXPECTATIONS.length - failures.length}/${EXPECTATIONS.length} expectations met; ${listed.length} agents listed`);
 console.log(failed === 0 ? '=== ALL CHECKS PASSED ===' : `=== ${failed} FAILURE(S) ===`);
 process.exit(failed === 0 ? 0 : 1);

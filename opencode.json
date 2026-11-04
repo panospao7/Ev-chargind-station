@@ -2,11 +2,17 @@
   "$schema": "https://opencode.ai/config.json",
   "default_agent": "orchestrator",
   "shell": "bash",
+  "model": "zai/glm-5.3-flash",
+  "small_model": "zai/glm-5.3-flash",
   "share": "disabled",
   "instructions": [
     "docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md"
   ],
   "agent": {
+    "build": { "model": "zai/glm-5.3-flash", "variant": "max" },
+    "plan": { "model": "zai/glm-5.3-flash", "variant": "max" },
+    "general": { "model": "zai/glm-5.3-flash", "variant": "max" },
+    "explore": { "model": "zai/glm-5.3-flash", "variant": "max" },
     "architecture-guardian": { "disable": true },
     "ci-build-debugger": { "disable": true },
     "coder-fast": { "disable": true },

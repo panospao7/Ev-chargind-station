@@ -1,6 +1,8 @@
 ---
 description: Implements an approved bounded task with minimal changes, synchronized tests and contracts, and reproducible self-verification.
 mode: subagent
+model: zai/glm-5.3-flash
+variant: max
 temperature: 0.1
 steps: 80
 permission:

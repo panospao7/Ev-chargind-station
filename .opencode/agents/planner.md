@@ -1,6 +1,8 @@
 ---
 description: Produces read-only implementation plans grounded in exact repository specifications, dependencies, risks, and acceptance criteria.
 mode: subagent
+model: zai/gemini-4-argon
+variant: high
 temperature: 0.1
 steps: 35
 permission:

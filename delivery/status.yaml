@@ -1,5 +1,5 @@
 schemaVersion: "1.0"
-updatedAt: "2026-11-04T12:19:39Z"
+updatedAt: "2026-11-04T13:56:00Z"
 
 project:
   name: "EV Charging Booking Platform"
@@ -923,6 +923,50 @@ tasks:
       paths:
         - "delivery/evidence/I1-DEL-001/agent-permissions.md"
         - "delivery/evidence/I1-DEL-001/verification.md"
+  I1-DEL-002:
+    state: "CI_PENDING"
+    assignedAgent: "Claude Code session (orchestrator+coder roles, disclosed)"
+    claimedAt: "2026-11-04T13:15:28Z"
+
+    baselineCommit: "e02db33e82eb0c30788cd9d12c8374bd4891e255"
+    branch: "task/i1-del-002-agent-models"
+    candidateCommit: "fd6180ba67d54129ba96a3eeb26726a862d11394"
+    pullRequest: null
+
+    blockers: []
+    deviations: []
+    unresolvedFindings:
+      - "One live reviewer subagent ran on the new models; no /review-task end to end"
+      - "Owner to confirm at merge: the writer and reviewer split, and L2 with no security review (02-reviewer.md F3, F4, F7)"
+      - "ARC-AI-OQ-01 (final AI tools and providers) stays open for the owner"
+
+    handoffSequence: 5
+    latestHandoff: "delivery/handoffs/I1-DEL-002/05-reviewer-final.md"
+    reviews:
+      planner: "NOT_REQUIRED"
+      tester: "NOT_REQUIRED"
+      generalReviewer: "PASS_WITH_FINDINGS (02-reviewer.md)"
+      contractReviewer: "NOT_REQUIRED"
+      dataReviewer: "NOT_REQUIRED"
+      securityReviewer: "NOT_REQUIRED"
+      humanReview: "NOT_STARTED"
+
+    ci:
+      status: "PENDING"
+      candidateRunReference: null
+      mergeRunReference: null
+      requiredChecks: []
+
+    humanApproval:
+      required: true
+      reference: "Owner directed the work and chose provider zai in session on 2026-11-04; merge approval pending"
+      approvedCandidateCommit: null
+
+    evidence:
+      status: "SELF_TEST_PASS"
+      paths:
+        - "delivery/evidence/I1-DEL-002/agent-models.md"
+        - "delivery/evidence/I1-DEL-002/review-fingerprint.md"
 summary:
   counts:
     BACKLOG: 0
@@ -933,7 +977,7 @@ summary:
     SELF_VERIFIED: 0
     FIX_REQUIRED: 0
     INDEPENDENT_REVIEW: 0
-    CI_PENDING: 0
+    CI_PENDING: 1
     HUMAN_REVIEW: 0
     MERGED: 0
     VERIFIED: 19
@@ -943,5 +987,5 @@ summary:
     SUPERSEDED: 0
     CANCELLED: 0
 
-  activeTask: null
+  activeTask: "I1-DEL-002"
   nextRecommendedTask: "I1-IAM-002"

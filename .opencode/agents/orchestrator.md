@@ -1,6 +1,8 @@
 ---
 description: Coordinates task execution, validates readiness, delegates planning and coding, and maintains delivery handoffs without editing product code.
 mode: primary
+model: zai/glm-5.3-flash
+variant: max
 temperature: 0.1
 steps: 50
 permission:
@@ -535,6 +537,8 @@ Every subagent invocation must include:
 Do not ask a subagent to rediscover information already available in the task packet.
 
 # Delegation policy
+
+Invoke subagents one at a time. Never put more than one `task` call in a message, and wait for each result before starting the next. The model provider allows 2 concurrent requests, and background title and compaction calls can use one of them.
 
 ## Planner
 
