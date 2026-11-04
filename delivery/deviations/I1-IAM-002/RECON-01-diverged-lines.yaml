@@ -1,0 +1,101 @@
+schemaVersion: "1.0"
+deviationId: "I1-IAM-002-RECON-01"
+type: "IMPLEMENTATION_DISCOVERY"
+taskId: "I1-IAM-002"
+date: "2026-11-04"
+status: "OWNER_DECIDED_RERUN_PASSED"
+title: "I1-IAM-002 has diverged implementation lines, and main does not record the one with the most self-reported progress"
+recordedBy: "Reconciliation under I1-DEL-001; drafted by an AI agent, not an approval"
+description: >
+  The record on main showed one stuck line. The remote holds two unmerged lines
+  with different approaches to Keycloak Standard Token Exchange. Nothing on main
+  referred to the first one. All results below are copied from those branches'
+  own records. They were not re-run during this reconciliation and have never
+  been independently reviewed or run in CI.
+lines:
+  - branch: "origin/task/i1-iam-002-ci"
+    tip: "431392f6df301f3afef018be3fbd144f50ee593d"
+    candidate: "f4673ef962ffccf83a0d5ec67b0668e9bd38a620"
+    lastCommitDate: "2026-09-14"
+    forkPoint: "589a36f7e863a6c0fdabbc10560839ac874ff7ec"
+    relationToMain: "6 commits ahead, 13 behind; no pull request was ever opened"
+    selfReportedState: "SELF_VERIFIED"
+    approach: >
+      Per-client standard.token.exchange.enabled attribute, a client policy using
+      the downscope-assertion-grant-enforcer executor, and audience mappers on
+      ev-bff, through the realm import (its deviation PLAN-001).
+    selfReportedResults: >
+      BFF 78/78, test-support 16/16, Discovery 27/27, Station Operations 36/36,
+      contracts 21/21, TokenExchangeIntegrationTests 12/12 against Keycloak 26.6.
+      Also contains resource-server validation in both services (AC-04).
+    selfReportedGaps:
+      - "AC-05 standalone cases NOT_RUN: duplicate jti, excessive lifetime, wrong assertion audience."
+      - "CI never ran on this line, so AC-07 is incomplete."
+      - >
+        The handoff calls this MINOR, but reviewers should reassess it: Keycloak
+        emits header typ=JWT while the production validator chain uses a
+        header-based JwtTypeValidator("Bearer"), and the suites mint header
+        typ=Bearer. As described, that validator would reject real Keycloak
+        tokens at both resource servers.
+  - branch: "origin/task/i1-iam-002-phase3"
+    tip: "0067c9c2e6022e5f9ecb61a191069012325a623f"
+    lastCommitDate: "2026-10-01"
+    forkPoint: "dc712a150c8211faa31de7dca895abfb03f078e7 (the line merged to main through PRs #49, #50, #51)"
+    relationToMain: "3 commits ahead, 1 behind (the PR #51 merge commit)"
+    recordedState: "IMPLEMENTING, but this comes from an unmaintained status entry, not a real self-report"
+    approach: >
+      Admin-REST bootstrap (BOOTSTRAP-01 Option A), later per-target client scopes
+      with audience mappers.
+    selfReportedResults: >
+      Headless code+PKCE login as ev-bff works. The latest commit message says
+      exchange is still gated by "Requested audience not available".
+recordsDisagree: >
+  The two lines disagree on a basic fact. BOOTSTRAP-01 is titled "Keycloak 26.6 realm
+  import cannot deterministically express the svc-* client finalization", while the
+  -ci line reports that the realm import did carry its exchange attribute and client
+  policies (its DA-1 and DA-2 checks). BOOTSTRAP-01 uses a different attribute name in
+  its text (the token-exchange-standard feature and STX attribute) and later retracted
+  its upstream-defect claim. This was not investigated further here. Resolve it first,
+  because it decides whether the Admin-REST bootstrap on main is needed at all.
+scopeFinding:
+  file: "scripts/dev/stx-attribute-put-bug-repro.mjs"
+  commit: "7b44916"
+  finding: >
+    The packet's prohibitedFiles lists scripts/**, and no deviation recorded this
+    file. Its name also still claims a Keycloak bug that BOOTSTRAP-01 later
+    retracted.
+  disposition: "Not removed by this reconciliation; part of the owner decision below."
+packetNote: >
+  The packet's allowed Option A bootstrap code location was never amended. BOOTSTRAP-01
+  remains OPEN_REQUIRES_OWNER_DECISION even though main contains its Option A work.
+ownerDecision:
+  date: "2026-11-04"
+  decision: >
+    The owner accepted the recommendation: option A, resume from
+    origin/task/i1-iam-002-ci, provided an independent re-run confirms its
+    self-reported results.
+  rerun: >
+    PASS at 431392f6 on JDK 21: BFF 78/78 including exchange 12/12, Discovery 27/27,
+    Station Operations 36/36, test-support 16/16. See
+    delivery/evidence/I1-IAM-002/ci-line-rerun.md. This is a re-run, not a review.
+ownerDecisionRequired:
+  question: "Which implementation line continues as I1-IAM-002?"
+  options:
+    - id: A
+      label: "Resume from origin/task/i1-iam-002-ci"
+      detail: >
+        Port it onto current main, resolve the typ validator question, run the
+        NOT_RUN AC-05 cases, then CI and the independent reviews. Main's bootstrap
+        work would need a disposition.
+    - id: B
+      label: "Continue the main and phase3 line"
+      detail: >
+        Keep investigating the audience gate; compare the working configuration
+        recorded on the -ci line first.
+    - id: C
+      label: "Replan the packet"
+      detail: "Run a new planner round with a recorded scope amendment before more code."
+  recommendation: >
+    Option A, provided an independent re-run confirms the self-reported results.
+    It is the only line reporting a passing positive exchange. This is an agent
+    recommendation; the choice belongs to the owner.

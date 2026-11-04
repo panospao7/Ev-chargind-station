@@ -1,0 +1,285 @@
+schemaVersion: "1.0"
+
+task:
+  id: "I1-DEL-001"
+  title: "Make the OpenCode control plane enforceable before first live use — agent permissions, ship step, valid states, I1-IAM-002 record correction"
+  initialState: "READY"
+  iteration: "I1"
+  epic: "EPIC-00"
+  releaseWave: "W1"
+  sliceApplicability: "cross-cutting"
+  impactLevel: "L3"
+  owner: "Project Owner"
+  createdAt: "2026-11-04"
+  baselineCommit: "811b81ed39ca954217cf785f5f9c3135f14b2263"
+
+objective: >
+  Delivery moved from ZCode to OpenCode on 2026-11-04, so the .opencode rules
+  now govern live work. Close the gaps between the written agent rules and the
+  permissions OpenCode actually resolves; add the missing step that commits
+  reviewed work and opens a pull request; replace command states the delivery
+  validator rejects; and correct the I1-IAM-002 record, including its diverged
+  unmerged branches. A repeatable check proves the resolved permissions.
+
+nonGoals:
+  - "Choosing per-agent models (owner decision: which providers may receive repository content, ARC-016 §26)."
+  - "Reconciling AGENTS.md and ARC-016 impact levels, or changing the always-loaded instructions (owner decision)."
+  - "Choosing Makefile or npm scripts for ENG-001 §8, or removing the unresolved make rules (owner decision)."
+  - "Choosing, merging or changing either I1-IAM-002 implementation line; splitting its packet."
+  - "Changing GitHub branch protection or files under ~/.config/opencode (owner actions)."
+  - "Repairing review matrices of VERIFIED tasks, adding the validator to CI, or moving checklists into skills."
+  - "New specialist agents or skills for EPIC-10 and later epics."
+  - "A validating wrapper script for git add, commit and push (owner decision; staging and committing prompt a human until then)."
+  - "Deciding how delivery/status.yaml relates to packet allowedFiles under DEC-AGENT-01 (owner decision; /ship-task stops on the conflict)."
+  - "Whether opencode --auto is banned for this repository (owner decision)."
+
+useCases:
+  - "None; delivery control plane only."
+
+authority:
+  governance:
+    - path: "AGENTS.md"
+      section: "§6 impact levels; §7 state machine; §10 implementation rules; §11 validators; §12 git safety and DEC-AGENT-01"
+    - path: "docs/00_governance/01_decision_and_open_question_register_v1.0.md"
+      section: "DEC-AGENT-01 (GOV-001 §16e)"
+    - path: "docs/08_delivery_and_ai_agents/03_ai_agent_rules_review_gates_v1.0.md"
+      section: "§7-§9 permitted and prohibited actions; §19 pull-request handoff; §32 permission profiles"
+    - path: "delivery/README.md"
+      section: "Workflow; handoff naming; deviation rules; human authority"
+  requirements: []
+  domain: []
+  architecture: []
+  contracts: []
+
+invariants:
+  - "Secrets, credentials and private keys never appear in source, logs or evidence (AGENTS.md §4)."
+  - "Merge to main, rebase, reset, restore, clean, tag, deploy and force-push remain human-only (DEC-AGENT-01)."
+  - "No validator is weakened or disabled (AGENTS.md §11)."
+  - "Workflow state stays limited to the AGENTS.md §7 state machine."
+
+ownership:
+  owningService: "n/a (delivery control plane)"
+  dataOwner: "n/a"
+  supportingServices: []
+  prohibitedOwners: []
+
+affectedArtifacts:
+  services: []
+  modules:
+    - "opencode.json"
+    - ".opencode/agents/*.md (frontmatter permissions only)"
+    - ".opencode/commands/* (workflow text; new ship-task)"
+    - "scripts/delivery/check-agent-permissions.mjs (new)"
+  tables: []
+  projections: []
+  migrations: []
+  apiOperations: []
+  commands: []
+  events: []
+  schemas: []
+  registries: []
+  screens: []
+  infrastructure: []
+
+dependencies:
+  tasks: []
+  contracts: []
+  infrastructure:
+    - "OpenCode CLI 1.19.0 for the permission check"
+  humanDecisions:
+    - "Owner directed this work on 2026-11-04 after reviewing the evaluation."
+
+blockers: []
+
+scope:
+  allowedFiles:
+    - "opencode.json"
+    - ".opencode/agents/*.md"
+    - ".opencode/commands/*.md"
+    - "scripts/delivery/check-agent-permissions.mjs"
+    - "delivery/README.md"
+    - "delivery/backlog.yaml"
+    - "delivery/status.yaml"
+    - "delivery/tasks/I1-DEL-001.yaml"
+    - "delivery/handoffs/I1-DEL-001/**"
+    - "delivery/evidence/I1-DEL-001/**"
+    - "delivery/handoffs/I1-IAM-002/03-orchestrator.md"
+    - "delivery/deviations/I1-IAM-002/RECON-01-diverged-lines.yaml"
+    - "delivery/handoffs/I1-IAM-002/04-orchestrator.md"
+    - "delivery/evidence/I1-IAM-002/ci-line-rerun.md"
+
+  prohibitedFiles:
+    - "AGENTS.md"
+    - "docs/**"
+    - "contracts/**"
+    - "services/**"
+    - "apps/**"
+    - "libraries/**"
+    - "simulator/**"
+    - "infra/**"
+    - ".github/workflows/**"
+    - ".opencode/skills/**"
+    - "scripts/contracts/**"
+    - "scripts/delivery/validate.mjs"
+    - "scripts/delivery/validate.ps1"
+    - "scripts/delivery/self-test.mjs"
+    - "delivery/tasks/I1-IAM-002.yaml"
+
+  maximumExpectedDiff: >
+    Bounded: permission rules across 11 config files, one new command, one
+    check script, delivery records.
+
+  generatedFilesPolicy: >
+    Hand-authored; no generated output.
+
+acceptanceCriteria:
+  - id: "AC-01"
+    statement: >
+      For every project agent plus the build, plan, general and explore
+      built-ins, OpenCode's resolved rules deny the recorded forms of direct
+      pushes to main, force pushes, branch deletion, sweep staging, amend,
+      destructive checkout and switch, merge, rebase, reset, restore, clean,
+      tag, gh pr merge and review, and destructive infrastructure, database and
+      file commands. Staging and committing prompt a human; the orchestrator
+      can push only a single task branch without a prompt.
+    authorityReferences:
+      - "AGENTS.md §12; DEC-AGENT-01"
+    evidenceRequired:
+      - "scripts/delivery/check-agent-permissions.mjs result"
+    testTypes: ["configuration", "security"]
+
+  - id: "AC-02"
+    statement: >
+      Only project agents and OpenCode built-ins can be selected, and the
+      result holds with and without the owner's global OpenCode config.
+    authorityReferences:
+      - "ARC-016 §2 (least privilege); AGENTS.md §8"
+    evidenceRequired:
+      - "permission check result in both configurations"
+    testTypes: ["configuration"]
+
+  - id: "AC-03"
+    statement: >
+      Coder and debugger need a human prompt to edit normative documents,
+      dependency manifests and validators, and cannot edit secret-pattern
+      files anywhere in the repository; the documentation agent needs a prompt
+      for docs/**.
+    authorityReferences:
+      - "AGENTS.md §10-§11; ARC-016 §8, §13"
+    evidenceRequired:
+      - "permission check result"
+    testTypes: ["configuration", "security"]
+
+  - id: "AC-04"
+    statement: >
+      Packet-specified Windows Maven test commands and read-only CI inspection
+      no longer prompt for the agents that need them, and the orchestrator can
+      push only task branches.
+    authorityReferences:
+      - "AGENTS.md §11; DEC-AGENT-01"
+    evidenceRequired:
+      - "permission check result"
+    testTypes: ["configuration"]
+
+  - id: "AC-05"
+    statement: >
+      A command commits reviewed work under the DEC-AGENT-01 pre-commit gate,
+      pushes the task branch and opens a pull request for human merge; no
+      command contradicts it; review results are saved unedited as handoffs.
+    authorityReferences:
+      - "DEC-AGENT-01; ARC-016 §19; delivery/README.md handoff naming"
+    evidenceRequired:
+      - "diff review; secret-scan command executed"
+    testTypes: ["review"]
+
+  - id: "AC-06"
+    statement: >
+      No command assigns a workflow state outside the AGENTS.md §7 state
+      machine.
+    authorityReferences:
+      - "AGENTS.md §7; scripts/delivery/validate.mjs validStates"
+    evidenceRequired:
+      - "grep of command state lists; validator result"
+    testTypes: ["review"]
+
+  - id: "AC-07"
+    statement: >
+      The I1-IAM-002 status entry matches repository facts: both unmerged
+      branches, the open deviation, the out-of-scope file and the owner
+      decision are recorded without changing either implementation line.
+    authorityReferences:
+      - "delivery/README.md source-of-truth ownership and deviation rules"
+    evidenceRequired:
+      - "status, deviation and handoff diff; validator result"
+    testTypes: ["review"]
+
+tests:
+  focusedCommands:
+    - "node scripts/delivery/check-agent-permissions.mjs"
+    - "node scripts/delivery/validate.mjs"
+    - "node scripts/delivery/self-test.mjs"
+  requiredSuites:
+    - "Permission check with the owner's global config and with an empty config directory"
+  positiveCases:
+    - "Orchestrator pushes task/* branches and reads CI status; coder runs .\\mvnw.cmd test commands."
+  negativeCases:
+    - "The FORBIDDEN_COMMANDS list is denied for all checked agents."
+  boundaryCases:
+    - "A branch named task/main-fix stays pushable while pushes targeting main are denied."
+  concurrencyCases: []
+  securityCases:
+    - "Secret-pattern files are denied even under paths with a broader ask rule."
+  contractCases: []
+  migrationCases: []
+  accessibilityCases: []
+
+persistence:
+  affected: false
+
+contracts:
+  affected: false
+  compatibilityClassification: "NONE"
+  requiredUpdates: []
+  requiredExamples: []
+  requiredConsumerTests: []
+
+securityPrivacy:
+  affected: true
+  threatChanges:
+    - "Reduces agent ability to reach main, rewrite history, change validators or use agents from outside this project."
+  dataClassifications: []
+  authorizationPolicies: []
+  rateLimitPolicies: []
+  auditRequirements: []
+  prohibitedData:
+    - "No secret values or provider credentials in evidence"
+
+reviews:
+  planner: false
+  tester: false
+  generalReviewer: true
+  contractReviewer: false
+  dataReviewer: false
+  securityReviewer: true
+  accessibilityReviewer: false
+  humanApprovalRequired: true
+  requiredHumanRole: "Project Owner (L3 — agent permissions and CI-adjacent security controls)"
+
+evidence:
+  requiredFiles:
+    - "delivery/evidence/I1-DEL-001/agent-permissions.md"
+  requiredCiChecks: []
+  requiredCommitSha: true
+  requiredRunReference: false
+
+assumptions:
+  - "OpenCode resolves rules as `opencode debug agent` reports them and applies them last-match-wins, as its documentation states."
+  - "The check copies the matcher read from the OpenCode 1.19.0 binary. It does not execute commands, run a live session, or parse git arguments."
+
+openQuestions: []
+
+recordedDecisions:
+  - "Owner confirmed on 2026-11-04 that ZCode built the work so far and delivery continues in OpenCode for now."
+  - "Owner directed these repo fixes on 2026-11-04 (\"can you make those for me\"). Merge remains the owner's decision."
+  - "Owner accepted the guardrail threat model on 2026-11-04, including R2-02 and R2-05 (handoff 12)."
+  - "Owner accepted on 2026-11-04: pin the shell after a live test; commit, push and open the pull request; resume I1-IAM-002 from the -ci line if a re-run confirms it; an exception letting the orchestrator commit its own records (handoff 13)."

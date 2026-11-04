@@ -67,3 +67,5 @@ BLOCKED
 SPEC_CONFLICT
 HUMAN_APPROVAL_REQUIRED
 ```
+
+`HUMAN_APPROVAL_REQUIRED` is a planning result, not a workflow state. Record it in `delivery/status.yaml` as `BLOCKED`.

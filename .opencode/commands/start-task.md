@@ -62,5 +62,6 @@ CLAIMED
 CLARIFICATION_REQUIRED
 BLOCKED
 SPEC_CONFLICT
-HUMAN_APPROVAL_REQUIRED
 ```
+
+When human approval is missing, use `BLOCKED` and list the approval under `HUMAN_APPROVALS`.
