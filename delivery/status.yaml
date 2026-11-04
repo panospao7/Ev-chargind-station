@@ -930,7 +930,7 @@ tasks:
 
     baselineCommit: "e02db33e82eb0c30788cd9d12c8374bd4891e255"
     branch: "task/i1-del-002-agent-models"
-    candidateCommit: null
+    candidateCommit: "fd6180ba67d54129ba96a3eeb26726a862d11394"
     pullRequest: null
 
     blockers: []
