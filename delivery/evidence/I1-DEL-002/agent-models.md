@@ -17,7 +17,8 @@ model IDs and variant names, lists `low`, `high`, `max` for Flash and `low`, `me
 or keys were printed.
 
 `glm-5.3-flash` replaces the requested `glm-5.3-flashx`, which returned `model not found` on `zai`, with or without a thinking
-setting.
+setting. `opencode models zai` does list `zai/glm-5.3-flashx`, so the listing and the live calls disagree. The reason is unknown,
+and `zai` would have to explain it.
 
 ## Why project agents set models in their own files
 
